@@ -6,7 +6,7 @@ import json
 import string
 
 import pytest
-from hypothesis import given, settings
+from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 from pydantic import TypeAdapter, ValidationError
 
@@ -480,7 +480,7 @@ def test_adversarial_edge_and_event_field_invariants_rejected(
         )
 
 
-@settings(max_examples=15)
+@settings(max_examples=15, suppress_health_check=[HealthCheck.too_slow])
 @given(
     graph=valid_structural_graph_strategy(),
     trace=valid_interaction_trace_strategy(),
