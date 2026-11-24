@@ -112,13 +112,17 @@ _EMITTER = MermaidEmitter()
 
 
 def test_emit_mermaid_300_node_hierarchical_structural_graph(benchmark: Any) -> None:
+    from archigram.domain.style import MERMAID_STRUCTURAL_FRONTMATTER
+
     output = benchmark(_EMITTER.emit, _GRAPH_300)
-    assert output.startswith("---\nconfig:\n  layout: elk\n---\nflowchart TD\n")
+    assert output.startswith(f"{MERMAID_STRUCTURAL_FRONTMATTER}\nflowchart TD\n")
     assert "subgraph " in output
 
 
 def test_emit_mermaid_500_event_concurrent_interaction_trace(benchmark: Any) -> None:
+    from archigram.domain.style import MERMAID_SEQUENCE_FRONTMATTER
+
     output = benchmark(_EMITTER.emit, _TRACE_500)
-    assert output.startswith("sequenceDiagram\n")
+    assert output.startswith(f"{MERMAID_SEQUENCE_FRONTMATTER}\nsequenceDiagram\n")
     assert "\n  par " in output
     assert "\n  loop [" in output

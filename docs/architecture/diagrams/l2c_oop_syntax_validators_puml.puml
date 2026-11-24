@@ -1,0 +1,86 @@
+@startuml
+!pragma layout elk
+skinparam backgroundColor transparent
+skinparam linetype ortho
+skinparam shadowing false
+skinparam componentStyle uml2
+skinparam ArrowColor #64748b
+skinparam PackageBackgroundColor transparent
+skinparam PackageBorderColor #64748b
+skinparam ComponentBackgroundColor transparent
+skinparam ComponentBorderColor #64748b
+skinparam ClassBackgroundColor transparent
+skinparam ClassBorderColor #64748b
+skinparam ClassHeaderBackgroundColor transparent
+skinparam RectangleBackgroundColor transparent
+skinparam RectangleBorderColor #64748b
+skinparam DatabaseBackgroundColor transparent
+skinparam DatabaseBorderColor #64748b
+skinparam QueueBackgroundColor transparent
+skinparam QueueBorderColor #64748b
+package "archigram" as c_0_archigram_983b03 {
+  package "features" as c_1_archigram_featur_e6f01e {
+    package "lint_syntax" as c_2_archigram_featur_ba3738 {
+      package "validators" as c_3_archigram_featur_d6e8be {
+        class "D2SyntaxValidator" as c_4_archigram_featur_bb531f {
+          +init(use_cli: bool, cli_timeout: float) : None
+          +property target_format() : str
+          +validate(diagram_source: str) : SyntaxValidationResult
+        }
+        class "DotSyntaxValidator" as c_5_archigram_featur_86114b {
+          +init(use_cli: bool, cli_timeout: float) : None
+          +property target_format() : str
+          +validate(diagram_source: str) : SyntaxValidationResult
+        }
+        class "Gate5SyntaxHarness" as c_6_archigram_featur_4106c5 {
+          +slice_name : str
+          +init(validators: Mapping[str, SyntaxValidatorPort] | None) : None
+          +property supported_formats() : tuple[str, ...]
+          +get_validator(target_format: str) : SyntaxValidatorPort | None
+          +validate(target_format: str, diagram_source: str) : SyntaxValidationResult
+        }
+        class "LikeC4SyntaxValidator" as c_7_archigram_featur_c2d69d {
+          +property target_format() : str
+          +validate(diagram_source: str) : SyntaxValidationResult
+        }
+        class "MermaidSyntaxValidator" as c_8_archigram_featur_086112 {
+          +property target_format() : str
+          +validate(diagram_source: str) : SyntaxValidationResult
+        }
+        class "PlantUmlSyntaxValidator" as c_9_archigram_featur_46a958 {
+          +init(use_cli: bool, cli_timeout: float) : None
+          +property target_format() : str
+          +validate(diagram_source: str) : SyntaxValidationResult
+        }
+      }
+    }
+  }
+  package "ports" as c_10_archigram_ports_384a04 {
+    package "contracts" as c_11_archigram_ports__7ed230 {
+      class "SyntaxValidationResult" as c_12_archigram_ports__58ed33 {
+        +valid : bool
+        +target_format : str
+        +errors : tuple[str, ...]
+      }
+      interface "SyntaxValidatorPort" as c_13_archigram_ports__993eea {
+        +property target_format() : str
+        +validate(diagram_source: str) : SyntaxValidationResult
+      }
+    }
+  }
+}
+c_2_archigram_featur_ba3738 ..>[#64748b] c_3_archigram_featur_d6e8be : imports
+c_3_archigram_featur_d6e8be ..>[#64748b] c_11_archigram_ports__7ed230 : imports
+c_4_archigram_featur_bb531f -->[#3b82f6] c_12_archigram_ports__58ed33 : calls
+c_13_archigram_ports__993eea <|..[#a855f7] c_4_archigram_featur_bb531f : implements
+c_5_archigram_featur_86114b -->[#3b82f6] c_12_archigram_ports__58ed33 : calls
+c_13_archigram_ports__993eea <|..[#a855f7] c_5_archigram_featur_86114b : implements
+c_6_archigram_featur_4106c5 -->[#3b82f6] c_12_archigram_ports__58ed33 : calls
+c_6_archigram_featur_4106c5 *--[#14b8a6] c_13_archigram_ports__993eea : composes
+c_7_archigram_featur_c2d69d -->[#3b82f6] c_12_archigram_ports__58ed33 : calls
+c_13_archigram_ports__993eea <|..[#a855f7] c_7_archigram_featur_c2d69d : implements
+c_8_archigram_featur_086112 -->[#3b82f6] c_12_archigram_ports__58ed33 : calls
+c_13_archigram_ports__993eea <|..[#a855f7] c_8_archigram_featur_086112 : implements
+c_9_archigram_featur_46a958 -->[#3b82f6] c_12_archigram_ports__58ed33 : calls
+c_13_archigram_ports__993eea <|..[#a855f7] c_9_archigram_featur_46a958 : implements
+@enduml

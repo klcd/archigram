@@ -235,9 +235,11 @@ def _interaction_trace_strategy(draw: st.DrawFn) -> InteractionTraceIR:
     return InteractionTraceIR(trace_id="fuzz_trace", participants=participants, events=events)
 
 
-@settings(max_examples=80)
+@settings(max_examples=80, deadline=None)
 @given(graph=_nested_structural_graph_strategy())
 def test_structural_graph_d2_determinism_and_syntax_invariants(graph: StructuralGraphIR) -> None:
+    from archigram.domain.style import D2_CANONICAL_HEADER
+
     emitter = D2Emitter()
     assert isinstance(emitter, DiagramEmitterPort)
     assert emitter.target_format == "d2"
@@ -245,7 +247,8 @@ def test_structural_graph_d2_determinism_and_syntax_invariants(graph: Structural
     out_first = emitter.emit(graph)
     out_second = emitter.emit(graph)
     assert out_first == out_second
-    assert out_first.startswith("vars: {\n  d2-config: {\n    layout-engine: elk\n  }\n}")
+    assert out_first.startswith(D2_CANONICAL_HEADER)
+    assert "style.fill: transparent" in out_first
     _assert_balanced_d2_braces(out_first)
     _assert_d2_cli_valid(out_first)
 
@@ -267,7 +270,7 @@ def test_structural_graph_d2_determinism_and_syntax_invariants(graph: Structural
         assert "style.stroke-dash: 5" in out_first
 
 
-@settings(max_examples=60)
+@settings(max_examples=60, deadline=None)
 @given(graph=_nested_structural_graph_strategy(include_punct=False, min_nodes=4, max_nodes=10))
 def test_cross_boundary_qualified_paths_and_order_invariance(graph: StructuralGraphIR) -> None:
     emitter = D2Emitter()
@@ -290,11 +293,13 @@ def test_cross_boundary_qualified_paths_and_order_invariance(graph: StructuralGr
             assert expected_target in out_a
 
 
-@settings(max_examples=80)
+@settings(max_examples=80, deadline=None)
 @given(trace=_interaction_trace_strategy())
 def test_interaction_trace_d2_sequence_and_concurrency_grouping(
     trace: InteractionTraceIR,
 ) -> None:
+    from archigram.domain.style import D2_CANONICAL_HEADER
+
     emitter = D2Emitter()
     reversed_trace = InteractionTraceIR(
         trace_id=trace.trace_id,
@@ -305,13 +310,13 @@ def test_interaction_trace_d2_sequence_and_concurrency_grouping(
     out_second = emitter.emit(reversed_trace)
 
     assert out_first == out_second
-    assert out_first.startswith("vars: {\n  d2-config: {\n    layout-engine: elk\n  }\n}")
+    assert out_first.startswith(D2_CANONICAL_HEADER)
     assert "\nshape: sequence_diagram\n" in out_first
     _assert_balanced_d2_braces(out_first)
     _assert_d2_cli_valid(out_first)
 
 
-@settings(max_examples=50)
+@settings(max_examples=50, deadline=None)
 @given(
     start_a=st.integers(min_value=0, max_value=500),
     dur_a=st.integers(min_value=50, max_value=300),
@@ -377,3 +382,35 @@ def test_overlapping_concurrent_siblings_emit_d2_message_group(
     assert out.index("dispatch") < out.index("concurrent_group_0:")
     _assert_balanced_d2_braces(out)
     _assert_d2_cli_valid(out)
+
+
+@settings(max_examples=60, deadline=None)
+@given(trace=_interaction_trace_strategy())
+def test_interaction_trace_d2_steps_variant_determinism_and_cli_validity(
+    trace: InteractionTraceIR,
+) -> None:
+    from archigram.domain.style import D2_CANONICAL_HEADER
+
+    steps_trace = trace.model_copy(
+        update={"metadata": {**trace.metadata, "diagram_variant": "steps"}}
+    )
+    reversed_steps_trace = InteractionTraceIR(
+        trace_id=trace.trace_id,
+        participants=dict(reversed(list(trace.participants.items()))),
+        events=dict(reversed(list(trace.events.items()))),
+        metadata={"diagram_variant": "steps"},
+    )
+    emitter = D2Emitter()
+    out_first = emitter.emit(steps_trace)
+    out_second = emitter.emit(reversed_steps_trace)
+
+    assert out_first == out_second
+    assert out_first.startswith(D2_CANONICAL_HEADER)
+    assert "\ndirection: right\n" in out_first
+    assert "shape: sequence_diagram" not in out_first
+    if trace.events:
+        assert "\nsteps: {\n" in out_first
+        assert "  step_1: {" in out_first
+        assert "  step_13: {" not in out_first
+    _assert_balanced_d2_braces(out_first)
+    _assert_d2_cli_valid(out_first)

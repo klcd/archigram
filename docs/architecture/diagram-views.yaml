@@ -210,6 +210,7 @@ views:
     title: "L0: ArchiGram Hexagonal Rings & Capability Groups (D2)"
     ir_mode: structural_graph
     target_renderer: d2
+    render_svg: true
     scope:
       mode: full
     rules:
@@ -267,6 +268,180 @@ views:
           - archigram.ports.*
       - op: collapse_partition
         id: l0_d2_domain_core
+        target_node_id: domain_core
+        label: "Domain Core"
+        member_globs:
+          - archigram.domain
+          - archigram.domain.*
+    simplify:
+      condense_sccs: true
+      transitive_reduction: true
+    invariants:
+      protected_nodes:
+        - cli_dataplane
+        - mcp_controlplane
+        - ports_contracts
+        - domain_core
+      preserve_reachability:
+        - from_node: archigram.entrypoints.cli.pipeline
+          to_node: archigram.ports.contracts
+        - from_node: archigram.ports.contracts
+          to_node: archigram.domain.ir
+      forbid_new_cycles: true
+      node_budget:
+        min_count: 6
+        max_count: 12
+      edge_budget_max: 40
+
+  - id: l0_hexagonal_rings_puml
+    title: "L0: ArchiGram Hexagonal Rings & Capability Groups (PlantUML Component)"
+    ir_mode: structural_graph
+    target_renderer: plantuml
+    diagram_variant: architecture
+    scope:
+      mode: full
+    rules:
+      - op: collapse_partition
+        id: l0_puml_cli_dataplane
+        target_node_id: cli_dataplane
+        label: "CLI Data Plane"
+        member_globs:
+          - archigram.entrypoints.cli
+          - archigram.entrypoints.cli.*
+      - op: collapse_partition
+        id: l0_puml_mcp_controlplane
+        target_node_id: mcp_controlplane
+        label: "MCP Control Plane"
+        member_globs:
+          - archigram.entrypoints.mcp
+          - archigram.entrypoints.mcp.*
+      - op: collapse_partition
+        id: l0_puml_feature_ingestors
+        target_node_id: feature_ingestors
+        label: "Ingestor Slices"
+        member_globs:
+          - archigram.features.ingest_*
+      - op: collapse_partition
+        id: l0_puml_feature_reducers
+        target_node_id: feature_reducers
+        label: "Reducer Slices"
+        member_globs:
+          - archigram.features.reduce_*
+      - op: collapse_partition
+        id: l0_puml_feature_linters
+        target_node_id: feature_linters
+        label: "5-Gate Linter Slices"
+        member_globs:
+          - archigram.features.lint_*
+      - op: collapse_partition
+        id: l0_puml_feature_emitters
+        target_node_id: feature_emitters
+        label: "Emitter Slices"
+        member_globs:
+          - archigram.features.emit_*
+      - op: collapse_partition
+        id: l0_puml_feature_digest
+        target_node_id: feature_digest
+        label: "Digest Slice"
+        member_globs:
+          - archigram.features.digest
+          - archigram.features.digest.*
+      - op: collapse_partition
+        id: l0_puml_ports_contracts
+        target_node_id: ports_contracts
+        label: "Ports & Contracts"
+        member_globs:
+          - archigram.ports
+          - archigram.ports.*
+      - op: collapse_partition
+        id: l0_puml_domain_core
+        target_node_id: domain_core
+        label: "Domain Core"
+        member_globs:
+          - archigram.domain
+          - archigram.domain.*
+    simplify:
+      condense_sccs: true
+      transitive_reduction: true
+    invariants:
+      protected_nodes:
+        - cli_dataplane
+        - mcp_controlplane
+        - ports_contracts
+        - domain_core
+      preserve_reachability:
+        - from_node: archigram.entrypoints.cli.pipeline
+          to_node: archigram.ports.contracts
+        - from_node: archigram.ports.contracts
+          to_node: archigram.domain.ir
+      forbid_new_cycles: true
+      node_budget:
+        min_count: 6
+        max_count: 12
+      edge_budget_max: 40
+
+  - id: l0_hexagonal_rings_dot
+    title: "L0: ArchiGram Hexagonal Rings & Capability Groups (Graphviz DOT)"
+    ir_mode: structural_graph
+    target_renderer: dot
+    render_svg: true
+    scope:
+      mode: full
+    rules:
+      - op: collapse_partition
+        id: l0_dot_cli_dataplane
+        target_node_id: cli_dataplane
+        label: "CLI Data Plane"
+        member_globs:
+          - archigram.entrypoints.cli
+          - archigram.entrypoints.cli.*
+      - op: collapse_partition
+        id: l0_dot_mcp_controlplane
+        target_node_id: mcp_controlplane
+        label: "MCP Control Plane"
+        member_globs:
+          - archigram.entrypoints.mcp
+          - archigram.entrypoints.mcp.*
+      - op: collapse_partition
+        id: l0_dot_feature_ingestors
+        target_node_id: feature_ingestors
+        label: "Ingestor Slices"
+        member_globs:
+          - archigram.features.ingest_*
+      - op: collapse_partition
+        id: l0_dot_feature_reducers
+        target_node_id: feature_reducers
+        label: "Reducer Slices"
+        member_globs:
+          - archigram.features.reduce_*
+      - op: collapse_partition
+        id: l0_dot_feature_linters
+        target_node_id: feature_linters
+        label: "5-Gate Linter Slices"
+        member_globs:
+          - archigram.features.lint_*
+      - op: collapse_partition
+        id: l0_dot_feature_emitters
+        target_node_id: feature_emitters
+        label: "Emitter Slices"
+        member_globs:
+          - archigram.features.emit_*
+      - op: collapse_partition
+        id: l0_dot_feature_digest
+        target_node_id: feature_digest
+        label: "Digest Slice"
+        member_globs:
+          - archigram.features.digest
+          - archigram.features.digest.*
+      - op: collapse_partition
+        id: l0_dot_ports_contracts
+        target_node_id: ports_contracts
+        label: "Ports & Contracts"
+        member_globs:
+          - archigram.ports
+          - archigram.ports.*
+      - op: collapse_partition
+        id: l0_dot_domain_core
         target_node_id: domain_core
         label: "Domain Core"
         member_globs:
@@ -426,6 +601,7 @@ views:
     title: "L1: 16 Independent Vertical Feature Slices (D2)"
     ir_mode: structural_graph
     target_renderer: d2
+    render_svg: true
     scope:
       mode: full
     rules:
@@ -820,6 +996,7 @@ views:
     title: "L2b: Structural Reducer, Trace Compactor & SP-Poset Engine (D2)"
     ir_mode: structural_graph
     target_renderer: d2
+    render_svg: true
     scope:
       mode: k_hop_neighborhood
       focal_nodes:
@@ -1001,6 +1178,91 @@ views:
         min_count: 6
         max_count: 16
       edge_budget_max: 35
+
+  - id: l2c_oop_syntax_validators_mermaid
+    title: "L2c OOP: Gate 5 SyntaxValidatorPort & Concrete Validators (Mermaid classDiagram)"
+    ir_mode: structural_graph
+    target_renderer: mermaid
+    diagram_variant: class
+    scope:
+      mode: k_hop_neighborhood
+      focal_nodes:
+        - archigram.ports.contracts.SyntaxValidatorPort
+        - archigram.ports.contracts.SyntaxValidationResult
+        - archigram.features.lint_syntax.validators.Gate5SyntaxHarness
+        - archigram.features.lint_syntax.validators.MermaidSyntaxValidator
+        - archigram.features.lint_syntax.validators.D2SyntaxValidator
+        - archigram.features.lint_syntax.validators.PlantUmlSyntaxValidator
+        - archigram.features.lint_syntax.validators.LikeC4SyntaxValidator
+        - archigram.features.lint_syntax.validators.DotSyntaxValidator
+      upstream_depth: 0
+      downstream_depth: 0
+    invariants:
+      protected_nodes:
+        - archigram.ports.contracts.SyntaxValidatorPort
+        - archigram.features.lint_syntax.validators.Gate5SyntaxHarness
+      forbid_new_cycles: true
+      node_budget:
+        min_count: 8
+        max_count: 16
+      edge_budget_max: 25
+
+  - id: l2c_oop_syntax_validators_d2
+    title: "L2c OOP: Gate 5 SyntaxValidatorPort & Concrete Validators (D2 shape: class)"
+    ir_mode: structural_graph
+    target_renderer: d2
+    diagram_variant: class
+    render_svg: true
+    scope:
+      mode: k_hop_neighborhood
+      focal_nodes:
+        - archigram.ports.contracts.SyntaxValidatorPort
+        - archigram.ports.contracts.SyntaxValidationResult
+        - archigram.features.lint_syntax.validators.Gate5SyntaxHarness
+        - archigram.features.lint_syntax.validators.MermaidSyntaxValidator
+        - archigram.features.lint_syntax.validators.D2SyntaxValidator
+        - archigram.features.lint_syntax.validators.PlantUmlSyntaxValidator
+        - archigram.features.lint_syntax.validators.LikeC4SyntaxValidator
+        - archigram.features.lint_syntax.validators.DotSyntaxValidator
+      upstream_depth: 0
+      downstream_depth: 0
+    invariants:
+      protected_nodes:
+        - archigram.ports.contracts.SyntaxValidatorPort
+        - archigram.features.lint_syntax.validators.Gate5SyntaxHarness
+      forbid_new_cycles: true
+      node_budget:
+        min_count: 8
+        max_count: 16
+      edge_budget_max: 25
+
+  - id: l2c_oop_syntax_validators_puml
+    title: "L2c OOP: Gate 5 SyntaxValidatorPort & Concrete Validators (PlantUML Class)"
+    ir_mode: structural_graph
+    target_renderer: plantuml
+    diagram_variant: class
+    scope:
+      mode: k_hop_neighborhood
+      focal_nodes:
+        - archigram.ports.contracts.SyntaxValidatorPort
+        - archigram.ports.contracts.SyntaxValidationResult
+        - archigram.features.lint_syntax.validators.Gate5SyntaxHarness
+        - archigram.features.lint_syntax.validators.MermaidSyntaxValidator
+        - archigram.features.lint_syntax.validators.D2SyntaxValidator
+        - archigram.features.lint_syntax.validators.PlantUmlSyntaxValidator
+        - archigram.features.lint_syntax.validators.LikeC4SyntaxValidator
+        - archigram.features.lint_syntax.validators.DotSyntaxValidator
+      upstream_depth: 0
+      downstream_depth: 0
+    invariants:
+      protected_nodes:
+        - archigram.ports.contracts.SyntaxValidatorPort
+        - archigram.features.lint_syntax.validators.Gate5SyntaxHarness
+      forbid_new_cycles: true
+      node_budget:
+        min_count: 8
+        max_count: 16
+      edge_budget_max: 25
 
   # ============================================================================
   # LEVEL 2d: CLI Data Plane & MCP Control Plane Driving Adapters

@@ -2,8 +2,8 @@
 
 **Best for:** Contributors adding a new ingestor, diagram emitter, or lint gate who want to know where every slice lives and verify what they are allowed to import.
 
-- **Zoom Out / In:** [L0: System & Rings](L0-system-and-rings.md) · [L2: Subsystem Guides](L2-subsystem-guides.md) · [L3: Runtime Traces](L3-runtime-traces.md)
-- **Companion Renders:** [Mermaid](diagrams/l1_feature_slices_mermaid.mmd) · [D2 (`.d2`)](diagrams/l1_feature_slices_d2.d2)
+- **Zoom Out / In:** [L0: System & Rings](L0-system-and-rings.md) · [L2: Subsystem Guides](L2-subsystem-guides.md) · [L3: Runtime Traces](L3-runtime-traces.md) · [Styling & Full Multi-Target Gallery](diagram-styling-and-gallery.md)
+- **Companion Renders:** [Mermaid](diagrams/l1_feature_slices_mermaid.mmd) · [D2 (`.d2`)](diagrams/l1_feature_slices_d2.d2) · [D2 SVG](diagrams/l1_feature_slices_d2.d2.svg)
 
 ---
 
@@ -33,14 +33,14 @@ Every directory under `src/archigram/features/<slice>/` is a **vertically isolat
 | | `lint_budget` | Gate 4 (cognitive node/edge/participant/event budgets & orphan detection) | `LintGatePort` |
 | | `lint_syntax` | Gate 5 (headless syntax verification for Mermaid, D2, PlantUML, LikeC4, DOT) | `SyntaxValidatorPort` |
 | **Emitters (4)** | `emit_mermaid` | Deterministic Mermaid `flowchart` / `classDiagram` / `sequenceDiagram` | `DiagramEmitterPort` |
-| | `emit_d2` | Deterministic D2 architecture & class diagrams | `DiagramEmitterPort` |
-| | `emit_plantuml` | Deterministic PlantUML component, class & sequence diagrams | `DiagramEmitterPort` |
-| | `emit_likec4` | Deterministic LikeC4 `.c4` architecture models & views | `DiagramEmitterPort` |
+| | `emit_d2` | Deterministic D2 architecture, OOP `shape: class` & sequence diagrams | `DiagramEmitterPort` |
+| | `emit_plantuml` | Deterministic PlantUML component, class & `teoz` sequence diagrams | `DiagramEmitterPort` |
+| | `emit_likec4` | Deterministic LikeC4 `.c4` architecture & dynamic sequence views | `DiagramEmitterPort` |
 | **Digest (1)** | `digest` | Token-efficient Louvain/PageRank/hotspot digests for MCP & `propose` | `DigestGeneratorPort` |
 
 ---
 
-## Curated View (`l1_feature_slices_mermaid`)
+## Curated View — Mermaid Orthogonal Flowchart (`l1_feature_slices_mermaid`)
 
 All 16 slices + 4 structural rings collapsed into 1 supernode each (within the `<= 25` cognitive node budget, `forbid_new_cycles: true`):
 
@@ -49,8 +49,24 @@ All 16 slices + 4 structural rings collapsed into 1 supernode each (within the `
 ---
 config:
   layout: elk
+  look: classic
+  elk:
+    mergeEdges: false
+    nodePlacementStrategy: BRANDES_KOEPF
+  flowchart:
+    curve: linear
+  themeVariables:
+    primaryColor: transparent
+    secondaryColor: transparent
+    tertiaryColor: transparent
+    mainBkg: transparent
+    nodeBorder: '#64748b'
+    clusterBkg: transparent
+    clusterBorder: '#64748b'
+    lineColor: '#64748b'
 ---
 flowchart TD
+  classDef default fill:transparent,stroke:#64748b,stroke-width:1.5px
   subgraph n_0_archigram_983b03["archigram"]
     subgraph n_1_archigram_entryp_6a8ce0["entrypoints"]
       n_9_entrypoints_cli_4bc091["entrypoints.cli"]
@@ -77,27 +93,36 @@ flowchart TD
     n_4_domain_f2ff83["domain"]
     n_20_ports_87afb3["ports"]
   end
+  style n_0_archigram_983b03 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  style n_1_archigram_entryp_6a8ce0 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  style n_2_archigram_featur_e6f01e fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   n_10_entrypoints_mcp_55388b -.->|"imports"| n_3_digest_0bf474
   n_19_lint_topology_df2e1d -.->|"imports"| n_4_domain_f2ff83
   n_7_emit_mermaid_1088af -.->|"imports"| n_4_domain_f2ff83
   n_3_digest_0bf474 -.->|"imports"| n_4_domain_f2ff83
-  n_17_lint_grounding_60eca0 -->|"calls"| n_4_domain_f2ff83
+  n_17_lint_grounding_60eca0 e_4@-->|"calls"| n_4_domain_f2ff83
+  e_4@{ animate: true }
   n_5_emit_d2_620ecc -.->|"imports"| n_4_domain_f2ff83
   n_3_digest_0bf474 -->|"composes"| n_4_domain_f2ff83
-  n_16_lint_budget_5ef046 -->|"calls"| n_4_domain_f2ff83
-  n_22_reduce_trace_a80f36 -->|"calls"| n_4_domain_f2ff83
+  n_16_lint_budget_5ef046 e_7@-->|"calls"| n_4_domain_f2ff83
+  e_7@{ animate: true }
+  n_22_reduce_trace_a80f36 e_8@-->|"calls"| n_4_domain_f2ff83
+  e_8@{ animate: true }
   n_19_lint_topology_df2e1d -->|"composes"| n_4_domain_f2ff83
-  n_19_lint_topology_df2e1d -->|"calls"| n_4_domain_f2ff83
+  n_19_lint_topology_df2e1d e_10@-->|"calls"| n_4_domain_f2ff83
+  e_10@{ animate: true }
   n_22_reduce_trace_a80f36 -.->|"imports"| n_4_domain_f2ff83
   n_17_lint_grounding_60eca0 -.->|"imports"| n_4_domain_f2ff83
   n_8_emit_plantuml_e13ade -->|"composes"| n_4_domain_f2ff83
+  n_5_emit_d2_620ecc -->|"composes"| n_4_domain_f2ff83
   n_20_ports_87afb3 -.->|"imports"| n_4_domain_f2ff83
   n_21_reduce_structura_382821 -.->|"imports"| n_4_domain_f2ff83
   n_16_lint_budget_5ef046 -.->|"imports"| n_4_domain_f2ff83
   n_8_emit_plantuml_e13ade -.->|"imports"| n_4_domain_f2ff83
   n_7_emit_mermaid_1088af -->|"composes"| n_4_domain_f2ff83
   n_6_emit_likec4_1b4b94 -.->|"imports"| n_4_domain_f2ff83
-  n_21_reduce_structura_382821 -->|"calls"| n_4_domain_f2ff83
+  n_21_reduce_structura_382821 e_21@-->|"calls"| n_4_domain_f2ff83
+  e_21@{ animate: true }
   n_10_entrypoints_mcp_55388b -.->|"imports"| n_5_emit_d2_620ecc
   n_10_entrypoints_mcp_55388b -.->|"imports"| n_6_emit_likec4_1b4b94
   n_10_entrypoints_mcp_55388b -.->|"imports"| n_7_emit_mermaid_1088af
@@ -105,34 +130,99 @@ flowchart TD
   n_9_entrypoints_cli_4bc091 -.->|"imports"| n_11_ingest_class_b85511
   n_9_entrypoints_cli_4bc091 -.->|"imports"| n_12_ingest_dot_b06b1d
   n_9_entrypoints_cli_4bc091 -.->|"imports"| n_13_ingest_otel_03f3a3
-  n_9_entrypoints_cli_4bc091 -->|"calls"| n_14_ingest_python_d587ef
+  n_9_entrypoints_cli_4bc091 e_29@-->|"calls"| n_14_ingest_python_d587ef
+  e_29@{ animate: true }
   n_9_entrypoints_cli_4bc091 -.->|"imports"| n_14_ingest_python_d587ef
   n_9_entrypoints_cli_4bc091 -.->|"imports"| n_15_ingest_scip_e323c8
   n_10_entrypoints_mcp_55388b -.->|"imports"| n_16_lint_budget_5ef046
-  n_10_entrypoints_mcp_55388b -->|"calls"| n_17_lint_grounding_60eca0
+  n_10_entrypoints_mcp_55388b e_33@-->|"calls"| n_17_lint_grounding_60eca0
+  e_33@{ animate: true }
   n_10_entrypoints_mcp_55388b -.->|"imports"| n_17_lint_grounding_60eca0
   n_10_entrypoints_mcp_55388b -.->|"imports"| n_18_lint_syntax_703d04
   n_10_entrypoints_mcp_55388b -.->|"imports"| n_19_lint_topology_df2e1d
   n_9_entrypoints_cli_4bc091 -.->|"imports"| n_10_entrypoints_mcp_55388b
-  n_9_entrypoints_cli_4bc091 -->|"calls"| n_10_entrypoints_mcp_55388b
+  n_9_entrypoints_cli_4bc091 e_38@-->|"calls"| n_10_entrypoints_mcp_55388b
+  e_38@{ animate: true }
   n_18_lint_syntax_703d04 -.->|"imports"| n_20_ports_87afb3
-  n_14_ingest_python_d587ef -->|"implements"| n_20_ports_87afb3
+  n_14_ingest_python_d587ef -.->|"implements"| n_20_ports_87afb3
   n_14_ingest_python_d587ef -.->|"imports"| n_20_ports_87afb3
   n_13_ingest_otel_03f3a3 -.->|"imports"| n_20_ports_87afb3
-  n_13_ingest_otel_03f3a3 -->|"implements"| n_20_ports_87afb3
-  n_18_lint_syntax_703d04 -->|"implements"| n_20_ports_87afb3
-  n_15_ingest_scip_e323c8 -->|"implements"| n_20_ports_87afb3
+  n_13_ingest_otel_03f3a3 -.->|"implements"| n_20_ports_87afb3
+  n_18_lint_syntax_703d04 -.->|"implements"| n_20_ports_87afb3
+  n_15_ingest_scip_e323c8 -.->|"implements"| n_20_ports_87afb3
   n_15_ingest_scip_e323c8 -.->|"imports"| n_20_ports_87afb3
   n_12_ingest_dot_b06b1d -.->|"imports"| n_20_ports_87afb3
   n_11_ingest_class_b85511 -.->|"imports"| n_20_ports_87afb3
-  n_11_ingest_class_b85511 -->|"implements"| n_20_ports_87afb3
-  n_18_lint_syntax_703d04 -->|"calls"| n_20_ports_87afb3
-  n_12_ingest_dot_b06b1d -->|"implements"| n_20_ports_87afb3
+  n_11_ingest_class_b85511 -.->|"implements"| n_20_ports_87afb3
+  n_18_lint_syntax_703d04 e_50@-->|"calls"| n_20_ports_87afb3
+  e_50@{ animate: true }
+  n_12_ingest_dot_b06b1d -.->|"implements"| n_20_ports_87afb3
   n_18_lint_syntax_703d04 -->|"composes"| n_20_ports_87afb3
   n_10_entrypoints_mcp_55388b -.->|"imports"| n_21_reduce_structura_382821
   n_10_entrypoints_mcp_55388b -.->|"imports"| n_22_reduce_trace_a80f36
+  linkStyle 0 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 1 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 2 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 3 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 4 stroke:#3b82f6,stroke-width:1.75px
+  linkStyle 5 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 6 stroke:#14b8a6,stroke-width:1.75px
+  linkStyle 7 stroke:#3b82f6,stroke-width:1.75px
+  linkStyle 8 stroke:#3b82f6,stroke-width:1.75px
+  linkStyle 9 stroke:#14b8a6,stroke-width:1.75px
+  linkStyle 10 stroke:#3b82f6,stroke-width:1.75px
+  linkStyle 11 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 12 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 13 stroke:#14b8a6,stroke-width:1.75px
+  linkStyle 14 stroke:#14b8a6,stroke-width:1.75px
+  linkStyle 15 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 16 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 17 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 18 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 19 stroke:#14b8a6,stroke-width:1.75px
+  linkStyle 20 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 21 stroke:#3b82f6,stroke-width:1.75px
+  linkStyle 22 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 23 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 24 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 25 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 26 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 27 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 28 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 29 stroke:#3b82f6,stroke-width:1.75px
+  linkStyle 30 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 31 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 32 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 33 stroke:#3b82f6,stroke-width:1.75px
+  linkStyle 34 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 35 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 36 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 37 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 38 stroke:#3b82f6,stroke-width:1.75px
+  linkStyle 39 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 40 stroke:#a855f7,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 41 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 42 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 43 stroke:#a855f7,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 44 stroke:#a855f7,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 45 stroke:#a855f7,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 46 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 47 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 48 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 49 stroke:#a855f7,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 50 stroke:#3b82f6,stroke-width:1.75px
+  linkStyle 51 stroke:#a855f7,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 52 stroke:#14b8a6,stroke-width:1.75px
+  linkStyle 53 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 54 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
 ```
 <!-- archigram:end l1_feature_slices_mermaid -->
+
+---
+
+## Curated View — Rendered D2 Feature Slices (`l1_feature_slices_d2`)
+
+![L1 Independent Feature Slices in D2](diagrams/l1_feature_slices_d2.d2.svg)
 
 ---
 

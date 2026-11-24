@@ -1,0 +1,62 @@
+digraph "archigram" {
+  rankdir="LR";
+  bgcolor="transparent";
+  splines="ortho";
+  node [shape="box", style="rounded", color="#64748b", fontcolor="#64748b"];
+  edge [penwidth="1.5", fontcolor="#64748b"];
+  subgraph "cluster_archigram" {
+    label="archigram";
+    bgcolor="transparent";
+    style="rounded,dashed";
+    color="#64748b";
+    fontcolor="#64748b";
+    "archigram" [label="archigram", kind="package", _kind="package"];
+    subgraph "cluster_archigram.entrypoints" {
+      label="entrypoints";
+      bgcolor="transparent";
+      style="rounded,dashed";
+      color="#64748b";
+      fontcolor="#64748b";
+      "archigram.entrypoints" [label="entrypoints", kind="package", _kind="package"];
+      "cli_dataplane" [label="CLI Data Plane", kind="supernode", _kind="supernode"];
+      "mcp_controlplane" [label="MCP Control Plane", kind="supernode", _kind="supernode"];
+    }
+    subgraph "cluster_archigram.features" {
+      label="features";
+      bgcolor="transparent";
+      style="rounded,dashed";
+      color="#64748b";
+      fontcolor="#64748b";
+      "archigram.features" [label="features", kind="package", _kind="package"];
+      "feature_digest" [label="Digest Slice", kind="supernode", _kind="supernode"];
+      "feature_emitters" [label="Emitter Slices", kind="supernode", _kind="supernode"];
+      "feature_ingestors" [label="Ingestor Slices", kind="supernode", _kind="supernode"];
+      "feature_linters" [label="5-Gate Linter Slices", kind="supernode", _kind="supernode"];
+      "feature_reducers" [label="Reducer Slices", kind="supernode", _kind="supernode"];
+    }
+    "domain_core" [label="Domain Core", kind="supernode", _kind="supernode"];
+    "ports_contracts" [label="Ports & Contracts", kind="supernode", _kind="supernode"];
+  }
+  "cli_dataplane" -> "feature_ingestors" [xlabel="calls", _rel_kind="calls", _sync_kind="sync", style="solid", color="#3b82f6", arrowhead="vee"];
+  "cli_dataplane" -> "feature_ingestors" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
+  "cli_dataplane" -> "mcp_controlplane" [xlabel="calls", _rel_kind="calls", _sync_kind="sync", style="solid", color="#3b82f6", arrowhead="vee"];
+  "cli_dataplane" -> "mcp_controlplane" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
+  "feature_digest" -> "domain_core" [xlabel="composes", _rel_kind="composes", _sync_kind="sync", style="solid", color="#14b8a6", arrowhead="diamond"];
+  "feature_digest" -> "domain_core" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
+  "feature_emitters" -> "domain_core" [xlabel="composes", _rel_kind="composes", _sync_kind="sync", style="solid", color="#14b8a6", arrowhead="diamond"];
+  "feature_emitters" -> "domain_core" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
+  "feature_ingestors" -> "ports_contracts" [xlabel="implements", _rel_kind="implements", _sync_kind="sync", style="dashed", color="#a855f7", arrowhead="empty"];
+  "feature_ingestors" -> "ports_contracts" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
+  "feature_linters" -> "ports_contracts" [xlabel="calls", _rel_kind="calls", _sync_kind="sync", style="solid", color="#3b82f6", arrowhead="vee"];
+  "feature_linters" -> "ports_contracts" [xlabel="composes", _rel_kind="composes", _sync_kind="sync", style="solid", color="#14b8a6", arrowhead="diamond"];
+  "feature_linters" -> "ports_contracts" [xlabel="implements", _rel_kind="implements", _sync_kind="sync", style="dashed", color="#a855f7", arrowhead="empty"];
+  "feature_linters" -> "ports_contracts" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
+  "feature_reducers" -> "domain_core" [xlabel="calls", _rel_kind="calls", _sync_kind="sync", style="solid", color="#3b82f6", arrowhead="vee"];
+  "feature_reducers" -> "domain_core" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
+  "mcp_controlplane" -> "feature_digest" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
+  "mcp_controlplane" -> "feature_emitters" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
+  "mcp_controlplane" -> "feature_linters" [xlabel="calls", _rel_kind="calls", _sync_kind="sync", style="solid", color="#3b82f6", arrowhead="vee"];
+  "mcp_controlplane" -> "feature_linters" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
+  "mcp_controlplane" -> "feature_reducers" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
+  "ports_contracts" -> "domain_core" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
+}

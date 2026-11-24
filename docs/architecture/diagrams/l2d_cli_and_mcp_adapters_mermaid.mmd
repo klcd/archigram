@@ -1,8 +1,24 @@
 ---
 config:
   layout: elk
+  look: classic
+  elk:
+    mergeEdges: false
+    nodePlacementStrategy: BRANDES_KOEPF
+  flowchart:
+    curve: linear
+  themeVariables:
+    primaryColor: transparent
+    secondaryColor: transparent
+    tertiaryColor: transparent
+    mainBkg: transparent
+    nodeBorder: '#64748b'
+    clusterBkg: transparent
+    clusterBorder: '#64748b'
+    lineColor: '#64748b'
 ---
 flowchart TD
+  classDef default fill:transparent,stroke:#64748b,stroke-width:1.5px
   subgraph n_0_archigram_983b03["archigram"]
     subgraph n_1_archigram_entryp_6a8ce0["entrypoints"]
       subgraph n_2_archigram_entryp_f9dc23["cli"]
@@ -26,6 +42,11 @@ flowchart TD
     end
     n_17_ports_and_domain_38e7a5["Ports & Domain Core"]
   end
+  style n_0_archigram_983b03 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  style n_1_archigram_entryp_6a8ce0 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  style n_2_archigram_entryp_f9dc23 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  style n_3_archigram_entryp_d739e6 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  style n_4_archigram_featur_e6f01e fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   n_2_archigram_entryp_f9dc23 -.->|"imports"| n_5_cli_app_af790b
   n_6_cli_diff_report_7a51b7 -.->|"imports"| n_8_cli_pipeline_6371a4
   n_5_cli_app_af790b -.->|"imports"| n_6_cli_diff_report_7a51b7
@@ -45,3 +66,22 @@ flowchart TD
   n_8_cli_pipeline_6371a4 -.->|"imports"| n_17_ports_and_domain_38e7a5
   n_15_mcp_propose_loop_e477f8 -.->|"imports"| n_14_feature_reducers_8a2858
   n_8_cli_pipeline_6371a4 -.->|"imports"| n_14_feature_reducers_8a2858
+  linkStyle 0 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 1 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 2 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 3 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 4 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 5 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 6 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 7 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 8 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 9 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 10 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 11 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 12 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 13 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 14 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 15 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 16 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 17 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 18 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5

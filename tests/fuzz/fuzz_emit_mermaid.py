@@ -323,23 +323,32 @@ def _assert_balanced_mermaid_blocks(mermaid_src: str) -> None:
 def test_flowchart_emission_determinism_and_syntax_invariants(
     graph: StructuralGraphIR,
 ) -> None:
+    from archigram.domain.style import (
+        MERMAID_DEFAULT_CLASSDEF,
+        MERMAID_STRUCTURAL_FRONTMATTER,
+    )
+
     emitter = MermaidEmitter()
     assert isinstance(emitter, DiagramEmitterPort)
     assert emitter.target_format == "mermaid"
 
     first = emitter.emit(graph)
-    PermutedNodes = dict(reversed(list(graph.nodes.items())))
-    PermutedEdges = tuple(reversed(graph.edges))
+    permuted_nodes = dict(reversed(list(graph.nodes.items())))
+    permuted_edges = tuple(reversed(graph.edges))
     permuted_graph = StructuralGraphIR(
         graph_id=graph.graph_id,
-        nodes=PermutedNodes,
-        edges=PermutedEdges,
+        nodes=permuted_nodes,
+        edges=permuted_edges,
         metadata=graph.metadata,
     )
     second = emitter.emit(permuted_graph)
 
     assert first == second
-    assert first.startswith("---\nconfig:\n  layout: elk\n---\nflowchart TD\n")
+    assert first.startswith(f"{MERMAID_STRUCTURAL_FRONTMATTER}\nflowchart TD\n")
+    assert MERMAID_DEFAULT_CLASSDEF in first
+    assert "curve: linear" in first
+    if graph.edges:
+        assert "\n  linkStyle 0 stroke:#" in first
     _assert_no_unescaped_semicolons_in_quoted_labels(first)
     _assert_balanced_mermaid_blocks(first)
     assert re.search(r"\bsubgraph\s+end\b", first, re.IGNORECASE) is None
@@ -350,6 +359,11 @@ def test_flowchart_emission_determinism_and_syntax_invariants(
 def test_class_diagram_emission_determinism_and_syntax_invariants(
     graph: StructuralGraphIR,
 ) -> None:
+    from archigram.domain.style import (
+        MERMAID_DEFAULT_CLASSDEF,
+        MERMAID_STRUCTURAL_FRONTMATTER,
+    )
+
     emitter = MermaidEmitter()
     first = emitter.emit(graph)
     permuted_graph = StructuralGraphIR(
@@ -361,7 +375,8 @@ def test_class_diagram_emission_determinism_and_syntax_invariants(
     second = emitter.emit(permuted_graph)
 
     assert first == second
-    assert first.startswith("---\nconfig:\n  layout: elk\n---\nclassDiagram\n")
+    assert first.startswith(f"{MERMAID_STRUCTURAL_FRONTMATTER}\nclassDiagram\n")
+    assert MERMAID_DEFAULT_CLASSDEF in first
     _assert_no_unescaped_semicolons_in_quoted_labels(first)
     assert re.search(r"\bclass\s+end\b", first, re.IGNORECASE) is None
 
@@ -371,6 +386,8 @@ def test_class_diagram_emission_determinism_and_syntax_invariants(
 def test_sequence_diagram_par_loop_and_end_aliasing_invariants(
     trace: InteractionTraceIR,
 ) -> None:
+    from archigram.domain.style import MERMAID_SEQUENCE_FRONTMATTER
+
     emitter = MermaidEmitter()
     first = emitter.emit(trace)
     permuted_trace = InteractionTraceIR(
@@ -382,7 +399,8 @@ def test_sequence_diagram_par_loop_and_end_aliasing_invariants(
     second = emitter.emit(permuted_trace)
 
     assert first == second
-    assert first.startswith("sequenceDiagram\n")
+    assert first.startswith(f"{MERMAID_SEQUENCE_FRONTMATTER}\nsequenceDiagram\n")
+    assert "actorBkg: transparent" in first
     _assert_no_unescaped_semicolons_in_quoted_labels(first)
     _assert_balanced_mermaid_blocks(first)
     assert re.search(r"\bparticipant\s+end\b", first, re.IGNORECASE) is None

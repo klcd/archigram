@@ -1,13 +1,13 @@
 # ArchiGram Self-Hosted Runtime Execution Trace Curation Spec (CurationSpecV1)
 # Compiled against live sys.monitoring trace snapshot via:
-#   uv run archigram apply docs/architecture/traces/pipeline-and-repair.ir.json \
+#   direnv exec . uv run archigram apply docs/architecture/traces/pipeline-and-repair.ir.json \
 #     --spec docs/architecture/trace-views.yaml \
 #     --out-dir docs/architecture/diagrams \
 #     --sync-md docs/architecture
 schema_version: '1.0'
 metadata:
   project: ArchiGram
-  purpose: Level 3 compacted runtime execution sequences for multi-view pipeline & 3-turn self-healing repair loop
+  purpose: Level 3 compacted runtime execution sequences across all 5 target renderers (Mermaid, D2, PlantUML, LikeC4, DOT)
 
 views:
   - id: l3_runtime_pipeline_mermaid
@@ -40,10 +40,134 @@ views:
         max_count: 25
       edge_budget_max: 60
 
+  - id: l3_runtime_pipeline_d2
+    title: "L3: Multi-View Compilation & Self-Healing Repair Trace (D2 Sequence)"
+    ir_mode: interaction_trace
+    target_renderer: d2
+    render_svg: true
+    trace_compaction:
+      fold_loops: true
+      fold_loop_with_opt: true
+      cut_recursion: true
+      fold_parallel_siblings: true
+      parallel_epsilon_ns: 1000000
+      fold_parallel_map: true
+      max_par_branches: 6
+      decompose_series_parallel: true
+      max_call_depth: 2
+    invariants:
+      protected_nodes:
+        - archigram.entrypoints.cli.pipeline
+        - archigram.entrypoints.mcp.propose_loop
+        - archigram.features.reduce_structural.reducer
+        - archigram.features.lint_grounding.gates
+        - archigram.features.lint_topology.gate
+        - archigram.features.lint_budget.gate
+        - archigram.features.lint_syntax.validators
+        - archigram.features.digest.generator
+      preserve_partial_order: true
+      node_budget:
+        min_count: 4
+        max_count: 25
+      edge_budget_max: 60
+
   - id: l3_runtime_pipeline_puml
-    title: "L3: Multi-View Compilation & Self-Healing Repair Trace (PlantUML)"
+    title: "L3: Multi-View Compilation & Self-Healing Repair Trace (PlantUML teoz)"
     ir_mode: interaction_trace
     target_renderer: plantuml
+    trace_compaction:
+      fold_loops: true
+      fold_loop_with_opt: true
+      cut_recursion: true
+      fold_parallel_siblings: true
+      parallel_epsilon_ns: 1000000
+      fold_parallel_map: true
+      max_par_branches: 6
+      decompose_series_parallel: true
+      max_call_depth: 2
+    invariants:
+      protected_nodes:
+        - archigram.entrypoints.cli.pipeline
+        - archigram.entrypoints.mcp.propose_loop
+        - archigram.features.reduce_structural.reducer
+        - archigram.features.lint_grounding.gates
+        - archigram.features.lint_topology.gate
+        - archigram.features.lint_budget.gate
+        - archigram.features.lint_syntax.validators
+        - archigram.features.digest.generator
+      preserve_partial_order: true
+      node_budget:
+        min_count: 4
+        max_count: 25
+      edge_budget_max: 60
+
+  - id: l3_runtime_pipeline_likec4
+    title: "L3: Multi-View Compilation & Self-Healing Repair Trace (LikeC4 Dynamic)"
+    ir_mode: interaction_trace
+    target_renderer: likec4
+    trace_compaction:
+      fold_loops: true
+      fold_loop_with_opt: true
+      cut_recursion: true
+      fold_parallel_siblings: true
+      parallel_epsilon_ns: 1000000
+      fold_parallel_map: true
+      max_par_branches: 6
+      decompose_series_parallel: true
+      max_call_depth: 2
+    invariants:
+      protected_nodes:
+        - archigram.entrypoints.cli.pipeline
+        - archigram.entrypoints.mcp.propose_loop
+        - archigram.features.reduce_structural.reducer
+        - archigram.features.lint_grounding.gates
+        - archigram.features.lint_topology.gate
+        - archigram.features.lint_budget.gate
+        - archigram.features.lint_syntax.validators
+        - archigram.features.digest.generator
+      preserve_partial_order: true
+      node_budget:
+        min_count: 4
+        max_count: 25
+      edge_budget_max: 60
+
+  - id: l3_runtime_pipeline_dot
+    title: "L3: Multi-View Compilation & Self-Healing Repair Trace (Graphviz DOT)"
+    ir_mode: interaction_trace
+    target_renderer: dot
+    render_svg: true
+    trace_compaction:
+      fold_loops: true
+      fold_loop_with_opt: true
+      cut_recursion: true
+      fold_parallel_siblings: true
+      parallel_epsilon_ns: 1000000
+      fold_parallel_map: true
+      max_par_branches: 6
+      decompose_series_parallel: true
+      max_call_depth: 2
+    invariants:
+      protected_nodes:
+        - archigram.entrypoints.cli.pipeline
+        - archigram.entrypoints.mcp.propose_loop
+        - archigram.features.reduce_structural.reducer
+        - archigram.features.lint_grounding.gates
+        - archigram.features.lint_topology.gate
+        - archigram.features.lint_budget.gate
+        - archigram.features.lint_syntax.validators
+        - archigram.features.digest.generator
+      preserve_partial_order: true
+      node_budget:
+        min_count: 4
+        max_count: 25
+      edge_budget_max: 60
+
+  - id: l3_runtime_pipeline_steps_d2
+    title: "L3: Multi-View Compilation & Self-Healing Repair Playback (D2 Animated Steps)"
+    ir_mode: interaction_trace
+    target_renderer: d2
+    diagram_variant: steps
+    render_svg: true
     trace_compaction:
       fold_loops: true
       fold_loop_with_opt: true

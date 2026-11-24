@@ -32,3 +32,4 @@ coverage.xml
 dist/
 build/
 *.egg-info/
+*.preview.svg

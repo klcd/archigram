@@ -7,6 +7,7 @@ import re
 from typing import TYPE_CHECKING
 
 from archigram.domain.ir import (
+    EdgeRelation,
     InteractionTraceIR,
     IREdge,
     IRNode,
@@ -14,6 +15,7 @@ from archigram.domain.ir import (
     StructuralGraphIR,
     TraceEvent,
 )
+from archigram.domain.style import CANONICAL_EDGE_STYLES, LinePattern
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -133,11 +135,35 @@ def _build_fqn_map(nodes: dict[str, IRNode], ident_map: dict[str, str]) -> dict[
     return fqn_map
 
 
-def _emit_specification(kinds: Iterable[str]) -> list[str]:
-    """Emit specification block with sorted element kinds."""
+def _emit_specification(
+    kinds: Iterable[str],
+    relations: Iterable[EdgeRelation] = (),
+) -> list[str]:
+    """Emit specification block with transparent element styles and colored relationships."""
     lines: list[str] = ["specification {"]
     for kind in sorted(kinds):
-        lines.append(f"  element {kind}")
+        lines.extend(
+            (
+                f"  element {kind} {{",
+                "    style {",
+                "      color slate",
+                "      border solid",
+                "      opacity 0%",
+                "    }",
+                "  }",
+            )
+        )
+    for rel in sorted(set(relations), key=lambda item: item.value):
+        visual = CANONICAL_EDGE_STYLES[rel]
+        line_style = "dashed" if visual.line_pattern is LinePattern.DASHED else "solid"
+        lines.extend(
+            (
+                f"  relationship {rel.value} {{",
+                f"    color {visual.likec4_color}",
+                f"    line {line_style}",
+                "  }",
+            )
+        )
     lines.append("}")
     return lines
 
@@ -183,7 +209,7 @@ def _emit_structural_edges(
     fqn_map: dict[str, str],
     lines: list[str],
 ) -> None:
-    """Emit deterministic forward relationship edges with zero chained or backward arrows."""
+    """Emit deterministic forward relationship edges with typed semantic kinds."""
     valid_edges: list[IREdge] = []
     for edge in edges:
         if edge.source not in fqn_map or edge.target not in fqn_map:
@@ -208,7 +234,7 @@ def _emit_structural_edges(
         dst_fqn = fqn_map[edge.target]
         label = edge.attributes.get("label") or edge.relation.value
         label_str = _escape_likec4_string(label)
-        lines.append(f"  {src_fqn} -> {dst_fqn} {label_str}")
+        lines.append(f"  {src_fqn} -[{edge.relation.value}]-> {dst_fqn} {label_str}")
 
 
 def _emit_structural_graph(graph: StructuralGraphIR) -> str:
@@ -216,7 +242,8 @@ def _emit_structural_graph(graph: StructuralGraphIR) -> str:
     all_kinds = sorted(
         {k.value for k in NodeKind} | {node.kind.value for node in graph.nodes.values()}
     )
-    lines = _emit_specification(all_kinds)
+    used_relations = {edge.relation for edge in graph.edges}
+    lines = _emit_specification(all_kinds, used_relations)
     lines.append("")
     lines.append("model {")
 

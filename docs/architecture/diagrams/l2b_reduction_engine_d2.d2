@@ -1,63 +1,146 @@
 vars: {
   d2-config: {
     layout-engine: elk
+    theme-id: 0
+    dark-theme-id: 200
   }
 }
+style.fill: transparent
 
 archigram: "archigram" {
+  style.fill: transparent
+  style.stroke: "#64748b"
   "archigram.domain": "domain" {
+    style.fill: transparent
+    style.stroke: "#64748b"
     domain_concurrency_poset: "domain.concurrency (SP-Poset & Overlap Clustering)" {
+      style.fill: transparent
+      style.stroke: "#64748b"
       tooltip: "Derived via l2b_d2_concurrency (1 backing node: archigram.domain.concurrency)"
     }
     domain_ir_and_spec: "domain.ir & domain.spec (Canonical IR & Spec)" {
+      style.fill: transparent
+      style.stroke: "#64748b"
       tooltip: "Derived via l2b_d2_domain_ir_spec (3 backing nodes: archigram.domain.ir, archigram.domain.spec, archigram.domain.spec.TraceCompactionConfig)"
     }
   }
   "archigram.entrypoints": "entrypoints" {
+    style.fill: transparent
+    style.stroke: "#64748b"
     driving_entrypoints: "Driving Adapters (cli.pipeline & mcp.propose_loop)" {
+      style.fill: transparent
+      style.stroke: "#64748b"
       tooltip: "Derived via l2b_d2_callers (5 backing nodes: archigram.entrypoints.cli, archigram.entrypoints.cli.pipeline, archigram.entrypoints.cli.pipeline.compile_and_lint_pipeline, archigram.entrypoints.mcp, archigram.entrypoints.mcp.propose_loop)"
     }
   }
   "archigram.features": "features" {
+    style.fill: transparent
+    style.stroke: "#64748b"
     "archigram.features.reduce_structural": "reduce_structural" {
+      style.fill: transparent
+      style.stroke: "#64748b"
       "archigram.features.reduce_structural.reducer": "reducer" {
+        style.fill: transparent
+        style.stroke: "#64748b"
         reduce_structural_engine: "StructuralTopologicalReducer" {
+          style.fill: transparent
+          style.stroke: "#64748b"
           tooltip: "Derived via l2b_d2_structural_engine (1 backing node: archigram.features.reduce_structural.reducer.StructuralTopologicalReducer)"
         }
         reduce_structural_ops: "Structural Operators (k_hop, prune, bypass, collapse, SCC, TR)" {
+          style.fill: transparent
+          style.stroke: "#64748b"
           tooltip: "Derived via l2b_d2_structural_ops (4 backing nodes: archigram.features.reduce_structural.reducer.apply_structural_rule, archigram.features.reduce_structural.reducer.condense_sccs, archigram.features.reduce_structural.reducer.k_hop_neighborhood, archigram.features.reduce_structural.reducer.transitive_reduction)"
         }
       }
     }
     "archigram.features.reduce_trace": "reduce_trace" {
+      style.fill: transparent
+      style.stroke: "#64748b"
       "archigram.features.reduce_trace.compactor": "compactor" {
+        style.fill: transparent
+        style.stroke: "#64748b"
         reduce_trace_engine: "TraceCompactionEngine (R1-R6 + SP-Poset)" {
+          style.fill: transparent
+          style.stroke: "#64748b"
           tooltip: "Derived via l2b_d2_trace_engine (1 backing node: archigram.features.reduce_trace.compactor.TraceCompactionEngine)"
         }
         trace_fragment_tree: "TraceFragment Tree Builder" {
+          style.fill: transparent
+          style.stroke: "#64748b"
           tooltip: "Derived via l2b_d2_trace_fragments (1 backing node: archigram.features.reduce_trace.compactor.build_trace_fragment_tree)"
         }
       }
     }
     concurrency_consumers: "Other Concurrency Consumers (lint_budget, digest)" {
+      style.fill: transparent
+      style.stroke: "#64748b"
       tooltip: "Derived via l2b_d2_lint_consumers (2 backing nodes: archigram.features.lint_budget, archigram.features.lint_budget.gate)"
     }
   }
 }
 
-archigram."archigram.features"."archigram.features.reduce_structural" -> archigram."archigram.features"."archigram.features.reduce_structural"."archigram.features.reduce_structural.reducer": "imports"
-archigram."archigram.features"."archigram.features.reduce_structural"."archigram.features.reduce_structural.reducer" -> archigram."archigram.domain".domain_ir_and_spec: "imports"
-archigram."archigram.features"."archigram.features.reduce_trace" -> archigram."archigram.features"."archigram.features.reduce_trace"."archigram.features.reduce_trace.compactor": "imports"
-archigram."archigram.features"."archigram.features.reduce_trace"."archigram.features.reduce_trace.compactor" -> archigram."archigram.domain".domain_concurrency_poset: "imports"
-archigram."archigram.features"."archigram.features.reduce_trace"."archigram.features.reduce_trace.compactor" -> archigram."archigram.domain".domain_ir_and_spec: "imports"
-archigram."archigram.features".concurrency_consumers -> archigram."archigram.domain".domain_concurrency_poset: "imports"
-archigram."archigram.features".concurrency_consumers -> archigram."archigram.domain".domain_ir_and_spec: "imports"
-archigram."archigram.domain".domain_ir_and_spec -> archigram."archigram.domain": "imports"
-archigram."archigram.entrypoints".driving_entrypoints -> archigram."archigram.features"."archigram.features.reduce_structural": "imports"
-archigram."archigram.entrypoints".driving_entrypoints -> archigram."archigram.features"."archigram.features.reduce_trace": "imports"
-archigram."archigram.entrypoints".driving_entrypoints -> archigram."archigram.features".concurrency_consumers: "imports"
-archigram."archigram.entrypoints".driving_entrypoints -> archigram."archigram.features"."archigram.features.reduce_structural"."archigram.features.reduce_structural.reducer".reduce_structural_engine: "calls"
-archigram."archigram.entrypoints".driving_entrypoints -> archigram."archigram.features"."archigram.features.reduce_trace"."archigram.features.reduce_trace.compactor".reduce_trace_engine: "calls"
-archigram."archigram.features"."archigram.features.reduce_structural"."archigram.features.reduce_structural.reducer".reduce_structural_engine -> archigram."archigram.features"."archigram.features.reduce_structural"."archigram.features.reduce_structural.reducer".reduce_structural_ops: "calls"
-archigram."archigram.features"."archigram.features.reduce_trace"."archigram.features.reduce_trace.compactor".reduce_trace_engine -> archigram."archigram.domain".domain_ir_and_spec: "calls"
-archigram."archigram.features"."archigram.features.reduce_trace"."archigram.features.reduce_trace.compactor".reduce_trace_engine -> archigram."archigram.features"."archigram.features.reduce_trace"."archigram.features.reduce_trace.compactor".trace_fragment_tree: "calls"
+archigram."archigram.features"."archigram.features.reduce_structural" -> archigram."archigram.features"."archigram.features.reduce_structural"."archigram.features.reduce_structural.reducer": "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.features"."archigram.features.reduce_structural"."archigram.features.reduce_structural.reducer" -> archigram."archigram.domain".domain_ir_and_spec: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.features"."archigram.features.reduce_trace" -> archigram."archigram.features"."archigram.features.reduce_trace"."archigram.features.reduce_trace.compactor": "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.features"."archigram.features.reduce_trace"."archigram.features.reduce_trace.compactor" -> archigram."archigram.domain".domain_concurrency_poset: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.features"."archigram.features.reduce_trace"."archigram.features.reduce_trace.compactor" -> archigram."archigram.domain".domain_ir_and_spec: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.features".concurrency_consumers -> archigram."archigram.domain".domain_concurrency_poset: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.features".concurrency_consumers -> archigram."archigram.domain".domain_ir_and_spec: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.domain".domain_ir_and_spec -> archigram."archigram.domain": "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.entrypoints".driving_entrypoints -> archigram."archigram.features"."archigram.features.reduce_structural": "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.entrypoints".driving_entrypoints -> archigram."archigram.features"."archigram.features.reduce_trace": "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.entrypoints".driving_entrypoints -> archigram."archigram.features".concurrency_consumers: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.entrypoints".driving_entrypoints -> archigram."archigram.features"."archigram.features.reduce_structural"."archigram.features.reduce_structural.reducer".reduce_structural_engine: "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.entrypoints".driving_entrypoints -> archigram."archigram.features"."archigram.features.reduce_trace"."archigram.features.reduce_trace.compactor".reduce_trace_engine: "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.features"."archigram.features.reduce_structural"."archigram.features.reduce_structural.reducer".reduce_structural_engine -> archigram."archigram.features"."archigram.features.reduce_structural"."archigram.features.reduce_structural.reducer".reduce_structural_ops: "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.features"."archigram.features.reduce_trace"."archigram.features.reduce_trace.compactor".reduce_trace_engine -> archigram."archigram.domain".domain_ir_and_spec: "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.features"."archigram.features.reduce_trace"."archigram.features.reduce_trace.compactor".reduce_trace_engine -> archigram."archigram.features"."archigram.features.reduce_trace"."archigram.features.reduce_trace.compactor".trace_fragment_tree: "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}

@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
+import shutil
+import subprocess
+import tempfile
 from dataclasses import dataclass, field
 from enum import StrEnum
 from pathlib import Path
@@ -18,15 +22,23 @@ from archigram.domain.diagnostics import (
 )
 from archigram.domain.ir import (
     CanonicalIR,
+    EdgeRelation,
     InteractionTraceIR,
     StructuralGraphIR,
 )
 from archigram.domain.spec import (
     CurationSpecV1,
+    DiagramVariant,
     DiagramViewSpec,
     IRMode,
     TargetRenderer,
     parse_curation_spec_yaml,
+)
+from archigram.domain.style import (
+    NEUTRAL_BORDER_HEX,
+    TRANSPARENT_FILL,
+    LinePattern,
+    resolve_edge_visual_style,
 )
 from archigram.features.emit_d2 import D2Emitter
 from archigram.features.emit_likec4 import LikeC4Emitter
@@ -305,8 +317,31 @@ def _escape_dot_str(value: str) -> str:
     return f'"{cleaned}"'
 
 
+def _dot_preamble_lines(graph_title: str) -> list[str]:
+    return [
+        f"digraph {_escape_dot_str(graph_title)} {{",
+        '  rankdir="LR";',
+        f"  bgcolor={_escape_dot_str(TRANSPARENT_FILL)};",
+        '  splines="ortho";',
+        (
+            f'  node [shape="box", style="rounded", '
+            f"color={_escape_dot_str(NEUTRAL_BORDER_HEX)}, "
+            f"fontcolor={_escape_dot_str(NEUTRAL_BORDER_HEX)}];"
+        ),
+        f'  edge [penwidth="1.5", fontcolor={_escape_dot_str(NEUTRAL_BORDER_HEX)}];',
+    ]
+
+
+def _dot_line_style(pattern: LinePattern) -> str:
+    if pattern is LinePattern.DASHED:
+        return "dashed"
+    if pattern is LinePattern.BOLD:
+        return "bold"
+    return "solid"
+
+
 def _emit_structural_dot(ir: StructuralGraphIR) -> str:
-    lines: list[str] = [f"digraph {_escape_dot_str(ir.graph_id)} {{", '  rankdir="LR";']
+    lines = _dot_preamble_lines(ir.graph_id)
     children_by_parent: dict[str | None, list[str]] = {}
     for sym_id in sorted(ir.nodes):
         parent_id = ir.nodes[sym_id].parent_id
@@ -317,52 +352,61 @@ def _emit_structural_dot(ir: StructuralGraphIR) -> str:
         for sym_id in children_by_parent.get(parent_key, ()):
             node = ir.nodes[sym_id]
             child_ids = children_by_parent.get(sym_id, [])
+            kind_val = _escape_dot_str(node.kind.value)
+            node_attrs = f"[label={_escape_dot_str(node.label)}, kind={kind_val}, _kind={kind_val}]"
             if child_ids:
                 cluster_id = f"cluster_{sym_id}"
                 lines.append(f"{indent}subgraph {_escape_dot_str(cluster_id)} {{")
                 lines.append(f"{indent}  label={_escape_dot_str(node.label)};")
-                lines.append(
-                    f"{indent}  {_escape_dot_str(sym_id)} "
-                    f"[label={_escape_dot_str(node.label)}, "
-                    f"kind={_escape_dot_str(node.kind.value)}];"
-                )
+                lines.append(f"{indent}  bgcolor={_escape_dot_str(TRANSPARENT_FILL)};")
+                lines.append(f'{indent}  style="rounded,dashed";')
+                lines.append(f"{indent}  color={_escape_dot_str(NEUTRAL_BORDER_HEX)};")
+                lines.append(f"{indent}  fontcolor={_escape_dot_str(NEUTRAL_BORDER_HEX)};")
+                lines.append(f"{indent}  {_escape_dot_str(sym_id)} {node_attrs};")
                 _emit_level(sym_id, indent + "  ")
                 lines.append(f"{indent}}}")
             else:
-                lines.append(
-                    f"{indent}{_escape_dot_str(sym_id)} "
-                    f"[label={_escape_dot_str(node.label)}, "
-                    f"kind={_escape_dot_str(node.kind.value)}];"
-                )
+                lines.append(f"{indent}{_escape_dot_str(sym_id)} {node_attrs};")
 
     _emit_level(None, "  ")
     for edge in sorted(ir.edges, key=lambda e: (e.source, e.target, e.relation.value, e.edge_id)):
-        style = "dashed" if edge.sync_kind.value != "sync" else "solid"
+        visual = resolve_edge_visual_style(edge.relation, edge.sync_kind)
+        style = _dot_line_style(visual.line_pattern)
+        rel_str = _escape_dot_str(edge.relation.value)
         lines.append(
             f"  {_escape_dot_str(edge.source)} -> {_escape_dot_str(edge.target)} "
-            f"[label={_escape_dot_str(edge.relation.value)}, style={_escape_dot_str(style)}];"
+            f"[xlabel={rel_str}, _rel_kind={rel_str}, "
+            f"_sync_kind={_escape_dot_str(edge.sync_kind.value)}, "
+            f"style={_escape_dot_str(style)}, "
+            f"color={_escape_dot_str(visual.stroke_hex)}, "
+            f"arrowhead={_escape_dot_str(visual.dot_arrowhead)}];"
         )
     lines.append("}")
     return "\n".join(lines) + "\n"
 
 
 def _emit_trace_dot(ir: InteractionTraceIR) -> str:
-    lines: list[str] = [f"digraph {_escape_dot_str(ir.trace_id)} {{", '  rankdir="LR";']
+    lines = _dot_preamble_lines(ir.trace_id)
     for pid in sorted(ir.participants):
         participant = ir.participants[pid]
+        kind_val = _escape_dot_str(participant.kind.value)
         lines.append(
             f"  {_escape_dot_str(pid)} "
-            f"[label={_escape_dot_str(participant.label)}, "
-            f"kind={_escape_dot_str(participant.kind.value)}];"
+            f"[label={_escape_dot_str(participant.label)}, kind={kind_val}, _kind={kind_val}];"
         )
     ordered_events = sorted(
         ir.events.values(),
         key=lambda ev: (ev.start_ns, ev.end_ns, ev.event_id),
     )
     for event in ordered_events:
+        visual = resolve_edge_visual_style(EdgeRelation.CALLS, event.sync_kind)
+        style = _dot_line_style(visual.line_pattern)
         lines.append(
             f"  {_escape_dot_str(event.caller_id)} -> {_escape_dot_str(event.callee_id)} "
-            f"[label={_escape_dot_str(event.signature)}];"
+            f"[xlabel={_escape_dot_str(event.signature)}, "
+            f"style={_escape_dot_str(style)}, "
+            f"color={_escape_dot_str(visual.stroke_hex)}, "
+            f"arrowhead={_escape_dot_str(visual.dot_arrowhead)}];"
         )
     lines.append("}")
     return "\n".join(lines) + "\n"
@@ -418,11 +462,19 @@ def emit_view_source(
     overflow_markdown: str = "",
 ) -> str:
     """Emit deterministic target diagram source for a view, appending overflow comment if any."""
+    meta_updates: dict[str, str] = {}
+    if view.diagram_variant is not DiagramVariant.AUTO:
+        meta_updates["diagram_variant"] = view.diagram_variant.value
+    if view.animate_edges is not None:
+        meta_updates["animate_edges"] = "true" if view.animate_edges else "false"
+    effective_ir = (
+        ir.model_copy(update={"metadata": {**ir.metadata, **meta_updates}}) if meta_updates else ir
+    )
     if view.target_renderer is TargetRenderer.DOT:
-        raw_source = emit_deterministic_dot(ir)
+        raw_source = emit_deterministic_dot(effective_ir)
     else:
         emitter = _EMITTERS[view.target_renderer]
-        raw_source = emitter.emit(ir)
+        raw_source = emitter.emit(effective_ir)
     overflow_file = f"{view.id}.overflow.md"
     return _append_overflow_comment(
         raw_source, view.target_renderer, overflow_file, overflow_markdown
@@ -627,6 +679,97 @@ def _check_or_write_single_file(
     written.append(target_path)
 
 
+def _stamp_svg_with_source_hash(raw_svg: str, source_sha256: str) -> str:
+    stamp_line = f"<!-- archigram-source-sha256: {source_sha256} -->"
+    stripped = raw_svg.lstrip()
+    if stripped.startswith("<?xml"):
+        newline_idx = stripped.find("\n")
+        if newline_idx != -1:
+            return f"{stripped[: newline_idx + 1]}{stamp_line}\n{stripped[newline_idx + 1 :]}"
+    return f"{stamp_line}\n{stripped}"
+
+
+def _render_d2_svg(binary: str, diagram_source: str) -> str:
+    has_steps = any(line.strip() == "steps: {" for line in diagram_source.splitlines())
+    with tempfile.TemporaryDirectory() as tmp_str:
+        tmp_dir = Path(tmp_str)
+        in_path = tmp_dir / "diagram.d2"
+        out_path = tmp_dir / "diagram.svg"
+        in_path.write_text(diagram_source, encoding="utf-8")
+        cli_args = (
+            [binary, "--animate-interval", "1200", "--pad", "24", str(in_path), str(out_path)]
+            if has_steps
+            else [binary, "--pad", "24", str(in_path), str(out_path)]
+        )
+        proc = subprocess.run(  # noqa: S603
+            cli_args,
+            capture_output=True,
+            text=True,
+            timeout=20.0,
+            check=False,
+        )
+        svg_text = out_path.read_text(encoding="utf-8") if out_path.is_file() else ""
+    if proc.returncode != 0 or "<svg" not in svg_text:
+        msg = f"Failed to render SVG via 'd2': {(proc.stderr or proc.stdout).strip()}"
+        raise ValueError(msg)
+    return svg_text
+
+
+def render_companion_svg(renderer: TargetRenderer, diagram_source: str) -> str | None:
+    """Compile a D2 or DOT source string to SVG stamped with its source SHA-256 when CLI exists."""
+    source_sha = hashlib.sha256(diagram_source.encode("utf-8")).hexdigest()
+    if renderer is TargetRenderer.D2:
+        d2_bin = shutil.which("d2")
+        if d2_bin is None:
+            return None
+        return _stamp_svg_with_source_hash(_render_d2_svg(d2_bin, diagram_source), source_sha)
+    if renderer is TargetRenderer.DOT:
+        dot_bin = shutil.which("dot")
+        if dot_bin is None:
+            return None
+        proc = subprocess.run(  # noqa: S603
+            [dot_bin, "-Tsvg"],
+            input=diagram_source,
+            capture_output=True,
+            text=True,
+            timeout=15.0,
+            check=False,
+        )
+        if proc.returncode != 0 or "<svg" not in proc.stdout:
+            msg = f"Failed to render SVG via 'dot': {(proc.stderr or proc.stdout).strip()}"
+            raise ValueError(msg)
+        return _stamp_svg_with_source_hash(proc.stdout, source_sha)
+    return None
+
+
+def _sync_companion_svg(
+    artifact: CompiledViewArtifact,
+    out_dir: Path,
+    *,
+    check_only: bool,
+    written: list[Path],
+    drifted: list[Path],
+    missing: list[Path],
+) -> None:
+    svg_path = out_dir / f"{artifact.output_filename}.svg"
+    source_sha = hashlib.sha256(artifact.diagram_source.encode("utf-8")).hexdigest()
+    expected_token = f"archigram-source-sha256: {source_sha}"
+    if check_only:
+        if not svg_path.is_file():
+            missing.append(svg_path)
+            return
+        actual_svg = svg_path.read_text(encoding="utf-8")
+        if "<svg" not in actual_svg or expected_token not in actual_svg:
+            drifted.append(svg_path)
+        return
+
+    rendered = render_companion_svg(artifact.view.target_renderer, artifact.diagram_source)
+    if rendered is not None:
+        svg_path.parent.mkdir(parents=True, exist_ok=True)
+        svg_path.write_bytes(rendered.encode("utf-8"))
+        written.append(svg_path)
+
+
 def sync_compiled_artifacts(
     compilation: PipelineCompilationResult,
     out_dir: Path,
@@ -660,6 +803,15 @@ def sync_compiled_artifacts(
             _check_or_write_single_file(
                 overflow_path,
                 artifact.overflow_markdown + "\n",
+                check_only=check_only,
+                written=written,
+                drifted=drifted,
+                missing=missing,
+            )
+        if artifact.view.render_svg:
+            _sync_companion_svg(
+                artifact,
+                out_dir,
                 check_only=check_only,
                 written=written,
                 drifted=drifted,

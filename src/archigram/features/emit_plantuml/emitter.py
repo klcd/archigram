@@ -20,6 +20,12 @@ from archigram.domain.ir import (
     TraceEvent,
     TraceParticipant,
 )
+from archigram.domain.style import (
+    PLANTUML_ORTHO_SKINPARAMS,
+    PLANTUML_SEQUENCE_SKINPARAMS,
+    LinePattern,
+    resolve_edge_visual_style,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -146,8 +152,11 @@ _OOP_NODE_KINDS: frozenset[NodeKind] = frozenset(
 
 def _is_class_diagram_mode(ir: StructuralGraphIR) -> bool:
     """Determine whether StructuralGraphIR should emit an OOP class diagram."""
-    if ir.metadata.get("diagram_variant") == "class":
+    variant = ir.metadata.get("diagram_variant", "auto")
+    if variant == "class":
         return True
+    if variant == "architecture":
+        return False
     if any(bool(node.members) for node in ir.nodes.values()):
         return True
     if not any(node.kind in _OOP_NODE_KINDS for node in ir.nodes.values()):
@@ -291,29 +300,30 @@ _DIRECT_CLASS_ARROWS: dict[EdgeRelation, str] = {
 }
 
 
-def _emit_class_edge(edge: IREdge, aliases: dict[str, str]) -> str:
-    """Emit a typed UML class relationship arrow."""
+def _emit_styled_structural_edge(edge: IREdge, aliases: dict[str, str]) -> str:
+    """Emit a UML relationship arrow with edge-only semantic `[#rrggbb]` stroke color."""
     src = aliases[edge.source]
     tgt = aliases[edge.target]
     label = sanitize_plantuml_message(edge.relation.value)
+    visual = resolve_edge_visual_style(edge.relation, edge.sync_kind)
+    color = visual.stroke_hex
     if edge.relation in _REVERSED_CLASS_ARROWS:
-        return f"{tgt} {_REVERSED_CLASS_ARROWS[edge.relation]} {src} : {label}"
+        return f"{tgt} {_REVERSED_CLASS_ARROWS[edge.relation]}[{color}] {src} : {label}"
     if edge.relation in _DIRECT_CLASS_ARROWS:
-        return f"{src} {_DIRECT_CLASS_ARROWS[edge.relation]} {tgt} : {label}"
-    arrow = (
-        "..>"
-        if edge.sync_kind is SyncKind.ASYNC_FIRE_FORGET or edge.relation is EdgeRelation.IMPORTS
-        else "-->"
-    )
-    return f"{src} {arrow} {tgt} : {label}"
+        return f"{src} {_DIRECT_CLASS_ARROWS[edge.relation]}[{color}] {tgt} : {label}"
+    if visual.line_pattern is LinePattern.BOLD:
+        return f"{src} -[{color},bold]-> {tgt} : {label}"
+    if visual.line_pattern is LinePattern.DASHED:
+        return f"{src} ..>[{color}] {tgt} : {label}"
+    return f"{src} -->[{color}] {tgt} : {label}"
 
 
 def _emit_class_diagram(ir: StructuralGraphIR) -> str:
-    """Emit a deterministic PlantUML OOP class diagram (Mode B)."""
+    """Emit a deterministic PlantUML OOP class diagram (Mode B) with orthogonal routing."""
     sorted_ids = sorted(ir.nodes)
     aliases = build_alias_map(sorted_ids, prefix="c")
     roots, children = _build_children_map(ir.nodes)
-    lines: list[str] = ["@startuml"]
+    lines: list[str] = ["@startuml", "!pragma layout elk", *PLANTUML_ORTHO_SKINPARAMS]
     for root_id in roots:
         lines.extend(_emit_class_subtree(root_id, ir.nodes, children, aliases, depth=0))
     sorted_edges = sorted(
@@ -321,7 +331,7 @@ def _emit_class_diagram(ir: StructuralGraphIR) -> str:
         key=lambda e: (e.source, e.target, e.relation.value, e.sync_kind.value, e.edge_id),
     )
     for edge in sorted_edges:
-        lines.append(_emit_class_edge(edge, aliases))
+        lines.append(_emit_styled_structural_edge(edge, aliases))
     lines.append("@enduml")
     return "\n".join(lines) + "\n"
 
@@ -377,25 +387,12 @@ def _emit_component_subtree(
     return [f'{indent}{leaf_kw} "{label}" as {alias}']
 
 
-def _emit_component_edge(edge: IREdge, aliases: dict[str, str]) -> str:
-    """Emit a typed component/architecture edge line."""
-    src = aliases[edge.source]
-    tgt = aliases[edge.target]
-    label = sanitize_plantuml_message(edge.relation.value)
-    if edge.sync_kind is SyncKind.ASYNC_FIRE_FORGET or edge.relation in {
-        EdgeRelation.IMPORTS,
-        EdgeRelation.ASYNC_SPAWN,
-    }:
-        return f"{src} ..> {tgt} : {label}"
-    return f"{src} --> {tgt} : {label}"
-
-
 def _emit_component_diagram(ir: StructuralGraphIR) -> str:
     """Emit a deterministic PlantUML ELK component/architecture view (Mode C)."""
     sorted_ids = sorted(ir.nodes)
     aliases = build_alias_map(sorted_ids, prefix="n")
     roots, children = _build_children_map(ir.nodes)
-    lines: list[str] = ["@startuml", "!pragma layout elk"]
+    lines: list[str] = ["@startuml", "!pragma layout elk", *PLANTUML_ORTHO_SKINPARAMS]
     for root_id in roots:
         lines.extend(_emit_component_subtree(root_id, ir.nodes, children, aliases, depth=0))
     sorted_edges = sorted(
@@ -403,7 +400,7 @@ def _emit_component_diagram(ir: StructuralGraphIR) -> str:
         key=lambda e: (e.source, e.target, e.relation.value, e.sync_kind.value, e.edge_id),
     )
     for edge in sorted_edges:
-        lines.append(_emit_component_edge(edge, aliases))
+        lines.append(_emit_styled_structural_edge(edge, aliases))
     lines.append("@enduml")
     return "\n".join(lines) + "\n"
 
@@ -720,7 +717,7 @@ def _emit_sequence_diagram(ir: InteractionTraceIR) -> str:
     """Emit a deterministic PlantUML teoz concurrent sequence diagram (Mode A)."""
     sorted_pids = sorted(ir.participants)
     aliases = build_alias_map(sorted_pids, prefix="p")
-    lines: list[str] = ["@startuml", "!pragma teoz true"]
+    lines: list[str] = ["@startuml", "!pragma teoz true", *PLANTUML_SEQUENCE_SKINPARAMS]
     for pid in sorted_pids:
         lines.append(_format_participant_line(ir.participants[pid], aliases[pid]))
 

@@ -1,8 +1,24 @@
 ---
 config:
   layout: elk
+  look: classic
+  elk:
+    mergeEdges: false
+    nodePlacementStrategy: BRANDES_KOEPF
+  flowchart:
+    curve: linear
+  themeVariables:
+    primaryColor: transparent
+    secondaryColor: transparent
+    tertiaryColor: transparent
+    mainBkg: transparent
+    nodeBorder: '#64748b'
+    clusterBkg: transparent
+    clusterBorder: '#64748b'
+    lineColor: '#64748b'
 ---
 flowchart TD
+  classDef default fill:transparent,stroke:#64748b,stroke-width:1.5px
   subgraph n_0_archigram_983b03["archigram"]
     subgraph n_1_archigram_domain_6f6ac3["domain"]
       n_5_domain_diagnosti_fc27fb["domain.diagnostics (LintReport, LintDiagnostic, GateId)"]
@@ -20,6 +36,10 @@ flowchart TD
     end
     n_12_ports_contracts_d0accd["ports.contracts (LintGatePort, SyntaxValidatorPort)"]
   end
+  style n_0_archigram_983b03 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  style n_1_archigram_domain_6f6ac3 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  style n_2_archigram_entryp_6a8ce0 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  style n_3_archigram_featur_e6f01e fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   n_9_gate_4_budget_6e89c3 -.->|"imports"| n_5_domain_diagnosti_fc27fb
   n_8_gate_3_topology_b45c48 -.->|"imports"| n_5_domain_diagnosti_fc27fb
   n_7_gate_1_2_groundi_256693 -.->|"imports"| n_5_domain_diagnosti_fc27fb
@@ -35,3 +55,18 @@ flowchart TD
   n_4_cli_pipeline_run_774c88 -.->|"imports"| n_11_mcp_repair_loop_f2e883
   n_12_ports_contracts_d0accd -.->|"imports"| n_5_domain_diagnosti_fc27fb
   n_10_gate_5_syntax_76244e -.->|"imports"| n_12_ports_contracts_d0accd
+  linkStyle 0 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 1 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 2 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 3 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 4 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 5 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 6 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 7 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 8 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 9 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 10 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 11 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 12 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 13 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 14 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5

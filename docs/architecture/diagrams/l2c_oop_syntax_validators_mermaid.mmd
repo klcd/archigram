@@ -1,0 +1,78 @@
+---
+config:
+  layout: elk
+  look: classic
+  elk:
+    mergeEdges: false
+    nodePlacementStrategy: BRANDES_KOEPF
+  flowchart:
+    curve: linear
+  themeVariables:
+    primaryColor: transparent
+    secondaryColor: transparent
+    tertiaryColor: transparent
+    mainBkg: transparent
+    nodeBorder: '#64748b'
+    clusterBkg: transparent
+    clusterBorder: '#64748b'
+    lineColor: '#64748b'
+---
+classDiagram
+  classDef default fill:transparent,stroke:#64748b,stroke-width:1.5px
+  class c_0_archigram_featur_ba3738["lint_syntax"]
+  class c_1_archigram_featur_d6e8be["validators"]
+  class c_2_archigram_featur_bb531f["D2SyntaxValidator"] {
+    +init(use_cli: bool, cli_timeout: float) None
+    +target_format() str property
+    +validate(diagram_source: str) SyntaxValidationResult
+  }
+  class c_3_archigram_featur_86114b["DotSyntaxValidator"] {
+    +init(use_cli: bool, cli_timeout: float) None
+    +target_format() str property
+    +validate(diagram_source: str) SyntaxValidationResult
+  }
+  class c_4_archigram_featur_4106c5["Gate5SyntaxHarness"] {
+    +str slice_name
+    +init(validators: Mapping#91;str, SyntaxValidatorPort#93; | None) None
+    +supported_formats() tuple_91_str_93 property
+    +get_validator(target_format: str) SyntaxValidatorPort_None
+    +validate(target_format: str, diagram_source: str) SyntaxValidationResult
+  }
+  class c_5_archigram_featur_c2d69d["LikeC4SyntaxValidator"] {
+    +target_format() str property
+    +validate(diagram_source: str) SyntaxValidationResult
+  }
+  class c_6_archigram_featur_086112["MermaidSyntaxValidator"] {
+    +target_format() str property
+    +validate(diagram_source: str) SyntaxValidationResult
+  }
+  class c_7_archigram_featur_46a958["PlantUmlSyntaxValidator"] {
+    +init(use_cli: bool, cli_timeout: float) None
+    +target_format() str property
+    +validate(diagram_source: str) SyntaxValidationResult
+  }
+  class c_8_archigram_ports__7ed230["contracts"]
+  class c_9_archigram_ports__58ed33["SyntaxValidationResult"] {
+    +bool valid
+    +str target_format
+    +tuple#91;str, ...#93; errors
+  }
+  class c_10_archigram_ports__993eea["SyntaxValidatorPort"] {
+    <<interface>>
+    +target_format() str property
+    +validate(diagram_source: str) SyntaxValidationResult
+  }
+  c_0_archigram_featur_ba3738 ..> c_1_archigram_featur_d6e8be : imports
+  c_1_archigram_featur_d6e8be ..> c_8_archigram_ports__7ed230 : imports
+  c_2_archigram_featur_bb531f --> c_9_archigram_ports__58ed33 : calls
+  c_10_archigram_ports__993eea <|.. c_2_archigram_featur_bb531f : implements
+  c_3_archigram_featur_86114b --> c_9_archigram_ports__58ed33 : calls
+  c_10_archigram_ports__993eea <|.. c_3_archigram_featur_86114b : implements
+  c_4_archigram_featur_4106c5 --> c_9_archigram_ports__58ed33 : calls
+  c_10_archigram_ports__993eea *-- c_4_archigram_featur_4106c5 : composes
+  c_5_archigram_featur_c2d69d --> c_9_archigram_ports__58ed33 : calls
+  c_10_archigram_ports__993eea <|.. c_5_archigram_featur_c2d69d : implements
+  c_6_archigram_featur_086112 --> c_9_archigram_ports__58ed33 : calls
+  c_10_archigram_ports__993eea <|.. c_6_archigram_featur_086112 : implements
+  c_7_archigram_featur_46a958 --> c_9_archigram_ports__58ed33 : calls
+  c_10_archigram_ports__993eea <|.. c_7_archigram_featur_46a958 : implements

@@ -1,8 +1,24 @@
 ---
 config:
   layout: elk
+  look: classic
+  elk:
+    mergeEdges: false
+    nodePlacementStrategy: BRANDES_KOEPF
+  flowchart:
+    curve: linear
+  themeVariables:
+    primaryColor: transparent
+    secondaryColor: transparent
+    tertiaryColor: transparent
+    mainBkg: transparent
+    nodeBorder: '#64748b'
+    clusterBkg: transparent
+    clusterBorder: '#64748b'
+    lineColor: '#64748b'
 ---
 flowchart TD
+  classDef default fill:transparent,stroke:#64748b,stroke-width:1.5px
   subgraph n_0_archigram_983b03["archigram"]
     subgraph n_1_archigram_domain_6f6ac3["domain"]
       subgraph n_2_archigram_domain_ae7fc5["ir"]
@@ -15,7 +31,14 @@ flowchart TD
     end
     n_8_ports_protocols_b2b1c2["ports.contracts (Ingestor, Reducer, Compactor, LintGate, Emitter, Digest)"]
   end
+  style n_0_archigram_983b03 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  style n_1_archigram_domain_6f6ac3 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  style n_2_archigram_domain_ae7fc5 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   n_8_ports_protocols_b2b1c2 -.->|"imports"| n_4_domain_diagnosti_fc27fb
   n_8_ports_protocols_b2b1c2 -.->|"imports"| n_2_archigram_domain_ae7fc5
   n_8_ports_protocols_b2b1c2 -.->|"imports"| n_7_domain_spec_d7d1fd
   n_2_archigram_domain_ae7fc5 -.->|"imports"| n_1_archigram_domain_6f6ac3
+  linkStyle 0 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 1 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 2 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 3 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5

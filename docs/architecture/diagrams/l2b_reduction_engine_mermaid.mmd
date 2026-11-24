@@ -1,8 +1,24 @@
 ---
 config:
   layout: elk
+  look: classic
+  elk:
+    mergeEdges: false
+    nodePlacementStrategy: BRANDES_KOEPF
+  flowchart:
+    curve: linear
+  themeVariables:
+    primaryColor: transparent
+    secondaryColor: transparent
+    tertiaryColor: transparent
+    mainBkg: transparent
+    nodeBorder: '#64748b'
+    clusterBkg: transparent
+    clusterBorder: '#64748b'
+    lineColor: '#64748b'
 ---
 flowchart TD
+  classDef default fill:transparent,stroke:#64748b,stroke-width:1.5px
   subgraph n_0_archigram_983b03["archigram"]
     subgraph n_1_archigram_domain_6f6ac3["domain"]
       n_9_domain_concurren_454309["domain.concurrency (SP-Poset & Overlap Clustering)"]
@@ -27,19 +43,48 @@ flowchart TD
       n_8_concurrency_cons_e749ae["Other Concurrency Consumers (lint_budget, digest)"]
     end
   end
+  style n_0_archigram_983b03 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  style n_1_archigram_domain_6f6ac3 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  style n_2_archigram_entryp_6a8ce0 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  style n_3_archigram_featur_e6f01e fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  style n_4_archigram_featur_f89487 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  style n_5_archigram_featur_df5fa8 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  style n_6_archigram_featur_e135d3 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  style n_7_archigram_featur_3ee542 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   n_11_driving_entrypoi_ee541f -.->|"imports"| n_4_archigram_featur_f89487
   n_11_driving_entrypoi_ee541f -.->|"imports"| n_6_archigram_featur_e135d3
   n_7_archigram_featur_3ee542 -.->|"imports"| n_9_domain_concurren_454309
-  n_14_reduce_trace_eng_1fb2ed -->|"calls"| n_10_domain_ir_and_sp_b5f20e
+  n_14_reduce_trace_eng_1fb2ed e_3@-->|"calls"| n_10_domain_ir_and_sp_b5f20e
+  e_3@{ animate: true }
   n_5_archigram_featur_df5fa8 -.->|"imports"| n_10_domain_ir_and_sp_b5f20e
   n_7_archigram_featur_3ee542 -.->|"imports"| n_10_domain_ir_and_sp_b5f20e
   n_10_domain_ir_and_sp_b5f20e -.->|"imports"| n_1_archigram_domain_6f6ac3
   n_8_concurrency_cons_e749ae -.->|"imports"| n_9_domain_concurren_454309
   n_8_concurrency_cons_e749ae -.->|"imports"| n_10_domain_ir_and_sp_b5f20e
   n_11_driving_entrypoi_ee541f -.->|"imports"| n_8_concurrency_cons_e749ae
-  n_11_driving_entrypoi_ee541f -->|"calls"| n_12_reduce_structura_7d424e
-  n_12_reduce_structura_7d424e -->|"calls"| n_13_reduce_structura_e46926
-  n_11_driving_entrypoi_ee541f -->|"calls"| n_14_reduce_trace_eng_1fb2ed
-  n_14_reduce_trace_eng_1fb2ed -->|"calls"| n_15_trace_fragment_t_0a27fc
+  n_11_driving_entrypoi_ee541f e_10@-->|"calls"| n_12_reduce_structura_7d424e
+  e_10@{ animate: true }
+  n_12_reduce_structura_7d424e e_11@-->|"calls"| n_13_reduce_structura_e46926
+  e_11@{ animate: true }
+  n_11_driving_entrypoi_ee541f e_12@-->|"calls"| n_14_reduce_trace_eng_1fb2ed
+  e_12@{ animate: true }
+  n_14_reduce_trace_eng_1fb2ed e_13@-->|"calls"| n_15_trace_fragment_t_0a27fc
+  e_13@{ animate: true }
   n_4_archigram_featur_f89487 -.->|"imports"| n_5_archigram_featur_df5fa8
   n_6_archigram_featur_e135d3 -.->|"imports"| n_7_archigram_featur_3ee542
+  linkStyle 0 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 1 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 2 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 3 stroke:#3b82f6,stroke-width:1.75px
+  linkStyle 4 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 5 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 6 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 7 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 8 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 9 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 10 stroke:#3b82f6,stroke-width:1.75px
+  linkStyle 11 stroke:#3b82f6,stroke-width:1.75px
+  linkStyle 12 stroke:#3b82f6,stroke-width:1.75px
+  linkStyle 13 stroke:#3b82f6,stroke-width:1.75px
+  linkStyle 14 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 15 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5

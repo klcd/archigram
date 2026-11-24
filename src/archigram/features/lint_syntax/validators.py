@@ -379,9 +379,16 @@ def _match_mermaid_opener(line: str, idx: int) -> tuple[str, tuple[str, ...]] | 
     return None
 
 
+_MERMAID_PROP_BLOCK_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*@\{.*\}$")
+
+
 def _check_mermaid_flowchart_labels(raw_line: str, line_no: int) -> list[str]:
     stripped = raw_line.strip()
-    if not stripped or stripped.lower().startswith(_MERMAID_SKIP_LABEL_PREFIXES):
+    if (
+        not stripped
+        or stripped.lower().startswith(_MERMAID_SKIP_LABEL_PREFIXES)
+        or _MERMAID_PROP_BLOCK_RE.match(stripped) is not None
+    ):
         return []
     errors: list[str] = []
     idx = 0

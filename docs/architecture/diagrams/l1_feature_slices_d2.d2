@@ -1,127 +1,384 @@
 vars: {
   d2-config: {
     layout-engine: elk
+    theme-id: 0
+    dark-theme-id: 200
   }
 }
+style.fill: transparent
 
 archigram: "archigram" {
+  style.fill: transparent
+  style.stroke: "#64748b"
   "archigram.entrypoints": "entrypoints" {
+    style.fill: transparent
+    style.stroke: "#64748b"
     entrypoints_cli: "entrypoints.cli" {
-      tooltip: "Derived via l1_d2_cli (44 backing nodes: archigram.entrypoints.cli, archigram.entrypoints.cli.app, archigram.entrypoints.cli.app.ApplyOptions, archigram.entrypoints.cli.app.DiffOptions, archigram.entrypoints.cli.app.LintOptions, ...)"
+      style.fill: transparent
+      style.stroke: "#64748b"
+      tooltip: "Derived via l1_d2_cli (45 backing nodes: archigram.entrypoints.cli, archigram.entrypoints.cli.app, archigram.entrypoints.cli.app.ApplyOptions, archigram.entrypoints.cli.app.DiffOptions, archigram.entrypoints.cli.app.LintOptions, ...)"
     }
     entrypoints_mcp: "entrypoints.mcp" {
+      style.fill: transparent
+      style.stroke: "#64748b"
       tooltip: "Derived via l1_d2_mcp (21 backing nodes: archigram.entrypoints.mcp, archigram.entrypoints.mcp.propose_loop, archigram.entrypoints.mcp.propose_loop.CompiledViewPreview, archigram.entrypoints.mcp.propose_loop.CuratedViewsPreviewReport, archigram.entrypoints.mcp.propose_loop.DeterministicHeuristicProposer, ...)"
     }
   }
   "archigram.features": "features" {
+    style.fill: transparent
+    style.stroke: "#64748b"
     digest: "digest" {
+      style.fill: transparent
+      style.stroke: "#64748b"
       tooltip: "Derived via l1_d2_digest (15 backing nodes: archigram.features.digest, archigram.features.digest.generator, archigram.features.digest.generator.CandidateLeafSink, archigram.features.digest.generator.CandidateWrapperNode, archigram.features.digest.generator.CentralityHub, ...)"
     }
     emit_d2: "emit_d2" {
-      tooltip: "Derived via l1_d2_emit_d2 (3 backing nodes: archigram.features.emit_d2, archigram.features.emit_d2.emitter, archigram.features.emit_d2.emitter.D2Emitter)"
+      style.fill: transparent
+      style.stroke: "#64748b"
+      tooltip: "Derived via l1_d2_emit_d2 (5 backing nodes: archigram.features.emit_d2, archigram.features.emit_d2.emitter, archigram.features.emit_d2.emitter.D2Emitter, archigram.features.emit_d2.emitter._D2StructuralCtx, archigram.features.emit_d2.emitter._StepEdge)"
     }
     emit_likec4: "emit_likec4" {
+      style.fill: transparent
+      style.stroke: "#64748b"
       tooltip: "Derived via l1_d2_emit_likec4 (3 backing nodes: archigram.features.emit_likec4, archigram.features.emit_likec4.emitter, archigram.features.emit_likec4.emitter.LikeC4Emitter)"
     }
     emit_mermaid: "emit_mermaid" {
+      style.fill: transparent
+      style.stroke: "#64748b"
       tooltip: "Derived via l1_d2_emit_mermaid (9 backing nodes: archigram.features.emit_mermaid, archigram.features.emit_mermaid.emitter, archigram.features.emit_mermaid.emitter.MermaidEmitter, archigram.features.emit_mermaid.emitter._LoopStep, archigram.features.emit_mermaid.emitter._ParStep, ...)"
     }
     emit_plantuml: "emit_plantuml" {
+      style.fill: transparent
+      style.stroke: "#64748b"
       tooltip: "Derived via l1_d2_emit_plantuml (11 backing nodes: archigram.features.emit_plantuml, archigram.features.emit_plantuml.emitter, archigram.features.emit_plantuml.emitter.PlantUmlEmitter, archigram.features.emit_plantuml.emitter._AnchorStep, archigram.features.emit_plantuml.emitter._LoopStep, ...)"
     }
     ingest_class: "ingest_class" {
+      style.fill: transparent
+      style.stroke: "#64748b"
       tooltip: "Derived via l1_d2_ingest_class (9 backing nodes: archigram.features.ingest_class, archigram.features.ingest_class.ingestor, archigram.features.ingest_class.ingestor.ClassHierarchyIngestor, archigram.features.ingest_class.ingestor._ActiveClassBlock, archigram.features.ingest_class.ingestor._ClassGraphBuilder, ...)"
     }
     ingest_dot: "ingest_dot" {
+      style.fill: transparent
+      style.stroke: "#64748b"
       tooltip: "Derived via l1_d2_ingest_dot (5 backing nodes: archigram.features.ingest_dot, archigram.features.ingest_dot.normalizer, archigram.features.ingest_dot.normalizer.DotStructuralIngestor, archigram.features.ingest_dot.normalizer._ParseContext, archigram.features.ingest_dot.normalizer._RawEdgeRecord)"
     }
     ingest_otel: "ingest_otel" {
+      style.fill: transparent
+      style.stroke: "#64748b"
       tooltip: "Derived via l1_d2_ingest_otel (4 backing nodes: archigram.features.ingest_otel, archigram.features.ingest_otel.ingestor, archigram.features.ingest_otel.ingestor.OtelTraceIngestor, archigram.features.ingest_otel.ingestor._RawSpanRecord)"
     }
     ingest_python: "ingest_python" {
+      style.fill: transparent
+      style.stroke: "#64748b"
       tooltip: "Derived via l1_d2_ingest_python (14 backing nodes: archigram.features.ingest_python, archigram.features.ingest_python.ast_ingestor, archigram.features.ingest_python.ast_ingestor.PythonAstStructuralIngestor, archigram.features.ingest_python.ast_ingestor._EdgeCandidate, archigram.features.ingest_python.ast_ingestor._ModuleIndex, ...)"
     }
     ingest_scip: "ingest_scip" {
+      style.fill: transparent
+      style.stroke: "#64748b"
       tooltip: "Derived via l1_d2_ingest_scip (8 backing nodes: archigram.features.ingest_scip, archigram.features.ingest_scip.ingestor, archigram.features.ingest_scip.ingestor.ScipStructuralIngestor, archigram.features.ingest_scip.ingestor._ConcurrencyAnnotation, archigram.features.ingest_scip.ingestor._DefSpan, ...)"
     }
     lint_budget: "lint_budget" {
+      style.fill: transparent
+      style.stroke: "#64748b"
       tooltip: "Derived via l1_d2_lint_budget (4 backing nodes: archigram.features.lint_budget, archigram.features.lint_budget.gate, archigram.features.lint_budget.gate.CognitiveBudgetAndOrphanGate, archigram.features.lint_budget.gate.apply_spanning_tree_edge_fallback)"
     }
     lint_grounding: "lint_grounding" {
+      style.fill: transparent
+      style.stroke: "#64748b"
       tooltip: "Derived via l1_d2_lint_grounding (12 backing nodes: archigram.features.lint_grounding, archigram.features.lint_grounding.gates, archigram.features.lint_grounding.gates.Gate1GroundingGate, archigram.features.lint_grounding.gates.Gate2BoundaryLeafGate, archigram.features.lint_grounding.gates.GroundingAndBoundaryGate, ...)"
     }
     lint_syntax: "lint_syntax" {
+      style.fill: transparent
+      style.stroke: "#64748b"
       tooltip: "Derived via l1_d2_lint_syntax (11 backing nodes: archigram.features.lint_syntax, archigram.features.lint_syntax.validators, archigram.features.lint_syntax.validators.D2SyntaxValidator, archigram.features.lint_syntax.validators.DotSyntaxValidator, archigram.features.lint_syntax.validators.Gate5SyntaxHarness, ...)"
     }
     lint_topology: "lint_topology" {
+      style.fill: transparent
+      style.stroke: "#64748b"
       tooltip: "Derived via l1_d2_lint_topology (6 backing nodes: archigram.features.lint_topology, archigram.features.lint_topology.gate, archigram.features.lint_topology.gate.TopologicalInvariantGate, archigram.features.lint_topology.gate._IndexedDiGraph, archigram.features.lint_topology.gate._StructuralContext, ...)"
     }
     reduce_structural: "reduce_structural" {
+      style.fill: transparent
+      style.stroke: "#64748b"
       tooltip: "Derived via l1_d2_reduce_structural (11 backing nodes: archigram.features.reduce_structural, archigram.features.reduce_structural.reducer, archigram.features.reduce_structural.reducer.CycleInducedError, archigram.features.reduce_structural.reducer.StructuralTopologicalReducer, archigram.features.reduce_structural.reducer.apply_structural_rule, ...)"
     }
     reduce_trace: "reduce_trace" {
+      style.fill: transparent
+      style.stroke: "#64748b"
       tooltip: "Derived via l1_d2_reduce_trace (8 backing nodes: archigram.features.reduce_trace, archigram.features.reduce_trace.compactor, archigram.features.reduce_trace.compactor.TraceCompactionEngine, archigram.features.reduce_trace.compactor.TraceFragment, archigram.features.reduce_trace.compactor.TraceFragmentKind, ...)"
     }
   }
   domain: "domain" {
-    tooltip: "Derived via l1_d2_domain (61 backing nodes: archigram.domain, archigram.domain.ProvenanceGrade, archigram.domain.ProvenanceStamp, archigram.domain.concurrency, archigram.domain.concurrency.ConcurrencyMode, ...)"
+    style.fill: transparent
+    style.stroke: "#64748b"
+    tooltip: "Derived via l1_d2_domain (69 backing nodes: archigram.domain, archigram.domain.ProvenanceGrade, archigram.domain.ProvenanceStamp, archigram.domain.concurrency, archigram.domain.concurrency.ConcurrencyMode, ...)"
   }
   ports: "ports" {
+    style.fill: transparent
+    style.stroke: "#64748b"
     tooltip: "Derived via l1_d2_ports (12 backing nodes: archigram.ports, archigram.ports.SliceDescriptor, archigram.ports.contracts, archigram.ports.contracts.DiagramEmitterPort, archigram.ports.contracts.DigestGeneratorPort, ...)"
   }
 }
 
-archigram."archigram.features".digest -> archigram.domain: "composes"
-archigram."archigram.features".digest -> archigram.domain: "imports"
-archigram."archigram.features".emit_d2 -> archigram.domain: "imports"
-archigram."archigram.features".emit_likec4 -> archigram.domain: "imports"
-archigram."archigram.features".emit_mermaid -> archigram.domain: "composes"
-archigram."archigram.features".emit_mermaid -> archigram.domain: "imports"
-archigram."archigram.features".emit_plantuml -> archigram.domain: "composes"
-archigram."archigram.features".emit_plantuml -> archigram.domain: "imports"
-archigram."archigram.entrypoints".entrypoints_cli -> archigram."archigram.entrypoints".entrypoints_mcp: "calls"
-archigram."archigram.entrypoints".entrypoints_cli -> archigram."archigram.entrypoints".entrypoints_mcp: "imports"
-archigram."archigram.entrypoints".entrypoints_cli -> archigram."archigram.features".ingest_class: "imports"
-archigram."archigram.entrypoints".entrypoints_cli -> archigram."archigram.features".ingest_dot: "imports"
-archigram."archigram.entrypoints".entrypoints_cli -> archigram."archigram.features".ingest_otel: "imports"
-archigram."archigram.entrypoints".entrypoints_cli -> archigram."archigram.features".ingest_python: "calls"
-archigram."archigram.entrypoints".entrypoints_cli -> archigram."archigram.features".ingest_python: "imports"
-archigram."archigram.entrypoints".entrypoints_cli -> archigram."archigram.features".ingest_scip: "imports"
-archigram."archigram.entrypoints".entrypoints_mcp -> archigram."archigram.features".digest: "imports"
-archigram."archigram.entrypoints".entrypoints_mcp -> archigram."archigram.features".emit_d2: "imports"
-archigram."archigram.entrypoints".entrypoints_mcp -> archigram."archigram.features".emit_likec4: "imports"
-archigram."archigram.entrypoints".entrypoints_mcp -> archigram."archigram.features".emit_mermaid: "imports"
-archigram."archigram.entrypoints".entrypoints_mcp -> archigram."archigram.features".emit_plantuml: "imports"
-archigram."archigram.entrypoints".entrypoints_mcp -> archigram."archigram.features".lint_budget: "imports"
-archigram."archigram.entrypoints".entrypoints_mcp -> archigram."archigram.features".lint_grounding: "calls"
-archigram."archigram.entrypoints".entrypoints_mcp -> archigram."archigram.features".lint_grounding: "imports"
-archigram."archigram.entrypoints".entrypoints_mcp -> archigram."archigram.features".lint_syntax: "imports"
-archigram."archigram.entrypoints".entrypoints_mcp -> archigram."archigram.features".lint_topology: "imports"
-archigram."archigram.entrypoints".entrypoints_mcp -> archigram."archigram.features".reduce_structural: "imports"
-archigram."archigram.entrypoints".entrypoints_mcp -> archigram."archigram.features".reduce_trace: "imports"
-archigram."archigram.features".ingest_class -> archigram.ports: "implements"
-archigram."archigram.features".ingest_class -> archigram.ports: "imports"
-archigram."archigram.features".ingest_dot -> archigram.ports: "implements"
-archigram."archigram.features".ingest_dot -> archigram.ports: "imports"
-archigram."archigram.features".ingest_otel -> archigram.ports: "implements"
-archigram."archigram.features".ingest_otel -> archigram.ports: "imports"
-archigram."archigram.features".ingest_python -> archigram.ports: "implements"
-archigram."archigram.features".ingest_python -> archigram.ports: "imports"
-archigram."archigram.features".ingest_scip -> archigram.ports: "implements"
-archigram."archigram.features".ingest_scip -> archigram.ports: "imports"
-archigram."archigram.features".lint_budget -> archigram.domain: "calls"
-archigram."archigram.features".lint_budget -> archigram.domain: "imports"
-archigram."archigram.features".lint_grounding -> archigram.domain: "calls"
-archigram."archigram.features".lint_grounding -> archigram.domain: "imports"
-archigram."archigram.features".lint_syntax -> archigram.ports: "calls"
-archigram."archigram.features".lint_syntax -> archigram.ports: "composes"
-archigram."archigram.features".lint_syntax -> archigram.ports: "implements"
-archigram."archigram.features".lint_syntax -> archigram.ports: "imports"
-archigram."archigram.features".lint_topology -> archigram.domain: "calls"
-archigram."archigram.features".lint_topology -> archigram.domain: "composes"
-archigram."archigram.features".lint_topology -> archigram.domain: "imports"
-archigram.ports -> archigram.domain: "imports"
-archigram."archigram.features".reduce_structural -> archigram.domain: "calls"
-archigram."archigram.features".reduce_structural -> archigram.domain: "imports"
-archigram."archigram.features".reduce_trace -> archigram.domain: "calls"
-archigram."archigram.features".reduce_trace -> archigram.domain: "imports"
+archigram."archigram.features".digest -> archigram.domain: "composes" {
+  style.stroke: "#14b8a6"
+  source-arrowhead: {
+    shape: diamond
+    style.filled: true
+  }
+}
+archigram."archigram.features".digest -> archigram.domain: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.features".emit_d2 -> archigram.domain: "composes" {
+  style.stroke: "#14b8a6"
+  source-arrowhead: {
+    shape: diamond
+    style.filled: true
+  }
+}
+archigram."archigram.features".emit_d2 -> archigram.domain: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.features".emit_likec4 -> archigram.domain: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.features".emit_mermaid -> archigram.domain: "composes" {
+  style.stroke: "#14b8a6"
+  source-arrowhead: {
+    shape: diamond
+    style.filled: true
+  }
+}
+archigram."archigram.features".emit_mermaid -> archigram.domain: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.features".emit_plantuml -> archigram.domain: "composes" {
+  style.stroke: "#14b8a6"
+  source-arrowhead: {
+    shape: diamond
+    style.filled: true
+  }
+}
+archigram."archigram.features".emit_plantuml -> archigram.domain: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.entrypoints".entrypoints_cli -> archigram."archigram.entrypoints".entrypoints_mcp: "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.entrypoints".entrypoints_cli -> archigram."archigram.entrypoints".entrypoints_mcp: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.entrypoints".entrypoints_cli -> archigram."archigram.features".ingest_class: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.entrypoints".entrypoints_cli -> archigram."archigram.features".ingest_dot: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.entrypoints".entrypoints_cli -> archigram."archigram.features".ingest_otel: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.entrypoints".entrypoints_cli -> archigram."archigram.features".ingest_python: "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.entrypoints".entrypoints_cli -> archigram."archigram.features".ingest_python: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.entrypoints".entrypoints_cli -> archigram."archigram.features".ingest_scip: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.entrypoints".entrypoints_mcp -> archigram."archigram.features".digest: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.entrypoints".entrypoints_mcp -> archigram."archigram.features".emit_d2: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.entrypoints".entrypoints_mcp -> archigram."archigram.features".emit_likec4: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.entrypoints".entrypoints_mcp -> archigram."archigram.features".emit_mermaid: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.entrypoints".entrypoints_mcp -> archigram."archigram.features".emit_plantuml: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.entrypoints".entrypoints_mcp -> archigram."archigram.features".lint_budget: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.entrypoints".entrypoints_mcp -> archigram."archigram.features".lint_grounding: "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.entrypoints".entrypoints_mcp -> archigram."archigram.features".lint_grounding: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.entrypoints".entrypoints_mcp -> archigram."archigram.features".lint_syntax: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.entrypoints".entrypoints_mcp -> archigram."archigram.features".lint_topology: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.entrypoints".entrypoints_mcp -> archigram."archigram.features".reduce_structural: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.entrypoints".entrypoints_mcp -> archigram."archigram.features".reduce_trace: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.features".ingest_class -> archigram.ports: "implements" {
+  style.stroke: "#a855f7"
+  style.stroke-dash: 5
+  target-arrowhead: {
+    shape: triangle
+    style.filled: false
+  }
+}
+archigram."archigram.features".ingest_class -> archigram.ports: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.features".ingest_dot -> archigram.ports: "implements" {
+  style.stroke: "#a855f7"
+  style.stroke-dash: 5
+  target-arrowhead: {
+    shape: triangle
+    style.filled: false
+  }
+}
+archigram."archigram.features".ingest_dot -> archigram.ports: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.features".ingest_otel -> archigram.ports: "implements" {
+  style.stroke: "#a855f7"
+  style.stroke-dash: 5
+  target-arrowhead: {
+    shape: triangle
+    style.filled: false
+  }
+}
+archigram."archigram.features".ingest_otel -> archigram.ports: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.features".ingest_python -> archigram.ports: "implements" {
+  style.stroke: "#a855f7"
+  style.stroke-dash: 5
+  target-arrowhead: {
+    shape: triangle
+    style.filled: false
+  }
+}
+archigram."archigram.features".ingest_python -> archigram.ports: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.features".ingest_scip -> archigram.ports: "implements" {
+  style.stroke: "#a855f7"
+  style.stroke-dash: 5
+  target-arrowhead: {
+    shape: triangle
+    style.filled: false
+  }
+}
+archigram."archigram.features".ingest_scip -> archigram.ports: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.features".lint_budget -> archigram.domain: "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.features".lint_budget -> archigram.domain: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.features".lint_grounding -> archigram.domain: "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.features".lint_grounding -> archigram.domain: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.features".lint_syntax -> archigram.ports: "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.features".lint_syntax -> archigram.ports: "composes" {
+  style.stroke: "#14b8a6"
+  source-arrowhead: {
+    shape: diamond
+    style.filled: true
+  }
+}
+archigram."archigram.features".lint_syntax -> archigram.ports: "implements" {
+  style.stroke: "#a855f7"
+  style.stroke-dash: 5
+  target-arrowhead: {
+    shape: triangle
+    style.filled: false
+  }
+}
+archigram."archigram.features".lint_syntax -> archigram.ports: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.features".lint_topology -> archigram.domain: "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.features".lint_topology -> archigram.domain: "composes" {
+  style.stroke: "#14b8a6"
+  source-arrowhead: {
+    shape: diamond
+    style.filled: true
+  }
+}
+archigram."archigram.features".lint_topology -> archigram.domain: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram.ports -> archigram.domain: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.features".reduce_structural -> archigram.domain: "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.features".reduce_structural -> archigram.domain: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.features".reduce_trace -> archigram.domain: "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.features".reduce_trace -> archigram.domain: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}

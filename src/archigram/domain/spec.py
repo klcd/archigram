@@ -36,6 +36,15 @@ class TargetRenderer(StrEnum):
     DOT = "dot"
 
 
+class DiagramVariant(StrEnum):
+    """Optional structural or trace sub-variant ('auto', 'architecture', 'class', 'steps')."""
+
+    AUTO = "auto"
+    ARCHITECTURE = "architecture"
+    CLASS = "class"
+    STEPS = "steps"
+
+
 class PruneLeavesRule(BaseModel):
     """Closed-world structural operator removing matched degree-0 leaf sinks and/or roots."""
 
@@ -194,6 +203,9 @@ class DiagramViewSpec(BaseModel):
     title: NonBlankStr
     ir_mode: IRMode
     target_renderer: TargetRenderer
+    diagram_variant: DiagramVariant = DiagramVariant.AUTO
+    render_svg: bool = False
+    animate_edges: bool | None = None
     rules: tuple[ViewRule, ...] = Field(default_factory=tuple)
     scope: ViewScope = Field(default_factory=FullScope)
     simplify: SimplifyConfig = Field(default_factory=SimplifyConfig)

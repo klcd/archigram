@@ -228,7 +228,8 @@ def test_structural_graph_emission_determinism_and_syntax_invariants(
     assert "<-" not in first
     _assert_balanced_c4_braces(first)
 
-    # Validate FQNs and segment identifiers
+    # Validate FQNs, element styles, relationship declarations, and typed arrows
+    assert "opacity 0%" in first
     for line in first.splitlines():
         stripped = line.strip()
         if not stripped or stripped in {
@@ -237,19 +238,30 @@ def test_structural_graph_emission_determinism_and_syntax_invariants(
             "views {",
             "view index {",
             "include *",
+            "style {",
+            "color slate",
+            "border solid",
+            "opacity 0%",
             "}",
         }:
             continue
+        if stripped.startswith(("color ", "line ")):
+            continue
         if stripped.startswith("element "):
-            kind_token = stripped.removeprefix("element ").strip()
+            kind_token = stripped.removeprefix("element ").removesuffix("{").strip()
             assert _FQN_SEGMENT_RE.match(kind_token) is not None
+        elif stripped.startswith("relationship "):
+            rel_token = stripped.removeprefix("relationship ").removesuffix("{").strip()
+            assert _FQN_SEGMENT_RE.match(rel_token) is not None
         elif " = " in stripped:
             ident = stripped.split(" = ")[0].strip()
             assert _FQN_SEGMENT_RE.match(ident) is not None
-        elif " -> " in stripped:
+        elif "]-> " in stripped:
             edge_part = stripped.split(" '")[0].strip()
-            src_fqn, dst_fqn = edge_part.split(" -> ")
+            src_fqn, rest = edge_part.split(" -[", 1)
+            rel_token, dst_fqn = rest.split("]-> ", 1)
             assert _FQN_PATH_RE.match(src_fqn) is not None
+            assert _FQN_SEGMENT_RE.match(rel_token) is not None
             assert _FQN_PATH_RE.match(dst_fqn) is not None
 
 

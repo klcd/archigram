@@ -19,8 +19,17 @@ from archigram.domain.ir import (
     TraceEvent,
     TraceParticipant,
 )
+from archigram.domain.style import (
+    DEFAULT_STROKE_WIDTH_PX,
+    MERMAID_DEFAULT_CLASSDEF,
+    MERMAID_SEQUENCE_FRONTMATTER,
+    MERMAID_STRUCTURAL_FRONTMATTER,
+    MERMAID_SUBGRAPH_STYLE_ATTRS,
+    LinePattern,
+    resolve_edge_animated,
+    resolve_edge_visual_style,
+)
 
-_ELK_FRONTMATTER = "---\nconfig:\n  layout: elk\n---"
 _SLUG_RE = re.compile(r"[^A-Za-z0-9]+")
 
 _OOP_RELATIONS: frozenset[EdgeRelation] = frozenset(
@@ -87,8 +96,11 @@ _OOP_NODE_KINDS: frozenset[NodeKind] = frozenset(
 
 def _is_class_diagram_mode(ir: StructuralGraphIR) -> bool:
     """Determine if a StructuralGraphIR should emit an OOP classDiagram instead of flowchart."""
-    if ir.metadata.get("diagram_variant") == "class":
+    variant = ir.metadata.get("diagram_variant", "auto")
+    if variant == "class":
         return True
+    if variant == "architecture":
+        return False
     if any(bool(node.members) for node in ir.nodes.values()):
         return True
     if not any(node.kind in _OOP_NODE_KINDS for node in ir.nodes.values()):
@@ -174,17 +186,32 @@ def _emit_class_edge(edge: IREdge, aliases: dict[str, str]) -> str:
     if edge.relation in _CLASS_ARROWS:
         arrow = _CLASS_ARROWS[edge.relation]
         return f"  {tgt} {arrow} {src} : {label}"
-    if edge.sync_kind is SyncKind.ASYNC_FIRE_FORGET or edge.relation is EdgeRelation.IMPORTS:
+    visual = resolve_edge_visual_style(edge.relation, edge.sync_kind)
+    if visual.line_pattern is LinePattern.DASHED:
         return f"  {src} ..> {tgt} : {label}"
     return f"  {src} --> {tgt} : {label}"
 
 
 def _emit_class_diagram(ir: StructuralGraphIR) -> str:
     """Emit a deterministic Mermaid v12 OOP classDiagram with ELK layout frontmatter."""
-    sorted_ids = sorted(ir.nodes)
-    aliases = build_alias_map(sorted_ids, prefix="c")
-    lines: list[str] = [_ELK_FRONTMATTER, "classDiagram"]
-    for sym_id in sorted_ids:
+    parent_ids = {n.parent_id for n in ir.nodes.values() if n.parent_id is not None}
+    incident_ids = {e.source for e in ir.edges} | {e.target for e in ir.edges}
+    visible_ids = [
+        sid
+        for sid in sorted(ir.nodes)
+        if not (
+            sid in parent_ids
+            and sid not in incident_ids
+            and ir.nodes[sid].kind not in _OOP_NODE_KINDS
+        )
+    ] or sorted(ir.nodes)
+    aliases = build_alias_map(visible_ids, prefix="c")
+    lines: list[str] = [
+        MERMAID_STRUCTURAL_FRONTMATTER,
+        "classDiagram",
+        f"  {MERMAID_DEFAULT_CLASSDEF}",
+    ]
+    for sym_id in visible_ids:
         lines.extend(_emit_class_node(ir.nodes[sym_id], aliases[sym_id]))
     for edge in sorted(ir.edges, key=lambda item: item.edge_id):
         lines.append(_emit_class_edge(edge, aliases))
@@ -226,33 +253,69 @@ def _emit_flowchart_subtree(
     return lines
 
 
-def _emit_flowchart_edge(edge: IREdge, aliases: dict[str, str]) -> str:
-    """Emit a styled flowchart edge line sorted by edge_id."""
+def _emit_flowchart_edge_and_linkstyle(
+    edge: IREdge,
+    edge_idx: int,
+    aliases: dict[str, str],
+    animate_override: str | None = None,
+) -> tuple[list[str], str]:
+    """Emit flowchart edge line(s) (with v11+ animation when active) and `linkStyle` directive."""
     src = aliases[edge.source]
     tgt = aliases[edge.target]
     label = sanitize_mermaid_text(edge.relation.value)
-    if edge.sync_kind is SyncKind.FORK_JOIN_BRANCH or edge.relation is EdgeRelation.FORK_JOIN:
+    visual = resolve_edge_visual_style(edge.relation, edge.sync_kind)
+    if visual.line_pattern is LinePattern.BOLD:
         arrow = "==>"
-    elif edge.sync_kind is SyncKind.ASYNC_FIRE_FORGET or edge.relation in {
-        EdgeRelation.IMPORTS,
-        EdgeRelation.ASYNC_SPAWN,
-    }:
+        link_style = f"  linkStyle {edge_idx} stroke:{visual.stroke_hex},stroke-width:2.5px"
+    elif visual.line_pattern is LinePattern.DASHED:
         arrow = "-.->"
+        link_style = (
+            f"  linkStyle {edge_idx} stroke:{visual.stroke_hex},"
+            f"stroke-width:{DEFAULT_STROKE_WIDTH_PX},stroke-dasharray:5 5"
+        )
     else:
         arrow = "-->"
-    return f'  {src} {arrow}|"{label}"| {tgt}'
+        link_style = (
+            f"  linkStyle {edge_idx} stroke:{visual.stroke_hex},"
+            f"stroke-width:{DEFAULT_STROKE_WIDTH_PX}"
+        )
+    if resolve_edge_animated(visual, animate_override):
+        edge_id = f"e_{edge_idx}"
+        edge_lines = [
+            f'  {src} {edge_id}@{arrow}|"{label}"| {tgt}',
+            f"  {edge_id}@{{ animate: true }}",
+        ]
+        return edge_lines, link_style
+    return [f'  {src} {arrow}|"{label}"| {tgt}'], link_style
 
 
 def _emit_flowchart(ir: StructuralGraphIR) -> str:
-    """Emit a deterministic Mermaid v12 ELK flowchart TD diagram."""
+    """Emit a deterministic Mermaid v12 ELK orthogonal flowchart TD diagram."""
     sorted_ids = sorted(ir.nodes)
     aliases = build_alias_map(sorted_ids, prefix="n")
     roots, children = _build_children_map(ir.nodes)
-    lines: list[str] = [_ELK_FRONTMATTER, "flowchart TD"]
+    animate_override = ir.metadata.get("animate_edges")
+    lines: list[str] = [
+        MERMAID_STRUCTURAL_FRONTMATTER,
+        "flowchart TD",
+        f"  {MERMAID_DEFAULT_CLASSDEF}",
+    ]
     for root_id in roots:
         lines.extend(_emit_flowchart_subtree(root_id, ir.nodes, children, aliases, depth=1))
-    for edge in sorted(ir.edges, key=lambda item: item.edge_id):
-        lines.append(_emit_flowchart_edge(edge, aliases))
+    for sym_id in sorted_ids:
+        if children[sym_id]:
+            lines.append(f"  style {aliases[sym_id]} {MERMAID_SUBGRAPH_STYLE_ATTRS}")
+    link_styles: list[str] = []
+    for edge_idx, edge in enumerate(sorted(ir.edges, key=lambda item: item.edge_id)):
+        edge_lines, style_line = _emit_flowchart_edge_and_linkstyle(
+            edge,
+            edge_idx,
+            aliases,
+            animate_override,
+        )
+        lines.extend(edge_lines)
+        link_styles.append(style_line)
+    lines.extend(link_styles)
     return "\n".join(lines) + "\n"
 
 
@@ -413,7 +476,7 @@ def _emit_sequence_diagram(ir: InteractionTraceIR) -> str:
     """Emit a deterministic Mermaid v12 sequenceDiagram with par/loop fragments and async arrows."""
     sorted_pids = sorted(ir.participants)
     aliases = build_alias_map(sorted_pids, prefix="p")
-    lines: list[str] = ["sequenceDiagram"]
+    lines: list[str] = [MERMAID_SEQUENCE_FRONTMATTER, "sequenceDiagram"]
     for pid in sorted_pids:
         lines.append(_format_participant_line(ir.participants[pid], aliases[pid]))
 

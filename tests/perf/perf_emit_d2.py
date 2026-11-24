@@ -113,8 +113,10 @@ _EMITTER = D2Emitter()
 
 
 def test_d2_emitter_300_node_nested_graph_throughput(benchmark: Any) -> None:
+    from archigram.domain.style import D2_CANONICAL_HEADER
+
     d2_output: str = benchmark(_EMITTER.emit, _GRAPH_300)
-    assert d2_output.startswith("vars: {\n  d2-config: {\n    layout-engine: elk\n  }\n}")
+    assert d2_output.startswith(D2_CANONICAL_HEADER)
     assert "shape: cylinder" in d2_output
     assert "shape: queue" in d2_output
     assert "shape: class" in d2_output

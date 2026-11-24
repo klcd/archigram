@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import heapq
 import re
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from archigram.domain import ProvenanceGrade
 from archigram.domain.ir import (
     ClassMember,
+    EdgeRelation,
     InteractionTraceIR,
     IREdge,
     IRNode,
@@ -17,15 +19,24 @@ from archigram.domain.ir import (
     SyncKind,
     TraceEvent,
 )
+from archigram.domain.style import (
+    D2_CANONICAL_HEADER,
+    NEUTRAL_BORDER_HEX,
+    TRANSPARENT_FILL,
+    LinePattern,
+    UmlArrowheadKind,
+    resolve_edge_animated,
+    resolve_edge_visual_style,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
     from archigram.domain.ir import CanonicalIR
 
-_ELK_HEADER = "vars: {\n  d2-config: {\n    layout-engine: elk\n  }\n}"
 _UNQUOTED_KEY_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 _SAMPLE_BACKING_LIMIT = 5
+_MAX_D2_TRACE_STEPS = 12
 
 _D2_RESERVED_KEYWORDS: frozenset[str] = frozenset(
     {
@@ -90,6 +101,20 @@ _NODE_KIND_SHAPES: dict[NodeKind, str] = {
     NodeKind.TABLE: "cylinder",
     NodeKind.QUEUE: "queue",
 }
+
+_OOP_CLASS_KINDS: frozenset[NodeKind] = frozenset(
+    {NodeKind.CLASS, NodeKind.INTERFACE, NodeKind.ENUM}
+)
+
+
+@dataclass(frozen=True, slots=True)
+class _D2StructuralCtx:
+    """Shared structural emission context to keep recursive signatures compact."""
+
+    key_map: dict[str, str]
+    children_by_parent: dict[str | None, list[str]]
+    nodes: dict[str, IRNode]
+    force_class: bool
 
 
 def _sanitize_control_chars(value: str) -> str:
@@ -189,35 +214,33 @@ def _emit_class_members(lines: list[str], members: tuple[ClassMember, ...], inde
 
 def _emit_structural_node(
     node: IRNode,
-    key_map: dict[str, str],
-    children_by_parent: dict[str | None, list[str]],
-    nodes: dict[str, IRNode],
+    ctx: _D2StructuralCtx,
     depth: int,
     lines: list[str],
 ) -> None:
-    """Recursively emit a D2 node or nested container block."""
+    """Recursively emit a D2 node or nested container block with transparent fill."""
     indent = "  " * depth
-    child_ids = children_by_parent.get(node.symbol_id, [])
+    child_ids = ctx.children_by_parent.get(node.symbol_id, [])
     is_class = (
-        node.kind in {NodeKind.CLASS, NodeKind.INTERFACE} and bool(node.members) and not child_ids
+        not child_ids and node.kind in _OOP_CLASS_KINDS and (bool(node.members) or ctx.force_class)
     )
     shape = "class" if is_class else _NODE_KIND_SHAPES.get(node.kind)
     tooltip = _build_provenance_tooltip(node)
-    header = f"{indent}{_format_d2_key(key_map[node.symbol_id])}: {_quote_d2_string(node.label)}"
-    if not child_ids and shape is None and tooltip is None:
-        lines.append(header)
-        return
-
+    header = (
+        f"{indent}{_format_d2_key(ctx.key_map[node.symbol_id])}: {_quote_d2_string(node.label)}"
+    )
     inner = "  " * (depth + 1)
     lines.append(f"{header} {{")
     if shape is not None:
         lines.append(f"{inner}shape: {shape}")
+    lines.append(f"{inner}style.fill: {TRANSPARENT_FILL}")
+    lines.append(f'{inner}style.stroke: "{NEUTRAL_BORDER_HEX}"')
     if tooltip is not None:
         lines.append(f"{inner}tooltip: {_quote_d2_string(tooltip)}")
-    if is_class:
+    if is_class and node.members:
         _emit_class_members(lines, node.members, inner)
     for child_id in child_ids:
-        _emit_structural_node(nodes[child_id], key_map, children_by_parent, nodes, depth + 1, lines)
+        _emit_structural_node(ctx.nodes[child_id], ctx, depth + 1, lines)
     lines.append(f"{indent}}}")
 
 
@@ -239,22 +262,63 @@ def _build_qualified_paths(nodes: dict[str, IRNode], key_map: dict[str, str]) ->
     return paths
 
 
-def _emit_structural_edge(edge: IREdge, paths: dict[str, str], lines: list[str]) -> None:
-    """Emit a single structural edge using full hierarchical D2 qualified paths."""
+def _append_d2_uml_arrowhead(arrowhead: UmlArrowheadKind, lines: list[str]) -> None:
+    """Append UML generalization, realization, composition, or aggregation arrowheads in D2."""
+    if arrowhead is UmlArrowheadKind.HOLLOW_TRIANGLE:
+        lines.extend(
+            (
+                "  target-arrowhead: {",
+                "    shape: triangle",
+                "    style.filled: false",
+                "  }",
+            )
+        )
+    elif arrowhead is UmlArrowheadKind.FILLED_DIAMOND:
+        lines.extend(
+            (
+                "  source-arrowhead: {",
+                "    shape: diamond",
+                "    style.filled: true",
+                "  }",
+            )
+        )
+    elif arrowhead is UmlArrowheadKind.HOLLOW_DIAMOND:
+        lines.extend(
+            (
+                "  source-arrowhead: {",
+                "    shape: diamond",
+                "    style.filled: false",
+                "  }",
+            )
+        )
+
+
+def _emit_structural_edge(
+    edge: IREdge,
+    paths: dict[str, str],
+    animate_override: str | None,
+    lines: list[str],
+) -> None:
+    """Emit a structural edge with edge-only semantic stroke, animation, and UML arrowheads."""
     src = paths[edge.source]
     dst = paths[edge.target]
+    visual = resolve_edge_visual_style(edge.relation, edge.sync_kind)
     stmt = f"{src} -> {dst}: {_quote_d2_string(edge.relation.value)}"
-    if edge.sync_kind is SyncKind.ASYNC_FIRE_FORGET:
-        lines.append(f"{stmt} {{")
+    lines.append(f"{stmt} {{")
+    lines.append(f'  style.stroke: "{visual.stroke_hex}"')
+    if visual.line_pattern is LinePattern.DASHED:
         lines.append("  style.stroke-dash: 5")
-        lines.append("}")
-        return
-    lines.append(stmt)
+    elif visual.line_pattern is LinePattern.BOLD:
+        lines.append("  style.stroke-width: 3")
+    if resolve_edge_animated(visual, animate_override):
+        lines.append("  style.animated: true")
+    _append_d2_uml_arrowhead(visual.uml_arrowhead, lines)
+    lines.append("}")
 
 
 def _emit_structural_graph(graph: StructuralGraphIR) -> str:
     """Serialize a StructuralGraphIR into deterministic D2 with ELK layout and containers."""
-    lines: list[str] = [_ELK_HEADER]
+    lines: list[str] = [D2_CANONICAL_HEADER]
     if not graph.nodes:
         return "\n".join(lines) + "\n"
 
@@ -264,21 +328,26 @@ def _emit_structural_graph(graph: StructuralGraphIR) -> str:
         parent_id = graph.nodes[sid].parent_id
         children_by_parent.setdefault(parent_id, []).append(sid)
 
+    ctx = _D2StructuralCtx(
+        key_map=key_map,
+        children_by_parent=children_by_parent,
+        nodes=graph.nodes,
+        force_class=graph.metadata.get("diagram_variant") == "class",
+    )
     lines.append("")
     for root_id in children_by_parent.get(None, []):
-        _emit_structural_node(
-            graph.nodes[root_id], key_map, children_by_parent, graph.nodes, 0, lines
-        )
+        _emit_structural_node(graph.nodes[root_id], ctx, 0, lines)
 
     if graph.edges:
         paths = _build_qualified_paths(graph.nodes, key_map)
+        animate_override = graph.metadata.get("animate_edges")
         sorted_edges = sorted(
             graph.edges,
             key=lambda e: (e.source, e.target, e.relation.value, e.sync_kind.value, e.edge_id),
         )
         lines.append("")
         for edge in sorted_edges:
-            _emit_structural_edge(edge, paths, lines)
+            _emit_structural_edge(edge, paths, animate_override, lines)
 
     return "\n".join(lines) + "\n"
 
@@ -341,22 +410,27 @@ def _group_concurrent_siblings(ordered: list[TraceEvent]) -> list[list[TraceEven
     return groups
 
 
-def _emit_trace_message(
-    event: TraceEvent,
-    key_map: dict[str, str],
-    indent: str,
+def _emit_d2_call_edge(
+    endpoints: tuple[str, str],
+    label: str,
+    sync_kind: SyncKind,
+    animate_override: str | None,
     lines: list[str],
+    indent: str = "",
 ) -> None:
-    """Emit a single D2 sequence diagram message line (and async dash style if needed)."""
-    caller = _format_d2_key(key_map[event.caller_id])
-    callee = _format_d2_key(key_map[event.callee_id])
-    stmt = f"{indent}{caller} -> {callee}: {_quote_d2_string(event.signature)}"
-    if event.sync_kind is SyncKind.ASYNC_FIRE_FORGET:
-        lines.append(f"{stmt} {{")
+    """Emit a D2 runtime call edge with semantic stroke, dash/width, and flowing animation."""
+    caller_key, callee_key = endpoints
+    visual = resolve_edge_visual_style(EdgeRelation.CALLS, sync_kind)
+    stmt = f"{indent}{caller_key} -> {callee_key}: {_quote_d2_string(label)}"
+    lines.append(f"{stmt} {{")
+    lines.append(f'{indent}  style.stroke: "{visual.stroke_hex}"')
+    if visual.line_pattern is LinePattern.DASHED:
         lines.append(f"{indent}  style.stroke-dash: 5")
-        lines.append(f"{indent}}}")
-        return
-    lines.append(stmt)
+    elif visual.line_pattern is LinePattern.BOLD:
+        lines.append(f"{indent}  style.stroke-width: 3")
+    if resolve_edge_animated(visual, animate_override):
+        lines.append(f"{indent}  style.animated: true")
+    lines.append(f"{indent}}}")
 
 
 def _allocate_group_key(used_lower: set[str], group_index: int) -> tuple[str, int]:
@@ -370,11 +444,12 @@ def _allocate_group_key(used_lower: set[str], group_index: int) -> tuple[str, in
     return candidate, idx + 1
 
 
-def _emit_interaction_trace(trace: InteractionTraceIR) -> str:
-    """Serialize an InteractionTraceIR into a deterministic D2 sequence diagram."""
-    lines: list[str] = [_ELK_HEADER, "", "shape: sequence_diagram"]
-    key_map, used_lower = _build_safe_key_map(trace.participants.keys())
-
+def _emit_trace_participants(
+    trace: InteractionTraceIR,
+    key_map: dict[str, str],
+    lines: list[str],
+) -> None:
+    """Emit transparent, neutral-bordered participant declarations in deterministic order."""
     if trace.participants:
         lines.append("")
     for pid in sorted(trace.participants):
@@ -382,12 +457,116 @@ def _emit_interaction_trace(trace: InteractionTraceIR) -> str:
         p_key = _format_d2_key(key_map[pid])
         p_label = _quote_d2_string(participant.label)
         p_shape = _NODE_KIND_SHAPES.get(participant.kind)
+        lines.append(f"{p_key}: {p_label} {{")
         if p_shape is not None:
-            lines.append(f"{p_key}: {p_label} {{")
             lines.append(f"  shape: {p_shape}")
-            lines.append("}")
-        else:
-            lines.append(f"{p_key}: {p_label}")
+        lines.append(f"  style.fill: {TRANSPARENT_FILL}")
+        lines.append(f'  style.stroke: "{NEUTRAL_BORDER_HEX}"')
+        lines.append("}")
+
+
+@dataclass(frozen=True, slots=True)
+class _StepEdge:
+    """Coalesced first-activation causal transition emitted inside a D2 `steps` frame."""
+
+    caller_id: str
+    callee_id: str
+    signature: str
+    sync_kind: SyncKind
+    call_count: int
+
+
+def _chunk_step_waves(waves: list[list[_StepEdge]]) -> list[list[_StepEdge]]:
+    """Bound D2 multiboard frame count to `_MAX_D2_TRACE_STEPS` while preserving causal order."""
+    if len(waves) <= _MAX_D2_TRACE_STEPS:
+        return waves
+    chunked: list[list[_StepEdge]] = []
+    total = len(waves)
+    for bucket in range(_MAX_D2_TRACE_STEPS):
+        start = (bucket * total) // _MAX_D2_TRACE_STEPS
+        end = ((bucket + 1) * total) // _MAX_D2_TRACE_STEPS
+        merged = [edge for wave in waves[start:end] for edge in wave]
+        if merged:
+            chunked.append(merged)
+    return chunked
+
+
+def _collect_unique_step_waves(ordered: list[TraceEvent]) -> list[list[_StepEdge]]:
+    """Extract ordered causal activation waves without duplicate parallel edges."""
+    has_cross = any(ev.caller_id != ev.callee_id for ev in ordered)
+    pair_counts: dict[tuple[str, str], int] = {}
+    for ev in ordered:
+        if not (has_cross and ev.caller_id == ev.callee_id):
+            pair = (ev.caller_id, ev.callee_id)
+            pair_counts[pair] = pair_counts.get(pair, 0) + 1
+
+    seen_pairs: set[tuple[str, str]] = set()
+    waves: list[list[_StepEdge]] = []
+    for group in _group_concurrent_siblings(ordered):
+        wave: list[_StepEdge] = []
+        for ev in group:
+            pair = (ev.caller_id, ev.callee_id)
+            if (has_cross and ev.caller_id == ev.callee_id) or pair in seen_pairs:
+                continue
+            seen_pairs.add(pair)
+            wave.append(
+                _StepEdge(
+                    caller_id=ev.caller_id,
+                    callee_id=ev.callee_id,
+                    signature=ev.signature,
+                    sync_kind=ev.sync_kind,
+                    call_count=pair_counts[pair],
+                )
+            )
+        if wave:
+            waves.append(wave)
+    return _chunk_step_waves(waves)
+
+
+def _emit_trace_steps(trace: InteractionTraceIR) -> str:
+    """Serialize an InteractionTraceIR into a multi-frame D2 `steps` architecture playback."""
+    lines: list[str] = [D2_CANONICAL_HEADER, "", "direction: right"]
+    key_map, _ = _build_safe_key_map(trace.participants.keys())
+    animate_override = trace.metadata.get("animate_edges")
+    _emit_trace_participants(trace, key_map, lines)
+
+    waves = _collect_unique_step_waves(_order_trace_events(trace.events)) if trace.events else []
+    if waves:
+        lines.append("")
+        lines.append("steps: {")
+        for idx, wave in enumerate(waves, start=1):
+            lines.append(f"  step_{idx}: {{")
+            for step_edge in wave:
+                label = (
+                    f"{step_edge.signature} (x{step_edge.call_count})"
+                    if step_edge.call_count > 1
+                    else step_edge.signature
+                )
+                endpoints = (
+                    _format_d2_key(key_map[step_edge.caller_id]),
+                    _format_d2_key(key_map[step_edge.callee_id]),
+                )
+                _emit_d2_call_edge(
+                    endpoints,
+                    label,
+                    step_edge.sync_kind,
+                    animate_override,
+                    lines,
+                    indent="    ",
+                )
+            lines.append("  }")
+        lines.append("}")
+    return "\n".join(lines) + "\n"
+
+
+def _emit_interaction_trace(trace: InteractionTraceIR) -> str:
+    """Serialize an InteractionTraceIR into a deterministic dual-mode D2 sequence diagram."""
+    if trace.metadata.get("diagram_variant") == "steps":
+        return _emit_trace_steps(trace)
+    lines: list[str] = [D2_CANONICAL_HEADER, "", "shape: sequence_diagram"]
+    key_map, used_lower = _build_safe_key_map(trace.participants.keys())
+    animate_override = trace.metadata.get("animate_edges")
+    _emit_trace_participants(trace, key_map, lines)
 
     if trace.events:
         lines.append("")
@@ -395,12 +574,26 @@ def _emit_interaction_trace(trace: InteractionTraceIR) -> str:
         group_index = 0
         for group in _group_concurrent_siblings(ordered):
             if len(group) == 1:
-                _emit_trace_message(group[0], key_map, "", lines)
+                ev = group[0]
+                _emit_d2_call_edge(
+                    (_format_d2_key(key_map[ev.caller_id]), _format_d2_key(key_map[ev.callee_id])),
+                    ev.signature,
+                    ev.sync_kind,
+                    animate_override,
+                    lines,
+                )
                 continue
             group_key, group_index = _allocate_group_key(used_lower, group_index)
             lines.append(f"{group_key}: {_quote_d2_string(f'Concurrent ({len(group)})')} {{")
-            for event in group:
-                _emit_trace_message(event, key_map, "  ", lines)
+            for ev in group:
+                _emit_d2_call_edge(
+                    (_format_d2_key(key_map[ev.caller_id]), _format_d2_key(key_map[ev.callee_id])),
+                    ev.signature,
+                    ev.sync_kind,
+                    animate_override,
+                    lines,
+                    indent="  ",
+                )
             lines.append("}")
 
     return "\n".join(lines) + "\n"

@@ -14,69 +14,61 @@ Pick the exact zoom level you need for your current task—each guide isolates i
 | Modify topological graph reduction, SCC/TR simplification, or `R1–R6` + SP-Poset trace compaction | **[L2b: Reduction & Concurrency Engine](L2-subsystem-guides.md#l2b-reduction--concurrency-compaction-engine)** | Focused `k_hop` zoom (`16` nodes) |
 | Add or tune a validation rule, witness path, or repair hint across Gates 1–5 | **[L2c: 5-Gate Linter](L2-subsystem-guides.md#l2c-5-gate-semantic-topological-budget--syntax-linter)** | Focused `k_hop` zoom (`13` nodes) |
 | Work on Typer CLI commands, PR diffing, Markdown sync, FastMCP tools, or the 3-turn repair loop | **[L2d: CLI & MCP Driving Adapters](L2-subsystem-guides.md#l2d-cli-data-plane--mcp-control-plane-adapters)** | Focused `k_hop` zoom (`18` nodes) |
-| Trace how `compile_and_lint_pipeline` and `run_propose_loop` execute end-to-end at runtime | **[L3: Runtime Execution & Self-Healing Traces](L3-runtime-traces.md)** | Compacted live sequence (`14` participants, `48` events) |
+| Trace how `compile_and_lint_pipeline` and `run_propose_loop` execute end-to-end at runtime | **[L3: Runtime Execution & Self-Healing Traces](L3-runtime-traces.md)** | Compacted live sequence (`15` participants, `48` events) |
+| Inspect default dual-mode light/dark coloring (`style.py`), UML arrows, orthogonal routing & all 12 target/variant diagrams | **[Styling Policy & Full Multi-Target Gallery](diagram-styling-and-gallery.md)** | All 5 renderers × structural, OOP class & sequence modes |
 
 ---
 
 ## Declarative Specs, Trace Snapshot & Companion Multi-Target Diagrams
 
-All views are defined declaratively and rendered across four target languages (Mermaid, D2, PlantUML, LikeC4):
+All views are defined declaratively and rendered across **all five supported target languages** (Mermaid, D2 + `.d2.svg`, PlantUML, LikeC4, Graphviz DOT + `.dot.svg`):
 
+- **Canonical Styling Policy:** [`src/archigram/domain/style.py`](../../src/archigram/domain/style.py) (transparent element fills, `#64748b` borders, edge-only semantic strokes, 90-degree orthogonal routing, UML arrowheads)
 - **Structural Curation Spec:** [`diagram-views.yaml`](diagram-views.yaml) (compiled against `src/archigram`)
 - **Runtime Trace Curation Spec:** [`trace-views.yaml`](trace-views.yaml) (compiled against [`traces/pipeline-and-repair.ir.json`](traces/pipeline-and-repair.ir.json))
 - **Live Trace Snapshot:** [`traces/pipeline-and-repair.ir.json`](traces/pipeline-and-repair.ir.json) (captured via `src/archigram/entrypoints/cli/self_trace.py`)
 
-| Level | View ID | Renderer | Companion Artifact |
+| Level | View ID | Renderer & Mode | Companion Artifacts |
 | --- | --- | --- | --- |
-| L0 | `l0_hexagonal_rings_mermaid` | Mermaid | [`diagrams/l0_hexagonal_rings_mermaid.mmd`](diagrams/l0_hexagonal_rings_mermaid.mmd) |
-| L0 | `l0_hexagonal_rings_likec4` | LikeC4 | [`diagrams/l0_hexagonal_rings_likec4.c4`](diagrams/l0_hexagonal_rings_likec4.c4) |
-| L0 | `l0_hexagonal_rings_d2` | D2 | [`diagrams/l0_hexagonal_rings_d2.d2`](diagrams/l0_hexagonal_rings_d2.d2) |
-| L1 | `l1_feature_slices_mermaid` | Mermaid | [`diagrams/l1_feature_slices_mermaid.mmd`](diagrams/l1_feature_slices_mermaid.mmd) |
-| L1 | `l1_feature_slices_d2` | D2 | [`diagrams/l1_feature_slices_d2.d2`](diagrams/l1_feature_slices_d2.d2) |
-| L2a | `l2a_domain_and_ports_mermaid` | Mermaid | [`diagrams/l2a_domain_and_ports_mermaid.mmd`](diagrams/l2a_domain_and_ports_mermaid.mmd) |
-| L2a | `l2a_domain_and_ports_puml` | PlantUML | [`diagrams/l2a_domain_and_ports_puml.puml`](diagrams/l2a_domain_and_ports_puml.puml) |
-| L2b | `l2b_reduction_engine_mermaid` | Mermaid | [`diagrams/l2b_reduction_engine_mermaid.mmd`](diagrams/l2b_reduction_engine_mermaid.mmd) |
-| L2b | `l2b_reduction_engine_d2` | D2 | [`diagrams/l2b_reduction_engine_d2.d2`](diagrams/l2b_reduction_engine_d2.d2) |
-| L2c | `l2c_five_gate_linter_mermaid` | Mermaid | [`diagrams/l2c_five_gate_linter_mermaid.mmd`](diagrams/l2c_five_gate_linter_mermaid.mmd) |
-| L2d | `l2d_cli_and_mcp_adapters_mermaid` | Mermaid | [`diagrams/l2d_cli_and_mcp_adapters_mermaid.mmd`](diagrams/l2d_cli_and_mcp_adapters_mermaid.mmd) |
-| L3 | `l3_runtime_pipeline_mermaid` | Mermaid | [`diagrams/l3_runtime_pipeline_mermaid.mmd`](diagrams/l3_runtime_pipeline_mermaid.mmd) |
-| L3 | `l3_runtime_pipeline_puml` | PlantUML | [`diagrams/l3_runtime_pipeline_puml.puml`](diagrams/l3_runtime_pipeline_puml.puml) |
+| L0 | `l0_hexagonal_rings_mermaid` | Mermaid (`flowchart TD`, ELK linear) | [`diagrams/l0_hexagonal_rings_mermaid.mmd`](diagrams/l0_hexagonal_rings_mermaid.mmd) |
+| L0 | `l0_hexagonal_rings_d2` | D2 (`elk` containers + SVG) | [`diagrams/l0_hexagonal_rings_d2.d2`](diagrams/l0_hexagonal_rings_d2.d2) · [`SVG`](diagrams/l0_hexagonal_rings_d2.d2.svg) |
+| L0 | `l0_hexagonal_rings_puml` | PlantUML (Mode C ELK component) | [`diagrams/l0_hexagonal_rings_puml.puml`](diagrams/l0_hexagonal_rings_puml.puml) |
+| L0 | `l0_hexagonal_rings_likec4` | LikeC4 (structural model & view) | [`diagrams/l0_hexagonal_rings_likec4.c4`](diagrams/l0_hexagonal_rings_likec4.c4) |
+| L0 | `l0_hexagonal_rings_dot` | Graphviz DOT (`splines="ortho"` + SVG) | [`diagrams/l0_hexagonal_rings_dot.dot`](diagrams/l0_hexagonal_rings_dot.dot) · [`SVG`](diagrams/l0_hexagonal_rings_dot.dot.svg) |
+| L1 | `l1_feature_slices_mermaid` | Mermaid (`flowchart TD`, ELK linear) | [`diagrams/l1_feature_slices_mermaid.mmd`](diagrams/l1_feature_slices_mermaid.mmd) |
+| L1 | `l1_feature_slices_d2` | D2 (`elk` containers + SVG) | [`diagrams/l1_feature_slices_d2.d2`](diagrams/l1_feature_slices_d2.d2) · [`SVG`](diagrams/l1_feature_slices_d2.d2.svg) |
+| L2a | `l2a_domain_and_ports_mermaid` | Mermaid (`flowchart TD`, ELK linear) | [`diagrams/l2a_domain_and_ports_mermaid.mmd`](diagrams/l2a_domain_and_ports_mermaid.mmd) |
+| L2a | `l2a_domain_and_ports_puml` | PlantUML (Mode C ELK component) | [`diagrams/l2a_domain_and_ports_puml.puml`](diagrams/l2a_domain_and_ports_puml.puml) |
+| L2b | `l2b_reduction_engine_mermaid` | Mermaid (`flowchart TD`, ELK linear) | [`diagrams/l2b_reduction_engine_mermaid.mmd`](diagrams/l2b_reduction_engine_mermaid.mmd) |
+| L2b | `l2b_reduction_engine_d2` | D2 (`elk` containers + SVG) | [`diagrams/l2b_reduction_engine_d2.d2`](diagrams/l2b_reduction_engine_d2.d2) · [`SVG`](diagrams/l2b_reduction_engine_d2.d2.svg) |
+| L2c | `l2c_five_gate_linter_mermaid` | Mermaid (`flowchart TD`, ELK linear) | [`diagrams/l2c_five_gate_linter_mermaid.mmd`](diagrams/l2c_five_gate_linter_mermaid.mmd) |
+| L2c OOP | `l2c_oop_syntax_validators_mermaid` | Mermaid (`classDiagram`, UML) | [`diagrams/l2c_oop_syntax_validators_mermaid.mmd`](diagrams/l2c_oop_syntax_validators_mermaid.mmd) |
+| L2c OOP | `l2c_oop_syntax_validators_d2` | D2 (`shape: class` + SVG) | [`diagrams/l2c_oop_syntax_validators_d2.d2`](diagrams/l2c_oop_syntax_validators_d2.d2) · [`SVG`](diagrams/l2c_oop_syntax_validators_d2.d2.svg) |
+| L2c OOP | `l2c_oop_syntax_validators_puml` | PlantUML (Mode B OOP `class` / `interface`) | [`diagrams/l2c_oop_syntax_validators_puml.puml`](diagrams/l2c_oop_syntax_validators_puml.puml) |
+| L2d | `l2d_cli_and_mcp_adapters_mermaid` | Mermaid (`flowchart TD`, ELK linear) | [`diagrams/l2d_cli_and_mcp_adapters_mermaid.mmd`](diagrams/l2d_cli_and_mcp_adapters_mermaid.mmd) |
+| L3 | `l3_runtime_pipeline_mermaid` | Mermaid (`sequenceDiagram`) | [`diagrams/l3_runtime_pipeline_mermaid.mmd`](diagrams/l3_runtime_pipeline_mermaid.mmd) |
+| L3 | `l3_runtime_pipeline_d2` | D2 (`shape: sequence_diagram` + flowing SVG) | [`diagrams/l3_runtime_pipeline_d2.d2`](diagrams/l3_runtime_pipeline_d2.d2) · [`SVG`](diagrams/l3_runtime_pipeline_d2.d2.svg) |
+| L3 | `l3_runtime_pipeline_steps_d2` | D2 (`steps` animated multi-frame playback + SVG) | [`diagrams/l3_runtime_pipeline_steps_d2.d2`](diagrams/l3_runtime_pipeline_steps_d2.d2) · [`Animated SVG`](diagrams/l3_runtime_pipeline_steps_d2.d2.svg) |
+| L3 | `l3_runtime_pipeline_puml` | PlantUML (Mode A `teoz` sequence) | [`diagrams/l3_runtime_pipeline_puml.puml`](diagrams/l3_runtime_pipeline_puml.puml) |
+| L3 | `l3_runtime_pipeline_likec4` | LikeC4 (`dynamic view ... variant sequence`) | [`diagrams/l3_runtime_pipeline_likec4.c4`](diagrams/l3_runtime_pipeline_likec4.c4) |
+| L3 | `l3_runtime_pipeline_dot` | Graphviz DOT (orthogonal trace + SVG) | [`diagrams/l3_runtime_pipeline_dot.dot`](diagrams/l3_runtime_pipeline_dot.dot) · [`SVG`](diagrams/l3_runtime_pipeline_dot.dot.svg) |
 
 ---
 
-## Regenerating & Verifying Zero Drift
+## Regenerating & Verifying Zero Drift (`justfile`)
 
-Run these commands after changing `src/archigram` or either curation spec:
-
-```bash
-# 1. Re-capture the deterministic live sys.monitoring runtime trace snapshot
-uv run python -m archigram.entrypoints.cli.self_trace
-
-# 2. Emit all L0/L1/L2 companion diagrams and sync inline Markdown blocks
-uv run archigram apply src/archigram \
-  --spec docs/architecture/diagram-views.yaml \
-  --out-dir docs/architecture/diagrams \
-  --sync-md docs/architecture
-
-# 3. Emit all L3 trace companion diagrams and sync inline Markdown blocks
-uv run archigram apply docs/architecture/traces/pipeline-and-repair.ir.json \
-  --spec docs/architecture/trace-views.yaml \
-  --out-dir docs/architecture/diagrams \
-  --sync-md docs/architecture
-```
-
-To verify in CI (or locally) that every spec passes all 5 Gates and every Markdown block is byte-for-byte in sync with zero drift:
+Use the root [`justfile`](../../justfile) to re-capture traces, compile all companion `.svg` / animated `.d2.svg` diagrams, sync Markdown blocks, and preview live changes:
 
 ```bash
-uv run archigram apply src/archigram \
-  --spec docs/architecture/diagram-views.yaml \
-  --out-dir docs/architecture/diagrams \
-  --sync-md docs/architecture \
-  --check
+# Re-capture trace + compile all L0-L3 diagrams & animated SVGs + sync Markdown docs
+just docs
 
-uv run archigram apply docs/architecture/traces/pipeline-and-repair.ir.json \
-  --spec docs/architecture/trace-views.yaml \
-  --out-dir docs/architecture/diagrams \
-  --sync-md docs/architecture \
-  --check
+# Verify 5-Gate pass + zero Markdown/SVG drift (also run in Gate 8 of `just verify`)
+just docs-check
+
+# Compile any individual .d2 file to <file>.svg (auto-detects `steps:` -> --animate-interval 1200)
+just d2 docs/architecture/diagrams/l3_runtime_pipeline_steps_d2.d2
+
+# Live hot-reload a D2 diagram in the browser while editing
+just watch-d2 docs/architecture/diagrams/l0_hexagonal_rings_d2.d2
 ```

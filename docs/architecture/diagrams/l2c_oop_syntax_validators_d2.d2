@@ -1,0 +1,176 @@
+vars: {
+  d2-config: {
+    layout-engine: elk
+    theme-id: 0
+    dark-theme-id: 200
+  }
+}
+style.fill: transparent
+
+archigram: "archigram" {
+  style.fill: transparent
+  style.stroke: "#64748b"
+  "archigram.features": "features" {
+    style.fill: transparent
+    style.stroke: "#64748b"
+    "archigram.features.lint_syntax": "lint_syntax" {
+      style.fill: transparent
+      style.stroke: "#64748b"
+      "archigram.features.lint_syntax.validators": "validators" {
+        style.fill: transparent
+        style.stroke: "#64748b"
+        "archigram.features.lint_syntax.validators.D2SyntaxValidator": "D2SyntaxValidator" {
+          shape: class
+          style.fill: transparent
+          style.stroke: "#64748b"
+          "+__init__(use_cli: bool, cli_timeout: float)": "None"
+          "+property target_format()": "str"
+          "+validate(diagram_source: str)": "SyntaxValidationResult"
+        }
+        "archigram.features.lint_syntax.validators.DotSyntaxValidator": "DotSyntaxValidator" {
+          shape: class
+          style.fill: transparent
+          style.stroke: "#64748b"
+          "+__init__(use_cli: bool, cli_timeout: float)": "None"
+          "+property target_format()": "str"
+          "+validate(diagram_source: str)": "SyntaxValidationResult"
+        }
+        "archigram.features.lint_syntax.validators.Gate5SyntaxHarness": "Gate5SyntaxHarness" {
+          shape: class
+          style.fill: transparent
+          style.stroke: "#64748b"
+          "+slice_name": "str"
+          "+__init__(validators: Mapping[str, SyntaxValidatorPort] | None)": "None"
+          "+property supported_formats()": "tuple[str, ...]"
+          "+get_validator(target_format: str)": "SyntaxValidatorPort | None"
+          "+validate(target_format: str, diagram_source: str)": "SyntaxValidationResult"
+        }
+        "archigram.features.lint_syntax.validators.LikeC4SyntaxValidator": "LikeC4SyntaxValidator" {
+          shape: class
+          style.fill: transparent
+          style.stroke: "#64748b"
+          "+property target_format()": "str"
+          "+validate(diagram_source: str)": "SyntaxValidationResult"
+        }
+        "archigram.features.lint_syntax.validators.MermaidSyntaxValidator": "MermaidSyntaxValidator" {
+          shape: class
+          style.fill: transparent
+          style.stroke: "#64748b"
+          "+property target_format()": "str"
+          "+validate(diagram_source: str)": "SyntaxValidationResult"
+        }
+        "archigram.features.lint_syntax.validators.PlantUmlSyntaxValidator": "PlantUmlSyntaxValidator" {
+          shape: class
+          style.fill: transparent
+          style.stroke: "#64748b"
+          "+__init__(use_cli: bool, cli_timeout: float)": "None"
+          "+property target_format()": "str"
+          "+validate(diagram_source: str)": "SyntaxValidationResult"
+        }
+      }
+    }
+  }
+  "archigram.ports": "ports" {
+    style.fill: transparent
+    style.stroke: "#64748b"
+    "archigram.ports.contracts": "contracts" {
+      style.fill: transparent
+      style.stroke: "#64748b"
+      "archigram.ports.contracts.SyntaxValidationResult": "SyntaxValidationResult" {
+        shape: class
+        style.fill: transparent
+        style.stroke: "#64748b"
+        "+valid": "bool"
+        "+target_format": "str"
+        "+errors": "tuple[str, ...]"
+      }
+      "archigram.ports.contracts.SyntaxValidatorPort": "SyntaxValidatorPort" {
+        shape: class
+        style.fill: transparent
+        style.stroke: "#64748b"
+        "+property target_format()": "str"
+        "+validate(diagram_source: str)": "SyntaxValidationResult"
+      }
+    }
+  }
+}
+
+archigram."archigram.features"."archigram.features.lint_syntax" -> archigram."archigram.features"."archigram.features.lint_syntax"."archigram.features.lint_syntax.validators": "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.features"."archigram.features.lint_syntax"."archigram.features.lint_syntax.validators" -> archigram."archigram.ports"."archigram.ports.contracts": "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.features"."archigram.features.lint_syntax"."archigram.features.lint_syntax.validators"."archigram.features.lint_syntax.validators.D2SyntaxValidator" -> archigram."archigram.ports"."archigram.ports.contracts"."archigram.ports.contracts.SyntaxValidationResult": "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.features"."archigram.features.lint_syntax"."archigram.features.lint_syntax.validators"."archigram.features.lint_syntax.validators.D2SyntaxValidator" -> archigram."archigram.ports"."archigram.ports.contracts"."archigram.ports.contracts.SyntaxValidatorPort": "implements" {
+  style.stroke: "#a855f7"
+  style.stroke-dash: 5
+  target-arrowhead: {
+    shape: triangle
+    style.filled: false
+  }
+}
+archigram."archigram.features"."archigram.features.lint_syntax"."archigram.features.lint_syntax.validators"."archigram.features.lint_syntax.validators.DotSyntaxValidator" -> archigram."archigram.ports"."archigram.ports.contracts"."archigram.ports.contracts.SyntaxValidationResult": "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.features"."archigram.features.lint_syntax"."archigram.features.lint_syntax.validators"."archigram.features.lint_syntax.validators.DotSyntaxValidator" -> archigram."archigram.ports"."archigram.ports.contracts"."archigram.ports.contracts.SyntaxValidatorPort": "implements" {
+  style.stroke: "#a855f7"
+  style.stroke-dash: 5
+  target-arrowhead: {
+    shape: triangle
+    style.filled: false
+  }
+}
+archigram."archigram.features"."archigram.features.lint_syntax"."archigram.features.lint_syntax.validators"."archigram.features.lint_syntax.validators.Gate5SyntaxHarness" -> archigram."archigram.ports"."archigram.ports.contracts"."archigram.ports.contracts.SyntaxValidationResult": "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.features"."archigram.features.lint_syntax"."archigram.features.lint_syntax.validators"."archigram.features.lint_syntax.validators.Gate5SyntaxHarness" -> archigram."archigram.ports"."archigram.ports.contracts"."archigram.ports.contracts.SyntaxValidatorPort": "composes" {
+  style.stroke: "#14b8a6"
+  source-arrowhead: {
+    shape: diamond
+    style.filled: true
+  }
+}
+archigram."archigram.features"."archigram.features.lint_syntax"."archigram.features.lint_syntax.validators"."archigram.features.lint_syntax.validators.LikeC4SyntaxValidator" -> archigram."archigram.ports"."archigram.ports.contracts"."archigram.ports.contracts.SyntaxValidationResult": "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.features"."archigram.features.lint_syntax"."archigram.features.lint_syntax.validators"."archigram.features.lint_syntax.validators.LikeC4SyntaxValidator" -> archigram."archigram.ports"."archigram.ports.contracts"."archigram.ports.contracts.SyntaxValidatorPort": "implements" {
+  style.stroke: "#a855f7"
+  style.stroke-dash: 5
+  target-arrowhead: {
+    shape: triangle
+    style.filled: false
+  }
+}
+archigram."archigram.features"."archigram.features.lint_syntax"."archigram.features.lint_syntax.validators"."archigram.features.lint_syntax.validators.MermaidSyntaxValidator" -> archigram."archigram.ports"."archigram.ports.contracts"."archigram.ports.contracts.SyntaxValidationResult": "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.features"."archigram.features.lint_syntax"."archigram.features.lint_syntax.validators"."archigram.features.lint_syntax.validators.MermaidSyntaxValidator" -> archigram."archigram.ports"."archigram.ports.contracts"."archigram.ports.contracts.SyntaxValidatorPort": "implements" {
+  style.stroke: "#a855f7"
+  style.stroke-dash: 5
+  target-arrowhead: {
+    shape: triangle
+    style.filled: false
+  }
+}
+archigram."archigram.features"."archigram.features.lint_syntax"."archigram.features.lint_syntax.validators"."archigram.features.lint_syntax.validators.PlantUmlSyntaxValidator" -> archigram."archigram.ports"."archigram.ports.contracts"."archigram.ports.contracts.SyntaxValidationResult": "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.features"."archigram.features.lint_syntax"."archigram.features.lint_syntax.validators"."archigram.features.lint_syntax.validators.PlantUmlSyntaxValidator" -> archigram."archigram.ports"."archigram.ports.contracts"."archigram.ports.contracts.SyntaxValidatorPort": "implements" {
+  style.stroke: "#a855f7"
+  style.stroke-dash: 5
+  target-arrowhead: {
+    shape: triangle
+    style.filled: false
+  }
+}

@@ -1,0 +1,173 @@
+specification {
+  element class {
+    style {
+      color slate
+      border solid
+      opacity 0%
+    }
+  }
+  element component {
+    style {
+      color slate
+      border solid
+      opacity 0%
+    }
+  }
+  element container {
+    style {
+      color slate
+      border solid
+      opacity 0%
+    }
+  }
+  element database {
+    style {
+      color slate
+      border solid
+      opacity 0%
+    }
+  }
+  element enum {
+    style {
+      color slate
+      border solid
+      opacity 0%
+    }
+  }
+  element external {
+    style {
+      color slate
+      border solid
+      opacity 0%
+    }
+  }
+  element function {
+    style {
+      color slate
+      border solid
+      opacity 0%
+    }
+  }
+  element interface {
+    style {
+      color slate
+      border solid
+      opacity 0%
+    }
+  }
+  element module {
+    style {
+      color slate
+      border solid
+      opacity 0%
+    }
+  }
+  element package {
+    style {
+      color slate
+      border solid
+      opacity 0%
+    }
+  }
+  element queue {
+    style {
+      color slate
+      border solid
+      opacity 0%
+    }
+  }
+  element service {
+    style {
+      color slate
+      border solid
+      opacity 0%
+    }
+  }
+  element supernode {
+    style {
+      color slate
+      border solid
+      opacity 0%
+    }
+  }
+  element table {
+    style {
+      color slate
+      border solid
+      opacity 0%
+    }
+  }
+}
+
+model {
+  archigram_domain_diagnostics = module 'diagnostics'
+  archigram_domain_ir = module 'ir'
+  archigram_domain_spec = module 'spec'
+  archigram_domain_style = module 'style'
+  archigram_entrypoints_cli_pipeline = module 'pipeline'
+  archigram_entrypoints_mcp_propose_loop = module 'propose_loop'
+  archigram_features_digest_generator = module 'generator'
+  archigram_features_emit_d2_emitter = module 'emit_d2.emitter'
+  archigram_features_emit_mermaid_emitter = module 'emit_mermaid.emitter'
+  archigram_features_emit_plantuml_emitter = module 'emit_plantuml.emitter'
+  archigram_features_lint_budget_gate = module 'lint_budget.gate'
+  archigram_features_lint_grounding_gates = module 'gates'
+  archigram_features_lint_syntax_validators = module 'validators'
+  archigram_features_lint_topology_gate = module 'lint_topology.gate'
+  archigram_features_reduce_structural_reducer = module 'reducer'
+}
+
+views {
+  dynamic view trace_archigram_pipeline_and_repair_v1 {
+    variant sequence
+
+    archigram_entrypoints_cli_pipeline -> archigram_entrypoints_cli_pipeline 'compile_and_lint_pipeline'
+    archigram_entrypoints_cli_pipeline -> archigram_features_reduce_structural_reducer 'StructuralTopologicalReducer.reduce'
+    archigram_entrypoints_cli_pipeline -> archigram_features_emit_mermaid_emitter 'MermaidEmitter.emit'
+    archigram_entrypoints_cli_pipeline -> archigram_features_reduce_structural_reducer 'StructuralTopologicalReducer.reduce'
+    archigram_entrypoints_cli_pipeline -> archigram_features_emit_d2_emitter 'D2Emitter.emit'
+    archigram_entrypoints_cli_pipeline -> archigram_features_reduce_structural_reducer 'StructuralTopologicalReducer.reduce'
+    archigram_entrypoints_cli_pipeline -> archigram_features_emit_plantuml_emitter 'PlantUmlEmitter.emit'
+    archigram_entrypoints_cli_pipeline -> archigram_features_lint_grounding_gates 'GroundingAndBoundaryGate.__init__'
+    archigram_entrypoints_cli_pipeline -> archigram_features_lint_grounding_gates 'GroundingAndBoundaryGate.check'
+    archigram_entrypoints_cli_pipeline -> archigram_features_lint_topology_gate 'TopologicalInvariantGate.__init__'
+    archigram_entrypoints_cli_pipeline -> archigram_features_lint_topology_gate 'TopologicalInvariantGate.check'
+    archigram_entrypoints_cli_pipeline -> archigram_features_lint_budget_gate 'CognitiveBudgetAndOrphanGate.check'
+    archigram_entrypoints_cli_pipeline -> archigram_features_lint_syntax_validators 'build_default_validators'
+    archigram_entrypoints_cli_pipeline -> archigram_features_lint_syntax_validators 'Gate5SyntaxHarness.__init__'
+    archigram_entrypoints_cli_pipeline -> archigram_features_lint_syntax_validators 'Gate5SyntaxHarness.validate [loop x3]'
+    archigram_entrypoints_cli_pipeline -> archigram_domain_diagnostics 'LintReport.from_diagnostics'
+    archigram_entrypoints_mcp_propose_loop -> archigram_entrypoints_mcp_propose_loop 'run_propose_loop'
+    archigram_entrypoints_mcp_propose_loop -> archigram_features_digest_generator 'GraphDigestGenerator.to_compact_markdown'
+    archigram_entrypoints_mcp_propose_loop -> archigram_domain_spec 'parse_curation_spec_yaml'
+    archigram_entrypoints_mcp_propose_loop -> archigram_features_lint_grounding_gates 'GroundingAndBoundaryGate.check [loop x2]'
+    archigram_entrypoints_mcp_propose_loop -> archigram_features_lint_topology_gate 'TopologicalInvariantGate.check'
+    archigram_entrypoints_mcp_propose_loop -> archigram_domain_diagnostics 'LintReport.from_diagnostics'
+    archigram_entrypoints_mcp_propose_loop -> archigram_domain_diagnostics 'LintReport._validate_passed_invariant'
+    archigram_entrypoints_mcp_propose_loop -> archigram_domain_spec 'parse_curation_spec_yaml'
+    archigram_entrypoints_mcp_propose_loop -> archigram_features_lint_grounding_gates 'collect_observed_symbols'
+    archigram_entrypoints_mcp_propose_loop -> archigram_domain_spec 'DiagramViewSpec._validate_unique_view_rules'
+    archigram_entrypoints_mcp_propose_loop -> archigram_domain_spec 'CurationSpecV1._validate_spec_uniqueness'
+    archigram_entrypoints_mcp_propose_loop -> archigram_features_lint_grounding_gates 'GroundingAndBoundaryGate.check'
+    archigram_entrypoints_mcp_propose_loop -> archigram_features_reduce_structural_reducer 'StructuralTopologicalReducer.reduce'
+    archigram_entrypoints_mcp_propose_loop -> archigram_features_lint_grounding_gates 'GroundingAndBoundaryGate.check'
+    archigram_entrypoints_mcp_propose_loop -> archigram_features_lint_topology_gate 'TopologicalInvariantGate.check'
+    archigram_entrypoints_mcp_propose_loop -> archigram_features_lint_budget_gate 'CognitiveBudgetAndOrphanGate.check'
+    archigram_entrypoints_mcp_propose_loop -> archigram_features_emit_mermaid_emitter 'MermaidEmitter.emit'
+    archigram_entrypoints_mcp_propose_loop -> archigram_features_lint_syntax_validators 'Gate5SyntaxHarness.validate'
+    archigram_entrypoints_mcp_propose_loop -> archigram_domain_diagnostics 'LintReport.from_diagnostics'
+    archigram_entrypoints_mcp_propose_loop -> archigram_domain_diagnostics 'LintReport._validate_passed_invariant'
+    archigram_entrypoints_mcp_propose_loop -> archigram_domain_spec 'dump_curation_spec_yaml'
+    archigram_entrypoints_mcp_propose_loop -> archigram_domain_spec 'parse_curation_spec_yaml'
+    archigram_entrypoints_mcp_propose_loop -> archigram_features_lint_grounding_gates 'GroundingAndBoundaryGate.check'
+    archigram_entrypoints_mcp_propose_loop -> archigram_features_reduce_structural_reducer 'StructuralTopologicalReducer.reduce'
+    archigram_entrypoints_mcp_propose_loop -> archigram_features_lint_grounding_gates 'GroundingAndBoundaryGate.check'
+    archigram_entrypoints_mcp_propose_loop -> archigram_features_lint_topology_gate 'TopologicalInvariantGate.check'
+    archigram_entrypoints_mcp_propose_loop -> archigram_features_lint_budget_gate 'CognitiveBudgetAndOrphanGate.check'
+    archigram_entrypoints_mcp_propose_loop -> archigram_features_emit_mermaid_emitter 'MermaidEmitter.emit'
+    archigram_entrypoints_mcp_propose_loop -> archigram_features_lint_syntax_validators 'Gate5SyntaxHarness.validate'
+    archigram_entrypoints_mcp_propose_loop -> archigram_domain_diagnostics 'LintReport.from_diagnostics'
+    archigram_entrypoints_mcp_propose_loop -> archigram_domain_diagnostics 'LintReport._validate_passed_invariant'
+    archigram_entrypoints_mcp_propose_loop -> archigram_domain_spec 'dump_curation_spec_yaml'
+  }
+}

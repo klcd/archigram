@@ -163,6 +163,48 @@ def test_self_hosted_trace_views_and_snapshot_determinism(
     assert sync_res.is_clean
 
 
+@settings(max_examples=10, deadline=None)
+@given(renderer=st.sampled_from(list(TargetRenderer)))
+def test_self_hosted_docs_cover_every_renderer_variant_and_companion_svg(
+    renderer: TargetRenderer,
+) -> None:
+    """Self-hosted docs showcase every renderer across structural/OOP/trace + stamped SVGs."""
+    from archigram.domain.spec import DiagramVariant
+    from archigram.entrypoints.cli.pipeline import sync_compiled_artifacts
+
+    diag_spec = _cached_diagram_spec()
+    trace_spec = _cached_trace_spec()
+
+    structural_renderers = {v.target_renderer for v in diag_spec.views}
+    trace_renderers = {v.target_renderer for v in trace_spec.views}
+    oop_renderers = {
+        v.target_renderer for v in diag_spec.views if v.diagram_variant is DiagramVariant.CLASS
+    }
+    assert renderer in structural_renderers
+    assert renderer in trace_renderers
+    assert {
+        TargetRenderer.MERMAID,
+        TargetRenderer.D2,
+        TargetRenderer.PLANTUML,
+    } <= oop_renderers
+
+    diag_res = compile_and_lint_pipeline(_cached_self_ir(), diag_spec)
+    diag_sync = sync_compiled_artifacts(
+        diag_res, _DIAGRAMS_DIR, check_only=True, sync_md_target=_DOCS_ARCH
+    )
+    assert diag_sync.is_clean, (
+        f"Structural drift/missing: {diag_sync.drifted_files} / {diag_sync.missing_files}"
+    )
+
+    trace_res = compile_and_lint_pipeline(_cached_trace_snapshot(), trace_spec)
+    trace_sync = sync_compiled_artifacts(
+        trace_res, _DIAGRAMS_DIR, check_only=True, sync_md_target=_DOCS_ARCH
+    )
+    assert trace_sync.is_clean, (
+        f"Trace drift/missing: {trace_sync.drifted_files} / {trace_sync.missing_files}"
+    )
+
+
 @settings(max_examples=30, deadline=None)
 @given(
     node_count=st.integers(min_value=2, max_value=6),
