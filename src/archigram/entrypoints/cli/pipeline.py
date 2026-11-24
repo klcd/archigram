@@ -1,0 +1,622 @@
+"""Zero-LLM CLI Data Plane compilation, ingestion, reduction, emission, and 5-Gate verification."""
+
+from __future__ import annotations
+
+import json
+from dataclasses import dataclass, field
+from enum import StrEnum
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+from pydantic import TypeAdapter
+
+from archigram.domain.diagnostics import (
+    DiagnosticSeverity,
+    GateId,
+    LintDiagnostic,
+    LintReport,
+)
+from archigram.domain.ir import (
+    CanonicalIR,
+    InteractionTraceIR,
+    StructuralGraphIR,
+)
+from archigram.domain.spec import (
+    CurationSpecV1,
+    DiagramViewSpec,
+    IRMode,
+    TargetRenderer,
+    parse_curation_spec_yaml,
+)
+from archigram.features.emit_d2 import D2Emitter
+from archigram.features.emit_likec4 import LikeC4Emitter
+from archigram.features.emit_mermaid import MermaidEmitter
+from archigram.features.emit_plantuml import PlantUmlEmitter
+from archigram.features.ingest_class import ClassHierarchyIngestor
+from archigram.features.ingest_dot import DotStructuralIngestor
+from archigram.features.ingest_otel import OtelTraceIngestor
+from archigram.features.ingest_scip import ScipStructuralIngestor
+from archigram.features.lint_budget import (
+    CognitiveBudgetAndOrphanGate,
+    apply_spanning_tree_edge_fallback,
+)
+from archigram.features.lint_grounding import GroundingAndBoundaryGate
+from archigram.features.lint_syntax import Gate5SyntaxHarness, build_default_validators
+from archigram.features.lint_topology import TopologicalInvariantGate
+from archigram.features.reduce_structural import (
+    CycleInducedError,
+    StructuralTopologicalReducer,
+)
+from archigram.features.reduce_trace import TraceCompactionEngine
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
+
+    from archigram.ports.contracts import DiagramEmitterPort
+
+_CANONICAL_IR_ADAPTER: TypeAdapter[CanonicalIR] = TypeAdapter(CanonicalIR)
+
+
+class InputFormat(StrEnum):
+    """Supported ingestion formats for the CLI data plane."""
+
+    AUTO = "auto"
+    IR_JSON = "ir_json"
+    DOT = "dot"
+    SCIP = "scip"
+    OTLP_JSON = "otlp_json"
+    CLASS_JSON = "class_json"
+
+
+_RENDERER_EXTENSIONS: dict[TargetRenderer, str] = {
+    TargetRenderer.MERMAID: ".mmd",
+    TargetRenderer.D2: ".d2",
+    TargetRenderer.PLANTUML: ".puml",
+    TargetRenderer.LIKEC4: ".c4",
+    TargetRenderer.DOT: ".dot",
+}
+
+
+@dataclass(frozen=True, slots=True)
+class CompiledViewArtifact:
+    """Deterministic compilation result for a single DiagramViewSpec."""
+
+    view: DiagramViewSpec
+    curated_ir: CanonicalIR
+    emitted_ir: CanonicalIR
+    diagram_source: str
+    file_extension: str
+    overflow_markdown: str = ""
+
+    @property
+    def output_filename(self) -> str:
+        """Return canonical filename `<view.id><ext>`."""
+        return f"{self.view.id}{self.file_extension}"
+
+    @property
+    def overflow_filename(self) -> str:
+        """Return companion overflow table filename `<view.id>.overflow.md`."""
+        return f"{self.view.id}.overflow.md"
+
+
+@dataclass(frozen=True, slots=True)
+class PipelineCompilationResult:
+    """Aggregated outcome of compiling and linting a CurationSpecV1 against an observed IR."""
+
+    observed_ir: CanonicalIR
+    spec: CurationSpecV1
+    views: dict[str, CompiledViewArtifact]
+    lint_report: LintReport
+    extra_diagnostics: tuple[LintDiagnostic, ...] = field(default_factory=tuple)
+
+
+def renderer_file_extension(renderer: TargetRenderer) -> str:
+    """Return the canonical file extension (including leading dot) for a TargetRenderer."""
+    return _RENDERER_EXTENSIONS[renderer]
+
+
+def _read_source_text(source: Path | str) -> tuple[str, Path | None]:
+    if isinstance(source, Path):
+        if not source.is_file():
+            msg = f"Input file does not exist: {source}"
+            raise FileNotFoundError(msg)
+        return source.read_text(encoding="utf-8"), source
+
+    try:
+        candidate = Path(source)
+        is_existing_file = candidate.is_file()
+    except OSError:
+        candidate = None
+        is_existing_file = False
+
+    if is_existing_file and candidate is not None:
+        return candidate.read_text(encoding="utf-8"), candidate
+    is_inline_payload = any(ch in source for ch in ("\n", "{", "}", ";", ":"))
+    if not is_inline_payload and len(source) < 256 and Path(source).suffix:
+        msg = f"Input file does not exist: {source}"
+        raise FileNotFoundError(msg)
+    return source, None
+
+
+def load_curation_spec(spec_source: Path | str) -> CurationSpecV1:
+    """Load and strictly validate a CurationSpecV1 from a YAML file path or YAML string."""
+    raw_yaml, _ = _read_source_text(spec_source)
+    if not raw_yaml.strip():
+        msg = "Curation spec YAML must not be empty"
+        raise ValueError(msg)
+    return parse_curation_spec_yaml(raw_yaml)
+
+
+def _detect_json_format(payload: object) -> InputFormat:
+    if not isinstance(payload, dict):
+        msg = "JSON input root must be an object"
+        raise ValueError(msg)
+    detected = InputFormat.IR_JSON
+    if payload.get("ir_mode") in {"structural_graph", "interaction_trace"}:
+        detected = InputFormat.IR_JSON
+    elif any(k in payload for k in ("resourceSpans", "resource_spans", "spans")):
+        detected = InputFormat.OTLP_JSON
+    elif any(k in payload for k in ("documents", "external_symbols", "symbols")):
+        detected = InputFormat.SCIP
+    elif any(k in payload for k in ("classes", "entities", "types", "relationships")):
+        detected = InputFormat.CLASS_JSON
+    return detected
+
+
+_SUFFIX_FORMATS: dict[str, InputFormat] = {
+    ".dot": InputFormat.DOT,
+    ".gv": InputFormat.DOT,
+    ".puml": InputFormat.CLASS_JSON,
+    ".scip": InputFormat.SCIP,
+}
+
+
+def detect_input_format(
+    raw_text: str,
+    source_path: Path | None = None,
+    requested: InputFormat | str = InputFormat.AUTO,
+) -> InputFormat:
+    """Resolve explicit or auto-detected InputFormat from file suffix and payload content."""
+    fmt = (
+        requested if isinstance(requested, InputFormat) else InputFormat(requested.strip().lower())
+    )
+    if fmt is not InputFormat.AUTO:
+        return fmt
+
+    stripped = raw_text.lstrip()
+    if not stripped:
+        msg = "Cannot detect format of empty input"
+        raise ValueError(msg)
+
+    suffix_fmt = (
+        _SUFFIX_FORMATS.get(source_path.suffix.lower()) if source_path is not None else None
+    )
+    if suffix_fmt is not None:
+        return suffix_fmt
+
+    if stripped.startswith("{"):
+        try:
+            parsed = json.loads(stripped)
+        except json.JSONDecodeError as exc:
+            msg = f"Invalid JSON input: {exc}"
+            raise ValueError(msg) from exc
+        return _detect_json_format(parsed)
+
+    return InputFormat.CLASS_JSON if stripped.lower().startswith("@startuml") else InputFormat.DOT
+
+
+def load_canonical_ir(
+    source: Path | str,
+    input_format: InputFormat | str = InputFormat.AUTO,
+) -> CanonicalIR:
+    """Ingest or deserialize an input path/payload into a validated CanonicalIR."""
+    raw_text, source_path = _read_source_text(source)
+    resolved_fmt = detect_input_format(raw_text, source_path, input_format)
+    effective_arg: Path | str = source_path if source_path is not None else raw_text
+
+    if resolved_fmt is InputFormat.IR_JSON:
+        try:
+            data: object = json.loads(raw_text)
+        except json.JSONDecodeError as exc:
+            msg = f"Invalid Canonical IR JSON: {exc}"
+            raise ValueError(msg) from exc
+        return _CANONICAL_IR_ADAPTER.validate_python(data)
+    if resolved_fmt is InputFormat.DOT:
+        return DotStructuralIngestor().ingest(effective_arg)
+    if resolved_fmt is InputFormat.SCIP:
+        source_name = str(source_path) if source_path is not None else "<memory>"
+        return ScipStructuralIngestor().ingest(effective_arg, source_name=source_name)
+    if resolved_fmt is InputFormat.OTLP_JSON:
+        source_name = str(source_path) if source_path is not None else "<memory>"
+        return OtelTraceIngestor().ingest(effective_arg, source_name=source_name)
+    return ClassHierarchyIngestor().ingest(effective_arg)
+
+
+def _escape_dot_str(value: str) -> str:
+    cleaned = (
+        value.replace("\\", "\\\\").replace('"', '\\"').replace("\r", " ").replace("\n", "\\n")
+    )
+    return f'"{cleaned}"'
+
+
+def _emit_structural_dot(ir: StructuralGraphIR) -> str:
+    lines: list[str] = [f"digraph {_escape_dot_str(ir.graph_id)} {{", '  rankdir="LR";']
+    children_by_parent: dict[str | None, list[str]] = {}
+    for sym_id in sorted(ir.nodes):
+        parent_id = ir.nodes[sym_id].parent_id
+        parent_key = parent_id if (parent_id is not None and parent_id in ir.nodes) else None
+        children_by_parent.setdefault(parent_key, []).append(sym_id)
+
+    def _emit_level(parent_key: str | None, indent: str) -> None:
+        for sym_id in children_by_parent.get(parent_key, ()):
+            node = ir.nodes[sym_id]
+            child_ids = children_by_parent.get(sym_id, [])
+            if child_ids:
+                cluster_id = f"cluster_{sym_id}"
+                lines.append(f"{indent}subgraph {_escape_dot_str(cluster_id)} {{")
+                lines.append(f"{indent}  label={_escape_dot_str(node.label)};")
+                lines.append(
+                    f"{indent}  {_escape_dot_str(sym_id)} "
+                    f"[label={_escape_dot_str(node.label)}, "
+                    f"kind={_escape_dot_str(node.kind.value)}];"
+                )
+                _emit_level(sym_id, indent + "  ")
+                lines.append(f"{indent}}}")
+            else:
+                lines.append(
+                    f"{indent}{_escape_dot_str(sym_id)} "
+                    f"[label={_escape_dot_str(node.label)}, "
+                    f"kind={_escape_dot_str(node.kind.value)}];"
+                )
+
+    _emit_level(None, "  ")
+    for edge in sorted(ir.edges, key=lambda e: (e.source, e.target, e.relation.value, e.edge_id)):
+        style = "dashed" if edge.sync_kind.value != "sync" else "solid"
+        lines.append(
+            f"  {_escape_dot_str(edge.source)} -> {_escape_dot_str(edge.target)} "
+            f"[label={_escape_dot_str(edge.relation.value)}, style={_escape_dot_str(style)}];"
+        )
+    lines.append("}")
+    return "\n".join(lines) + "\n"
+
+
+def _emit_trace_dot(ir: InteractionTraceIR) -> str:
+    lines: list[str] = [f"digraph {_escape_dot_str(ir.trace_id)} {{", '  rankdir="LR";']
+    for pid in sorted(ir.participants):
+        participant = ir.participants[pid]
+        lines.append(
+            f"  {_escape_dot_str(pid)} "
+            f"[label={_escape_dot_str(participant.label)}, "
+            f"kind={_escape_dot_str(participant.kind.value)}];"
+        )
+    ordered_events = sorted(
+        ir.events.values(),
+        key=lambda ev: (ev.start_ns, ev.end_ns, ev.event_id),
+    )
+    for event in ordered_events:
+        lines.append(
+            f"  {_escape_dot_str(event.caller_id)} -> {_escape_dot_str(event.callee_id)} "
+            f"[label={_escape_dot_str(event.signature)}];"
+        )
+    lines.append("}")
+    return "\n".join(lines) + "\n"
+
+
+def emit_deterministic_dot(ir: CanonicalIR) -> str:
+    """Emit deterministic Graphviz `.dot` source for StructuralGraphIR or InteractionTraceIR."""
+    if isinstance(ir, StructuralGraphIR):
+        return _emit_structural_dot(ir)
+    return _emit_trace_dot(ir)
+
+
+_EMITTERS: dict[TargetRenderer, DiagramEmitterPort] = {
+    TargetRenderer.MERMAID: MermaidEmitter(),
+    TargetRenderer.D2: D2Emitter(),
+    TargetRenderer.PLANTUML: PlantUmlEmitter(),
+    TargetRenderer.LIKEC4: LikeC4Emitter(),
+}
+
+
+def _append_overflow_comment(
+    diagram_source: str,
+    renderer: TargetRenderer,
+    overflow_filename: str,
+    overflow_markdown: str,
+) -> str:
+    if not overflow_markdown:
+        return diagram_source
+    prefix_map: dict[TargetRenderer, str] = {
+        TargetRenderer.MERMAID: "%%",
+        TargetRenderer.D2: "#",
+        TargetRenderer.PLANTUML: "'",
+        TargetRenderer.LIKEC4: "//",
+        TargetRenderer.DOT: "//",
+    }
+    prefix = prefix_map[renderer]
+    row_count = max(0, len(overflow_markdown.splitlines()) - 2)
+    comment_lines = [
+        f"{prefix} Companion overflow table ({row_count} omitted edges): {overflow_filename}",
+        *(f"{prefix} {line}" for line in overflow_markdown.splitlines()),
+    ]
+    if renderer is TargetRenderer.PLANTUML:
+        stripped = diagram_source.rstrip("\n")
+        if stripped.endswith("@enduml"):
+            body = stripped[: -len("@enduml")].rstrip("\n")
+            return "\n".join([body, *comment_lines, "@enduml"]) + "\n"
+    return diagram_source.rstrip("\n") + "\n" + "\n".join(comment_lines) + "\n"
+
+
+def emit_view_source(
+    ir: CanonicalIR,
+    view: DiagramViewSpec,
+    overflow_markdown: str = "",
+) -> str:
+    """Emit deterministic target diagram source for a view, appending overflow comment if any."""
+    if view.target_renderer is TargetRenderer.DOT:
+        raw_source = emit_deterministic_dot(ir)
+    else:
+        emitter = _EMITTERS[view.target_renderer]
+        raw_source = emitter.emit(ir)
+    overflow_file = f"{view.id}.overflow.md"
+    return _append_overflow_comment(
+        raw_source, view.target_renderer, overflow_file, overflow_markdown
+    )
+
+
+def _reduce_single_view(
+    observed_ir: CanonicalIR,
+    view: DiagramViewSpec,
+    spec: CurationSpecV1,
+    structural_reducer: StructuralTopologicalReducer,
+    trace_compactor: TraceCompactionEngine,
+) -> tuple[CanonicalIR, CanonicalIR, str, list[LintDiagnostic]]:
+    if view.ir_mode.value != observed_ir.ir_mode:
+        diag = LintDiagnostic(
+            gate=GateId.GATE_1_GROUNDING,
+            severity=DiagnosticSeverity.ERROR,
+            code="VIEW_IR_MODE_MISMATCH",
+            message=(
+                f"View '{view.id}' expects ir_mode='{view.ir_mode.value}', "
+                f"but input Canonical IR has ir_mode='{observed_ir.ir_mode}'."
+            ),
+            view_id=view.id,
+            offending_symbols=(view.id,),
+            repair_hint=(
+                f"Align view '{view.id}' ir_mode with the input IR ('{observed_ir.ir_mode}') "
+                "or provide a matching input payload."
+            ),
+        )
+        return observed_ir, observed_ir, "", [diag]
+
+    if isinstance(observed_ir, StructuralGraphIR) and view.ir_mode is IRMode.STRUCTURAL_GRAPH:
+        try:
+            curated = structural_reducer.reduce(
+                observed_ir,
+                view,
+                spec.global_abstractions,
+            )
+        except CycleInducedError as exc:
+            curated = structural_reducer.reduce(
+                observed_ir,
+                view.model_copy(
+                    update={
+                        "invariants": view.invariants.model_copy(
+                            update={"forbid_new_cycles": False}
+                        )
+                    }
+                ),
+                spec.global_abstractions,
+            )
+            _ = exc
+        overflow_md = ""
+        emitted: CanonicalIR = curated
+        if (
+            view.invariants.overflow_strategy == "spanning_tree_table"
+            and len(curated.edges) > view.invariants.edge_budget_max
+        ):
+            emitted, overflow_md = apply_spanning_tree_edge_fallback(
+                curated,
+                view.invariants.edge_budget_max,
+            )
+        return curated, emitted, overflow_md, []
+
+    if isinstance(observed_ir, InteractionTraceIR) and view.ir_mode is IRMode.INTERACTION_TRACE:
+        curated_trace = trace_compactor.compact(observed_ir, view.trace_compaction)
+        return curated_trace, curated_trace, "", []
+
+    return observed_ir, observed_ir, "", []
+
+
+def _run_gate5_on_views(
+    compiled_views: Mapping[str, CompiledViewArtifact],
+    syntax_harness: Gate5SyntaxHarness,
+) -> list[LintDiagnostic]:
+    diagnostics: list[LintDiagnostic] = []
+    for view_id, artifact in compiled_views.items():
+        target_fmt = artifact.view.target_renderer.value
+        result = syntax_harness.validate(target_fmt, artifact.diagram_source)
+        if not result.valid:
+            err_summary = "; ".join(result.errors) if result.errors else "Invalid diagram syntax"
+            diagnostics.append(
+                LintDiagnostic(
+                    gate=GateId.GATE_5_SYNTAX,
+                    severity=DiagnosticSeverity.ERROR,
+                    code="SYNTAX_VALIDATION_FAILED",
+                    message=(
+                        f"View '{view_id}' ({target_fmt}) failed Gate 5 syntax validation: "
+                        f"{err_summary}"
+                    ),
+                    view_id=view_id,
+                    offending_symbols=(view_id,),
+                    repair_hint=(
+                        f"Inspect emitted '{target_fmt}' syntax for view '{view_id}' and fix "
+                        "malformed labels or unsupported constructs."
+                    ),
+                )
+            )
+    return diagnostics
+
+
+def compile_and_lint_pipeline(
+    observed_ir: CanonicalIR,
+    spec: CurationSpecV1,
+    *,
+    use_external_syntax_cli: bool = False,
+) -> PipelineCompilationResult:
+    """Compile all views in a CurationSpecV1 and execute Gates 1-5 deterministically."""
+    structural_reducer = StructuralTopologicalReducer()
+    trace_compactor = TraceCompactionEngine()
+
+    compiled_views: dict[str, CompiledViewArtifact] = {}
+    curated_by_id: dict[str, CanonicalIR] = {}
+    pre_diagnostics: list[LintDiagnostic] = []
+
+    for view in spec.views:
+        curated_ir, emitted_ir, overflow_md, view_diags = _reduce_single_view(
+            observed_ir,
+            view,
+            spec,
+            structural_reducer,
+            trace_compactor,
+        )
+        pre_diagnostics.extend(view_diags)
+        curated_by_id[view.id] = curated_ir
+        diagram_source = emit_view_source(emitted_ir, view, overflow_md)
+        compiled_views[view.id] = CompiledViewArtifact(
+            view=view,
+            curated_ir=curated_ir,
+            emitted_ir=emitted_ir,
+            diagram_source=diagram_source,
+            file_extension=renderer_file_extension(view.target_renderer),
+            overflow_markdown=overflow_md,
+        )
+
+    gate_1_2 = GroundingAndBoundaryGate().check(observed_ir, spec, curated_by_id)
+    gate_3 = TopologicalInvariantGate().check(observed_ir, spec, curated_by_id)
+    gate_4 = CognitiveBudgetAndOrphanGate().check(observed_ir, spec, curated_by_id)
+
+    syntax_harness = Gate5SyntaxHarness(
+        validators=build_default_validators(use_cli=use_external_syntax_cli)
+    )
+    gate_5_diags = _run_gate5_on_views(compiled_views, syntax_harness)
+
+    all_diagnostics: tuple[LintDiagnostic, ...] = (
+        *pre_diagnostics,
+        *gate_1_2.diagnostics,
+        *gate_3.diagnostics,
+        *gate_4.diagnostics,
+        *gate_5_diags,
+    )
+    lint_report = LintReport.from_diagnostics(all_diagnostics)
+    return PipelineCompilationResult(
+        observed_ir=observed_ir,
+        spec=spec,
+        views=compiled_views,
+        lint_report=lint_report,
+        extra_diagnostics=tuple(pre_diagnostics),
+    )
+
+
+@dataclass(frozen=True, slots=True)
+class ApplySyncOutcome:
+    """Outcome of writing or checking compiled diagram artifacts on disk."""
+
+    compilation: PipelineCompilationResult
+    written_files: tuple[Path, ...] = ()
+    drifted_files: tuple[Path, ...] = ()
+    missing_files: tuple[Path, ...] = ()
+
+    @property
+    def is_clean(self) -> bool:
+        """Return True when Gates 1-5 passed and zero file drift/missing files occurred."""
+        return (
+            self.compilation.lint_report.passed
+            and not self.drifted_files
+            and not self.missing_files
+        )
+
+
+def _check_or_write_single_file(
+    target_path: Path,
+    expected_content: str,
+    *,
+    check_only: bool,
+    written: list[Path],
+    drifted: list[Path],
+    missing: list[Path],
+) -> None:
+    expected_bytes = expected_content.encode("utf-8")
+    if check_only:
+        if not target_path.is_file():
+            missing.append(target_path)
+            return
+        actual_bytes = target_path.read_bytes()
+        if actual_bytes != expected_bytes:
+            drifted.append(target_path)
+        return
+
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    target_path.write_bytes(expected_bytes)
+    written.append(target_path)
+
+
+def sync_compiled_artifacts(
+    compilation: PipelineCompilationResult,
+    out_dir: Path,
+    *,
+    check_only: bool = False,
+) -> ApplySyncOutcome:
+    """Write compiled views to `out_dir` or verify byte-for-byte parity when `check_only=True`."""
+    written: list[Path] = []
+    drifted: list[Path] = []
+    missing: list[Path] = []
+
+    if not check_only and not compilation.lint_report.passed:
+        return ApplySyncOutcome(compilation=compilation)
+
+    for artifact in compilation.views.values():
+        diagram_path = out_dir / artifact.output_filename
+        _check_or_write_single_file(
+            diagram_path,
+            artifact.diagram_source,
+            check_only=check_only,
+            written=written,
+            drifted=drifted,
+            missing=missing,
+        )
+        if artifact.overflow_markdown:
+            overflow_path = out_dir / artifact.overflow_filename
+            _check_or_write_single_file(
+                overflow_path,
+                artifact.overflow_markdown + "\n",
+                check_only=check_only,
+                written=written,
+                drifted=drifted,
+                missing=missing,
+            )
+
+    return ApplySyncOutcome(
+        compilation=compilation,
+        written_files=tuple(written),
+        drifted_files=tuple(drifted),
+        missing_files=tuple(missing),
+    )
+
+
+def format_lint_report_text(report: LintReport) -> str:
+    """Format a LintReport into a deterministic human-readable CLI summary."""
+    status = "PASSED" if report.passed else "FAILED"
+    lines: list[str] = [
+        f"ArchiGram 5-Gate Linter: {status} "
+        f"({report.error_count} error(s), {report.warning_count} warning(s))"
+    ]
+    for diag in report.diagnostics:
+        scope_parts: list[str] = [diag.gate.value]
+        if diag.view_id is not None:
+            scope_parts.append(f"view={diag.view_id}")
+        if diag.rule_id is not None:
+            scope_parts.append(f"rule={diag.rule_id}")
+        scope_str = ", ".join(scope_parts)
+        lines.append(f"  [{diag.severity.value.upper()}] {diag.code} ({scope_str}): {diag.message}")
+        lines.append(f"    Hint: {diag.repair_hint}")
+    return "\n".join(lines)
