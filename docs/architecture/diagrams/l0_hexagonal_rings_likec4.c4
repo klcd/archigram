@@ -1,0 +1,63 @@
+specification {
+  element class
+  element component
+  element container
+  element database
+  element enum
+  element external
+  element function
+  element interface
+  element module
+  element package
+  element queue
+  element service
+  element supernode
+  element table
+}
+
+model {
+  archigram = package 'archigram' {
+    archigram_entrypoints = package 'entrypoints' {
+      cli_dataplane = supernode 'CLI Data Plane'
+      mcp_controlplane = supernode 'MCP Control Plane'
+    }
+    archigram_features = package 'features' {
+      feature_digest = supernode 'Digest Slice'
+      feature_emitters = supernode 'Emitter Slices'
+      feature_ingestors = supernode 'Ingestor Slices'
+      feature_linters = supernode '5-Gate Linter Slices'
+      feature_reducers = supernode 'Reducer Slices'
+    }
+    domain_core = supernode 'Domain Core'
+    ports_contracts = supernode 'Ports & Contracts'
+  }
+
+  archigram.archigram_entrypoints.cli_dataplane -> archigram.archigram_entrypoints.mcp_controlplane 'calls'
+  archigram.archigram_entrypoints.cli_dataplane -> archigram.archigram_entrypoints.mcp_controlplane 'imports'
+  archigram.archigram_entrypoints.cli_dataplane -> archigram.archigram_features.feature_ingestors 'calls'
+  archigram.archigram_entrypoints.cli_dataplane -> archigram.archigram_features.feature_ingestors 'imports'
+  archigram.archigram_entrypoints.mcp_controlplane -> archigram.archigram_features.feature_digest 'imports'
+  archigram.archigram_entrypoints.mcp_controlplane -> archigram.archigram_features.feature_emitters 'imports'
+  archigram.archigram_entrypoints.mcp_controlplane -> archigram.archigram_features.feature_linters 'calls'
+  archigram.archigram_entrypoints.mcp_controlplane -> archigram.archigram_features.feature_linters 'imports'
+  archigram.archigram_entrypoints.mcp_controlplane -> archigram.archigram_features.feature_reducers 'imports'
+  archigram.archigram_features.feature_digest -> archigram.domain_core 'composes'
+  archigram.archigram_features.feature_digest -> archigram.domain_core 'imports'
+  archigram.archigram_features.feature_emitters -> archigram.domain_core 'composes'
+  archigram.archigram_features.feature_emitters -> archigram.domain_core 'imports'
+  archigram.archigram_features.feature_ingestors -> archigram.ports_contracts 'implements'
+  archigram.archigram_features.feature_ingestors -> archigram.ports_contracts 'imports'
+  archigram.archigram_features.feature_linters -> archigram.ports_contracts 'calls'
+  archigram.archigram_features.feature_linters -> archigram.ports_contracts 'composes'
+  archigram.archigram_features.feature_linters -> archigram.ports_contracts 'implements'
+  archigram.archigram_features.feature_linters -> archigram.ports_contracts 'imports'
+  archigram.archigram_features.feature_reducers -> archigram.domain_core 'calls'
+  archigram.archigram_features.feature_reducers -> archigram.domain_core 'imports'
+  archigram.ports_contracts -> archigram.domain_core 'imports'
+}
+
+views {
+  view index {
+    include *
+  }
+}

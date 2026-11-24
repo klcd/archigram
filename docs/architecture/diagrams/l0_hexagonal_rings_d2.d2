@@ -1,0 +1,62 @@
+vars: {
+  d2-config: {
+    layout-engine: elk
+  }
+}
+
+archigram: "archigram" {
+  "archigram.entrypoints": "entrypoints" {
+    cli_dataplane: "CLI Data Plane" {
+      tooltip: "Derived via l0_d2_cli_dataplane (44 backing nodes: archigram.entrypoints.cli, archigram.entrypoints.cli.app, archigram.entrypoints.cli.app.ApplyOptions, archigram.entrypoints.cli.app.DiffOptions, archigram.entrypoints.cli.app.LintOptions, ...)"
+    }
+    mcp_controlplane: "MCP Control Plane" {
+      tooltip: "Derived via l0_d2_mcp_controlplane (21 backing nodes: archigram.entrypoints.mcp, archigram.entrypoints.mcp.propose_loop, archigram.entrypoints.mcp.propose_loop.CompiledViewPreview, archigram.entrypoints.mcp.propose_loop.CuratedViewsPreviewReport, archigram.entrypoints.mcp.propose_loop.DeterministicHeuristicProposer, ...)"
+    }
+  }
+  "archigram.features": "features" {
+    feature_digest: "Digest Slice" {
+      tooltip: "Derived via l0_d2_feature_digest (15 backing nodes: archigram.features.digest, archigram.features.digest.generator, archigram.features.digest.generator.CandidateLeafSink, archigram.features.digest.generator.CandidateWrapperNode, archigram.features.digest.generator.CentralityHub, ...)"
+    }
+    feature_emitters: "Emitter Slices" {
+      tooltip: "Derived via l0_d2_feature_emitters (26 backing nodes: archigram.features.emit_d2, archigram.features.emit_d2.emitter, archigram.features.emit_d2.emitter.D2Emitter, archigram.features.emit_likec4, archigram.features.emit_likec4.emitter, ...)"
+    }
+    feature_ingestors: "Ingestor Slices" {
+      tooltip: "Derived via l0_d2_feature_ingestors (40 backing nodes: archigram.features.ingest_class, archigram.features.ingest_class.ingestor, archigram.features.ingest_class.ingestor.ClassHierarchyIngestor, archigram.features.ingest_class.ingestor._ActiveClassBlock, archigram.features.ingest_class.ingestor._ClassGraphBuilder, ...)"
+    }
+    feature_linters: "5-Gate Linter Slices" {
+      tooltip: "Derived via l0_d2_feature_linters (33 backing nodes: archigram.features.lint_budget, archigram.features.lint_budget.gate, archigram.features.lint_budget.gate.CognitiveBudgetAndOrphanGate, archigram.features.lint_budget.gate.apply_spanning_tree_edge_fallback, archigram.features.lint_grounding, ...)"
+    }
+    feature_reducers: "Reducer Slices" {
+      tooltip: "Derived via l0_d2_feature_reducers (19 backing nodes: archigram.features.reduce_structural, archigram.features.reduce_structural.reducer, archigram.features.reduce_structural.reducer.CycleInducedError, archigram.features.reduce_structural.reducer.StructuralTopologicalReducer, archigram.features.reduce_structural.reducer.apply_structural_rule, ...)"
+    }
+  }
+  domain_core: "Domain Core" {
+    tooltip: "Derived via l0_d2_domain_core (61 backing nodes: archigram.domain, archigram.domain.ProvenanceGrade, archigram.domain.ProvenanceStamp, archigram.domain.concurrency, archigram.domain.concurrency.ConcurrencyMode, ...)"
+  }
+  ports_contracts: "Ports & Contracts" {
+    tooltip: "Derived via l0_d2_ports_contracts (12 backing nodes: archigram.ports, archigram.ports.SliceDescriptor, archigram.ports.contracts, archigram.ports.contracts.DiagramEmitterPort, archigram.ports.contracts.DigestGeneratorPort, ...)"
+  }
+}
+
+archigram."archigram.entrypoints".cli_dataplane -> archigram."archigram.features".feature_ingestors: "calls"
+archigram."archigram.entrypoints".cli_dataplane -> archigram."archigram.features".feature_ingestors: "imports"
+archigram."archigram.entrypoints".cli_dataplane -> archigram."archigram.entrypoints".mcp_controlplane: "calls"
+archigram."archigram.entrypoints".cli_dataplane -> archigram."archigram.entrypoints".mcp_controlplane: "imports"
+archigram."archigram.features".feature_digest -> archigram.domain_core: "composes"
+archigram."archigram.features".feature_digest -> archigram.domain_core: "imports"
+archigram."archigram.features".feature_emitters -> archigram.domain_core: "composes"
+archigram."archigram.features".feature_emitters -> archigram.domain_core: "imports"
+archigram."archigram.features".feature_ingestors -> archigram.ports_contracts: "implements"
+archigram."archigram.features".feature_ingestors -> archigram.ports_contracts: "imports"
+archigram."archigram.features".feature_linters -> archigram.ports_contracts: "calls"
+archigram."archigram.features".feature_linters -> archigram.ports_contracts: "composes"
+archigram."archigram.features".feature_linters -> archigram.ports_contracts: "implements"
+archigram."archigram.features".feature_linters -> archigram.ports_contracts: "imports"
+archigram."archigram.features".feature_reducers -> archigram.domain_core: "calls"
+archigram."archigram.features".feature_reducers -> archigram.domain_core: "imports"
+archigram."archigram.entrypoints".mcp_controlplane -> archigram."archigram.features".feature_digest: "imports"
+archigram."archigram.entrypoints".mcp_controlplane -> archigram."archigram.features".feature_emitters: "imports"
+archigram."archigram.entrypoints".mcp_controlplane -> archigram."archigram.features".feature_linters: "calls"
+archigram."archigram.entrypoints".mcp_controlplane -> archigram."archigram.features".feature_linters: "imports"
+archigram."archigram.entrypoints".mcp_controlplane -> archigram."archigram.features".feature_reducers: "imports"
+archigram.ports_contracts -> archigram.domain_core: "imports"

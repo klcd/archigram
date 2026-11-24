@@ -475,6 +475,28 @@ def _apply_rule_to_active_set(
         active_nodes.add(rule.target_node_id)
 
 
+def _expand_containment_ancestors(
+    visible: set[str],
+    ir: StructuralGraphIR,
+    collapsed_into: dict[str, tuple[str, str]],
+    active_nodes: set[str],
+) -> set[str]:
+    expanded = set(visible)
+    for sym in list(visible):
+        node = ir.nodes.get(sym)
+        cursor = node.parent_id if node is not None else None
+        visited: set[str] = set()
+        while cursor is not None and cursor not in visited:
+            visited.add(cursor)
+            resolved = _resolve_collapse_target(cursor, collapsed_into)
+            rep = resolved[0] if resolved is not None else cursor
+            if rep in active_nodes:
+                expanded.add(rep)
+            parent_node = ir.nodes.get(cursor)
+            cursor = parent_node.parent_id if parent_node is not None else None
+    return expanded
+
+
 def _simulate_view_survival(
     observed_ir: CanonicalIR,
     view: DiagramViewSpec,
@@ -484,13 +506,36 @@ def _simulate_view_survival(
     dropped_by_rule: dict[str, tuple[str, str]] = {}
     collapsed_into: dict[str, tuple[str, str]] = {}
 
-    for rule in (*global_rules, *view.rules):
+    for rule in global_rules:
         _apply_rule_to_active_set(rule, active_nodes, dropped_by_rule, collapsed_into)
 
     if isinstance(view.scope, KHopNeighborhoodScope) and isinstance(observed_ir, StructuralGraphIR):
-        proj_edges = _project_edges(observed_ir, collapsed_into, active_nodes)
-        visible = _compute_khop_visible(frozenset(active_nodes), proj_edges, view.scope)
+        view_targets = _collect_partition_targets((), view.rules)
+        uses_view_target_focal = any(focal in view_targets for focal in view.scope.focal_nodes)
+        if not uses_view_target_focal and any(
+            focal in active_nodes for focal in view.scope.focal_nodes
+        ):
+            proj_edges = _project_edges(observed_ir, collapsed_into, active_nodes)
+            scoped = _compute_khop_visible(frozenset(active_nodes), proj_edges, view.scope)
+            active_nodes = _expand_containment_ancestors(
+                set(scoped), observed_ir, collapsed_into, active_nodes
+            )
+            for rule in view.rules:
+                _apply_rule_to_active_set(rule, active_nodes, dropped_by_rule, collapsed_into)
+            visible = frozenset(active_nodes)
+        else:
+            for rule in view.rules:
+                _apply_rule_to_active_set(rule, active_nodes, dropped_by_rule, collapsed_into)
+            resolved_focals = tuple(
+                (_resolve_collapse_target(f, collapsed_into) or (f, ""))[0]
+                for f in view.scope.focal_nodes
+            )
+            resolved_scope = view.scope.model_copy(update={"focal_nodes": resolved_focals})
+            proj_edges = _project_edges(observed_ir, collapsed_into, active_nodes)
+            visible = _compute_khop_visible(frozenset(active_nodes), proj_edges, resolved_scope)
     else:
+        for rule in view.rules:
+            _apply_rule_to_active_set(rule, active_nodes, dropped_by_rule, collapsed_into)
         visible = frozenset(active_nodes)
 
     return _ProtectedNodeSimulation(

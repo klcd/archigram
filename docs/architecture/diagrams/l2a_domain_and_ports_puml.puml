@@ -1,0 +1,19 @@
+@startuml
+!pragma layout elk
+package "archigram" as n_0_archigram_983b03 {
+  package "domain" as n_1_archigram_domain_6f6ac3 {
+    package "ir" as n_2_archigram_domain_ae7fc5 {
+      component "StructuralGraphIR, IRNode, IREdge" as n_5_domain_ir_graph_6792fb
+      component "InteractionTraceIR, TraceEvent, TraceParticipant" as n_6_domain_ir_trace_8295b5
+    }
+    component "domain.concurrency (PosetCotreeNode)" as n_3_domain_concurren_e2754c
+    component "domain.diagnostics (LintReport)" as n_4_domain_diagnosti_fc27fb
+    component "domain.spec (CurationSpecV1)" as n_7_domain_spec_d7d1fd
+  }
+  component "ports.contracts Protocols" as n_8_ports_protocols_b2b1c2
+}
+n_2_archigram_domain_ae7fc5 ..> n_1_archigram_domain_6f6ac3 : imports
+n_8_ports_protocols_b2b1c2 ..> n_2_archigram_domain_ae7fc5 : imports
+n_8_ports_protocols_b2b1c2 ..> n_4_domain_diagnosti_fc27fb : imports
+n_8_ports_protocols_b2b1c2 ..> n_7_domain_spec_d7d1fd : imports
+@enduml

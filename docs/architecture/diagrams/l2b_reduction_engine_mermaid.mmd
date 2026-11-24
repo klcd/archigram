@@ -1,0 +1,45 @@
+---
+config:
+  layout: elk
+---
+flowchart TD
+  subgraph n_0_archigram_983b03["archigram"]
+    subgraph n_1_archigram_domain_6f6ac3["domain"]
+      n_9_domain_concurren_454309["domain.concurrency (SP-Poset & Overlap Clustering)"]
+      n_10_domain_ir_and_sp_b5f20e["domain.ir & domain.spec (Canonical IR & Spec)"]
+    end
+    subgraph n_2_archigram_entryp_6a8ce0["entrypoints"]
+      n_11_driving_entrypoi_ee541f["Driving Adapters (cli.pipeline & mcp.propose_loop)"]
+    end
+    subgraph n_3_archigram_featur_e6f01e["features"]
+      subgraph n_4_archigram_featur_f89487["reduce_structural"]
+        subgraph n_5_archigram_featur_df5fa8["reducer"]
+          n_12_reduce_structura_7d424e["StructuralTopologicalReducer"]
+          n_13_reduce_structura_e46926["Structural Operators (k_hop, prune, bypass, collapse, SCC, TR)"]
+        end
+      end
+      subgraph n_6_archigram_featur_e135d3["reduce_trace"]
+        subgraph n_7_archigram_featur_3ee542["compactor"]
+          n_14_reduce_trace_eng_1fb2ed["TraceCompactionEngine (R1-R6 + SP-Poset)"]
+          n_15_trace_fragment_t_0a27fc["TraceFragment Tree Builder"]
+        end
+      end
+      n_8_concurrency_cons_e749ae["Other Concurrency Consumers (lint_budget, digest)"]
+    end
+  end
+  n_11_driving_entrypoi_ee541f -.->|"imports"| n_4_archigram_featur_f89487
+  n_11_driving_entrypoi_ee541f -.->|"imports"| n_6_archigram_featur_e135d3
+  n_7_archigram_featur_3ee542 -.->|"imports"| n_9_domain_concurren_454309
+  n_14_reduce_trace_eng_1fb2ed -->|"calls"| n_10_domain_ir_and_sp_b5f20e
+  n_5_archigram_featur_df5fa8 -.->|"imports"| n_10_domain_ir_and_sp_b5f20e
+  n_7_archigram_featur_3ee542 -.->|"imports"| n_10_domain_ir_and_sp_b5f20e
+  n_10_domain_ir_and_sp_b5f20e -.->|"imports"| n_1_archigram_domain_6f6ac3
+  n_8_concurrency_cons_e749ae -.->|"imports"| n_9_domain_concurren_454309
+  n_8_concurrency_cons_e749ae -.->|"imports"| n_10_domain_ir_and_sp_b5f20e
+  n_11_driving_entrypoi_ee541f -.->|"imports"| n_8_concurrency_cons_e749ae
+  n_11_driving_entrypoi_ee541f -->|"calls"| n_12_reduce_structura_7d424e
+  n_12_reduce_structura_7d424e -->|"calls"| n_13_reduce_structura_e46926
+  n_11_driving_entrypoi_ee541f -->|"calls"| n_14_reduce_trace_eng_1fb2ed
+  n_14_reduce_trace_eng_1fb2ed -->|"calls"| n_15_trace_fragment_t_0a27fc
+  n_4_archigram_featur_f89487 -.->|"imports"| n_5_archigram_featur_df5fa8
+  n_6_archigram_featur_e135d3 -.->|"imports"| n_7_archigram_featur_3ee542

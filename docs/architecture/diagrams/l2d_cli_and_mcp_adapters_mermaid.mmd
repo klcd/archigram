@@ -1,0 +1,47 @@
+---
+config:
+  layout: elk
+---
+flowchart TD
+  subgraph n_0_archigram_983b03["archigram"]
+    subgraph n_1_archigram_entryp_6a8ce0["entrypoints"]
+      subgraph n_2_archigram_entryp_f9dc23["cli"]
+        n_5_cli_app_af790b["cli.app (Typer apply/lint/diff/propose)"]
+        n_6_cli_diff_report_7a51b7["cli.diff_report (PR Regression Diff)"]
+        n_7_cli_markdown_syn_cf9552["cli.markdown_sync (--sync-md Inline Blocks)"]
+        n_8_cli_pipeline_6371a4["cli.pipeline (Zero-LLM Compile & Lint Orchestrator)"]
+        n_9_cli_self_trace_5e0e93["cli.self_trace (Live Trace Snapshotter)"]
+      end
+      subgraph n_3_archigram_entryp_d739e6["mcp"]
+        n_15_mcp_propose_loop_e477f8["mcp.propose_loop (Bounded 3-Turn Repair Loop)"]
+        n_16_mcp_server_f6e365["mcp.server (FastMCP Tools: digest, lint, preview)"]
+      end
+    end
+    subgraph n_4_archigram_featur_e6f01e["features"]
+      n_10_feature_digest_52876d["features.digest (GraphDigestGenerator)"]
+      n_11_feature_emitters_75a4c0["Emitter Slices (Mermaid/D2/PUML/LikeC4)"]
+      n_12_feature_ingestor_73234e["Ingestor Slices (DOT/SCIP/OTLP/Class/Python)"]
+      n_13_feature_linters_57c819["5-Gate Linter Slices"]
+      n_14_feature_reducers_8a2858["Reducer Slices (Structural & Trace)"]
+    end
+    n_17_ports_and_domain_38e7a5["Ports & Domain Core"]
+  end
+  n_2_archigram_entryp_f9dc23 -.->|"imports"| n_5_cli_app_af790b
+  n_6_cli_diff_report_7a51b7 -.->|"imports"| n_8_cli_pipeline_6371a4
+  n_5_cli_app_af790b -.->|"imports"| n_6_cli_diff_report_7a51b7
+  n_7_cli_markdown_syn_cf9552 -.->|"imports"| n_8_cli_pipeline_6371a4
+  n_2_archigram_entryp_f9dc23 -.->|"imports"| n_7_cli_markdown_syn_cf9552
+  n_9_cli_self_trace_5e0e93 -.->|"imports"| n_8_cli_pipeline_6371a4
+  n_15_mcp_propose_loop_e477f8 -.->|"imports"| n_10_feature_digest_52876d
+  n_15_mcp_propose_loop_e477f8 -.->|"imports"| n_11_feature_emitters_75a4c0
+  n_8_cli_pipeline_6371a4 -.->|"imports"| n_11_feature_emitters_75a4c0
+  n_8_cli_pipeline_6371a4 -.->|"imports"| n_12_feature_ingestor_73234e
+  n_15_mcp_propose_loop_e477f8 -.->|"imports"| n_13_feature_linters_57c819
+  n_8_cli_pipeline_6371a4 -.->|"imports"| n_13_feature_linters_57c819
+  n_9_cli_self_trace_5e0e93 -.->|"imports"| n_15_mcp_propose_loop_e477f8
+  n_16_mcp_server_f6e365 -.->|"imports"| n_15_mcp_propose_loop_e477f8
+  n_3_archigram_entryp_d739e6 -.->|"imports"| n_16_mcp_server_f6e365
+  n_10_feature_digest_52876d -.->|"imports"| n_17_ports_and_domain_38e7a5
+  n_8_cli_pipeline_6371a4 -.->|"imports"| n_17_ports_and_domain_38e7a5
+  n_15_mcp_propose_loop_e477f8 -.->|"imports"| n_14_feature_reducers_8a2858
+  n_8_cli_pipeline_6371a4 -.->|"imports"| n_14_feature_reducers_8a2858
