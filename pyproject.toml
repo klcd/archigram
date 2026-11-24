@@ -1,0 +1,140 @@
+[project]
+name = "archigram"
+version = "0.1.0"
+description = "Deterministic graph projection, concurrency trace compaction, and 5-gate topological linter with MCP control plane"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pydantic>=2.9.0",
+    "pyyaml>=6.0.2",
+    "rustworkx>=0.15.1",
+    "typer>=0.15.0",
+    "rich>=13.9.0",
+    "mcp>=1.2.0",
+    "pydot>=3.0.2",
+]
+
+[project.scripts]
+archigram = "archigram.entrypoints.cli.app:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.0",
+    "hypothesis>=6.122.0",
+    "pytest-benchmark>=5.1.0",
+    "import-linter>=2.1",
+    "ruff>=0.8.0",
+    "pyright>=1.1.390",
+    "types-pyyaml>=6.0.12",
+]
+
+[build-system]
+requires = ["hatchling>=1.26.0"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/archigram"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["src", "tests", "scripts"]
+
+[tool.ruff.lint]
+select = [
+    "E",     # pycodestyle errors
+    "W",     # pycodestyle warnings
+    "F",     # pyflakes
+    "I",     # isort
+    "B",     # flake8-bugbear
+    "C90",   # mccabe cyclomatic complexity
+    "UP",    # pyupgrade
+    "SIM",   # flake8-simplify
+    "TCH",   # flake8-type-checking
+    "S",     # bandit security static analysis
+    "PLR",   # pylint refactor & structural complexity limits
+    "RUF",   # ruff-specific static checks
+]
+ignore = [
+    "PLR2004", # numeric constants in mathematical graph/benchmark invariants
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"] # assert is mandatory inside Hypothesis & benchmark invariants
+"scripts/**" = ["S603", "S607"] # CLI tool invocations in repo verification scripts
+"src/archigram/features/lint_syntax/**" = ["S603", "S607"] # Headless syntax CLI runners (d2, dot, likec4)
+"src/archigram/features/ingest_dot/**" = ["S603", "S607"] # dot -Tjson0 invocation
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.lint.pylint]
+max-args = 6
+max-branches = 10
+max-returns = 5
+max-statements = 40
+
+[tool.pyright]
+include = ["src", "tests"]
+pythonVersion = "3.12"
+typeCheckingMode = "strict"
+reportMissingTypeStubs = false
+reportUnknownMemberType = false
+reportUnknownArgumentType = false
+reportUnknownVariableType = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["fuzz_*.py", "perf_*.py"]
+python_functions = ["test_*"]
+addopts = "-q --strict-markers"
+
+[tool.importlinter]
+root_packages = ["archigram"]
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "Hexagonal Ring Dependency Direction"
+type = "layers"
+layers = [
+    "archigram.entrypoints",
+    "archigram.features",
+    "archigram.ports",
+    "archigram.domain",
+]
+
+[[tool.importlinter.contracts]]
+name = "Feature Slice Mutual Independence"
+type = "independence"
+modules = [
+    "archigram.features.ingest_dot",
+    "archigram.features.ingest_scip",
+    "archigram.features.ingest_otel",
+    "archigram.features.ingest_class",
+    "archigram.features.reduce_structural",
+    "archigram.features.reduce_trace",
+    "archigram.features.lint_grounding",
+    "archigram.features.lint_topology",
+    "archigram.features.lint_budget",
+    "archigram.features.lint_syntax",
+    "archigram.features.emit_mermaid",
+    "archigram.features.emit_d2",
+    "archigram.features.emit_plantuml",
+    "archigram.features.emit_likec4",
+    "archigram.features.digest",
+]
+
+[[tool.importlinter.contracts]]
+name = "Domain and Ports Purity"
+type = "forbidden"
+source_modules = [
+    "archigram.domain",
+    "archigram.ports",
+]
+forbidden_modules = [
+    "typer",
+    "mcp",
+    "subprocess",
+    "archigram.features",
+    "archigram.entrypoints",
+]

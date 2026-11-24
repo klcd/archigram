@@ -75,3 +75,21 @@ _Add a brief overview of your project architecture_
 ## Conventions & Patterns
 
 _Add your project-specific conventions here_
+
+
+## ArchiGram Mandatory Architecture & Worker Guardrails
+
+Every worker operates in an isolated Git worktree and MUST pass all 7 Git pre-commit/pre-push gates (`./scripts/verify.sh`) before reporting `worker_done`:
+
+1. **Hexagonal Feature-Sliced Architecture (`lint-imports`):**
+   - Layers flow strictly inward: `archigram.entrypoints` -> `archigram.features` -> `archigram.ports` -> `archigram.domain`.
+   - **Zero Cross-Slice Imports:** Every slice under `src/archigram/features/<slice>/` is strictly independent (`import-linter` `independence` contract). Feature slices may ONLY import from `archigram.domain` and `archigram.ports`—NEVER from another feature slice.
+2. **Complexity, Static Security & Strict Typing:**
+   - `ruff format --check` and `ruff check` enforce McCabe cyclomatic complexity `C901 <= 10`, structural limits (`max-args=6`, `max-branches=10`, `max-statements=40`), and Bandit (`S`) static security checks.
+   - `pyright` runs in `strict` mode across `src/` and `tests/`.
+3. **NO UNIT TESTS — Fuzz & Performance Tests ONLY:**
+   - Static example-based unit tests are **strictly forbidden** and blocked by `scripts/check-test-discipline.py`.
+   - Every task MUST add property-based fuzz tests in `tests/fuzz/fuzz_<topic>.py` using Hypothesis `@given(...)` (or `RuleBasedStateMachine`) AND performance benchmarks in `tests/perf/perf_<topic>.py` using `pytest-benchmark` (`benchmark` fixture).
+4. **Guardrail Immutability & Commit Discipline:**
+   - Workers MUST NOT modify `pyproject.toml`, `orca.yaml`, `scripts/*`, or `.beads/hooks/*`.
+   - Commit messages MUST use Conventional Commits (`feat(<scope>): ...`, <= 72 chars) and pass Git hooks cleanly without `--no-verify`.

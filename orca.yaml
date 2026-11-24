@@ -1,0 +1,5 @@
+scripts:
+  setup: |
+    ./scripts/worktree-setup.sh "${ORCA_WORKTREE_PATH:-$PWD}" "${ORCA_ROOT_PATH:-}"
+  archive: |
+    ./scripts/worktree-teardown.sh "${ORCA_WORKTREE_PATH:-$PWD}"

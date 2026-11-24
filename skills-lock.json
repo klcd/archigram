@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "skills": {
+    "beads": {
+      "source": "gastownhall/beads",
+      "commit": "78624109904655d7a4609f27d34eb0982cd8963f",
+      "sourceType": "github",
+      "skillPath": "plugins/beads/skills/beads/SKILL.md",
+      "computedHash": "61096750214b75f22a15d4f37d69491133318200f4dad197cbda6f32c510112f"
+    },
+    "orca-cli": {
+      "source": "stablyai/orca",
+      "commit": "4f56f7c0e206956ee3b3832062bbc558c409f80e",
+      "sourceType": "github",
+      "skillPath": "skills/orca-cli/SKILL.md",
+      "computedHash": "0ac62f8c6c46d3709400e78688324b692b71d9740fe320caa8fd2fa018ef07ce"
+    }
+  }
+}
