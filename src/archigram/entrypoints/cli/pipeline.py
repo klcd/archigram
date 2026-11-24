@@ -35,6 +35,10 @@ from archigram.features.emit_plantuml import PlantUmlEmitter
 from archigram.features.ingest_class import ClassHierarchyIngestor
 from archigram.features.ingest_dot import DotStructuralIngestor
 from archigram.features.ingest_otel import OtelTraceIngestor
+from archigram.features.ingest_python import (
+    PythonAstStructuralIngestor,
+    PythonTraceIngestor,
+)
 from archigram.features.ingest_scip import ScipStructuralIngestor
 from archigram.features.lint_budget import (
     CognitiveBudgetAndOrphanGate,
@@ -66,6 +70,8 @@ class InputFormat(StrEnum):
     SCIP = "scip"
     OTLP_JSON = "otlp_json"
     CLASS_JSON = "class_json"
+    PYTHON_AST = "python_ast"
+    PYTHON_TRACE = "python_trace"
 
 
 _RENDERER_EXTENSIONS: dict[TargetRenderer, str] = {
@@ -115,6 +121,28 @@ def renderer_file_extension(renderer: TargetRenderer) -> str:
     return _RENDERER_EXTENSIONS[renderer]
 
 
+def _resolve_existing_dir(source: Path | str) -> Path | None:
+    if isinstance(source, Path):
+        if source.is_dir():
+            return source
+        return None
+    if not source or any(ch in source for ch in ("\n", "{", "}", ";", ":")) or len(source) > 1024:
+        return None
+    try:
+        candidate = Path(source)
+        return candidate if candidate.is_dir() else None
+    except OSError:
+        return None
+
+
+def _ingest_python_ast_source(source: Path | str) -> StructuralGraphIR:
+    ir = PythonAstStructuralIngestor().ingest(source)
+    if ir.metadata.get("file_count") == "0" or not ir.nodes:
+        msg = f"Python source directory contains zero .py files: {source}"
+        raise FileNotFoundError(msg)
+    return ir
+
+
 def _read_source_text(source: Path | str) -> tuple[str, Path | None]:
     if isinstance(source, Path):
         if not source.is_file():
@@ -156,6 +184,8 @@ def _detect_json_format(payload: object) -> InputFormat:
         detected = InputFormat.IR_JSON
     elif any(k in payload for k in ("resourceSpans", "resource_spans", "spans")):
         detected = InputFormat.OTLP_JSON
+    elif isinstance(payload.get("events"), list):
+        detected = InputFormat.PYTHON_TRACE
     elif any(k in payload for k in ("documents", "external_symbols", "symbols")):
         detected = InputFormat.SCIP
     elif any(k in payload for k in ("classes", "entities", "types", "relationships")):
@@ -168,6 +198,7 @@ _SUFFIX_FORMATS: dict[str, InputFormat] = {
     ".gv": InputFormat.DOT,
     ".puml": InputFormat.CLASS_JSON,
     ".scip": InputFormat.SCIP,
+    ".py": InputFormat.PYTHON_AST,
 }
 
 
@@ -183,16 +214,19 @@ def detect_input_format(
     if fmt is not InputFormat.AUTO:
         return fmt
 
-    stripped = raw_text.lstrip()
-    if not stripped:
-        msg = "Cannot detect format of empty input"
-        raise ValueError(msg)
+    if source_path is not None and source_path.is_dir():
+        return InputFormat.PYTHON_AST
 
     suffix_fmt = (
         _SUFFIX_FORMATS.get(source_path.suffix.lower()) if source_path is not None else None
     )
     if suffix_fmt is not None:
         return suffix_fmt
+
+    stripped = raw_text.lstrip()
+    if not stripped:
+        msg = "Cannot detect format of empty input"
+        raise ValueError(msg)
 
     if stripped.startswith("{"):
         try:
@@ -205,31 +239,63 @@ def detect_input_format(
     return InputFormat.CLASS_JSON if stripped.lower().startswith("@startuml") else InputFormat.DOT
 
 
-def load_canonical_ir(
-    source: Path | str,
-    input_format: InputFormat | str = InputFormat.AUTO,
+def _dispatch_format_ingestor(
+    resolved_fmt: InputFormat,
+    raw_text: str,
+    source_path: Path | None,
 ) -> CanonicalIR:
-    """Ingest or deserialize an input path/payload into a validated CanonicalIR."""
-    raw_text, source_path = _read_source_text(source)
-    resolved_fmt = detect_input_format(raw_text, source_path, input_format)
     effective_arg: Path | str = source_path if source_path is not None else raw_text
-
+    source_name = str(source_path) if source_path is not None else "<memory>"
+    result: CanonicalIR
     if resolved_fmt is InputFormat.IR_JSON:
         try:
             data: object = json.loads(raw_text)
         except json.JSONDecodeError as exc:
             msg = f"Invalid Canonical IR JSON: {exc}"
             raise ValueError(msg) from exc
-        return _CANONICAL_IR_ADAPTER.validate_python(data)
-    if resolved_fmt is InputFormat.DOT:
-        return DotStructuralIngestor().ingest(effective_arg)
-    if resolved_fmt is InputFormat.SCIP:
-        source_name = str(source_path) if source_path is not None else "<memory>"
-        return ScipStructuralIngestor().ingest(effective_arg, source_name=source_name)
-    if resolved_fmt is InputFormat.OTLP_JSON:
-        source_name = str(source_path) if source_path is not None else "<memory>"
-        return OtelTraceIngestor().ingest(effective_arg, source_name=source_name)
-    return ClassHierarchyIngestor().ingest(effective_arg)
+        result = _CANONICAL_IR_ADAPTER.validate_python(data)
+    elif resolved_fmt is InputFormat.PYTHON_AST:
+        result = _ingest_python_ast_source(effective_arg)
+    elif resolved_fmt is InputFormat.PYTHON_TRACE:
+        result = PythonTraceIngestor().ingest(effective_arg)
+    elif resolved_fmt is InputFormat.DOT:
+        result = DotStructuralIngestor().ingest(effective_arg)
+    elif resolved_fmt is InputFormat.SCIP:
+        result = ScipStructuralIngestor().ingest(effective_arg, source_name=source_name)
+    elif resolved_fmt is InputFormat.OTLP_JSON:
+        result = OtelTraceIngestor().ingest(effective_arg, source_name=source_name)
+    else:
+        result = ClassHierarchyIngestor().ingest(effective_arg)
+    return result
+
+
+def load_canonical_ir(
+    source: Path | str,
+    input_format: InputFormat | str = InputFormat.AUTO,
+) -> CanonicalIR:
+    """Ingest or deserialize an input path/payload into a validated CanonicalIR."""
+    req_fmt = (
+        input_format
+        if isinstance(input_format, InputFormat)
+        else InputFormat(input_format.strip().lower())
+    )
+    dir_path = _resolve_existing_dir(source)
+    if dir_path is not None:
+        if req_fmt not in {InputFormat.AUTO, InputFormat.PYTHON_AST}:
+            msg = f"Directory input '{dir_path}' is only supported for python_ast format"
+            raise ValueError(msg)
+        return _ingest_python_ast_source(dir_path)
+
+    if isinstance(source, Path) and source.suffix.lower() == ".py":
+        if not source.is_file():
+            msg = f"Input file does not exist: {source}"
+            raise FileNotFoundError(msg)
+        if req_fmt in {InputFormat.AUTO, InputFormat.PYTHON_AST}:
+            return _ingest_python_ast_source(source)
+
+    raw_text, source_path = _read_source_text(source)
+    resolved_fmt = detect_input_format(raw_text, source_path, req_fmt)
+    return _dispatch_format_ingestor(resolved_fmt, raw_text, source_path)
 
 
 def _escape_dot_str(value: str) -> str:
@@ -525,6 +591,7 @@ class ApplySyncOutcome:
     written_files: tuple[Path, ...] = ()
     drifted_files: tuple[Path, ...] = ()
     missing_files: tuple[Path, ...] = ()
+    synced_md_files: tuple[Path, ...] = ()
 
     @property
     def is_clean(self) -> bool:
@@ -565,11 +632,15 @@ def sync_compiled_artifacts(
     out_dir: Path,
     *,
     check_only: bool = False,
+    sync_md_target: Path | None = None,
 ) -> ApplySyncOutcome:
     """Write compiled views to `out_dir` or verify byte-for-byte parity when `check_only=True`."""
+    from archigram.entrypoints.cli.markdown_sync import sync_markdown_views
+
     written: list[Path] = []
     drifted: list[Path] = []
     missing: list[Path] = []
+    synced_md: list[Path] = []
 
     if not check_only and not compilation.lint_report.passed:
         return ApplySyncOutcome(compilation=compilation)
@@ -595,11 +666,22 @@ def sync_compiled_artifacts(
                 missing=missing,
             )
 
+    if sync_md_target is not None:
+        md_outcome = sync_markdown_views(
+            compilation.views,
+            sync_md_target,
+            check_only=check_only,
+        )
+        written.extend(md_outcome.synced_files)
+        synced_md.extend(md_outcome.synced_files)
+        drifted.extend(md_outcome.drifted_files)
+
     return ApplySyncOutcome(
         compilation=compilation,
         written_files=tuple(written),
         drifted_files=tuple(drifted),
         missing_files=tuple(missing),
+        synced_md_files=tuple(synced_md),
     )
 
 

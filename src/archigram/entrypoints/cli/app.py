@@ -43,6 +43,7 @@ class ApplyOptions:
     out_dir: Path
     input_format: InputFormat = InputFormat.AUTO
     check_only: bool = False
+    sync_md: Path | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -101,6 +102,7 @@ def execute_apply(options: ApplyOptions) -> ApplySyncOutcome:
         compilation,
         options.out_dir,
         check_only=options.check_only,
+        sync_md_target=options.sync_md,
     )
 
 
@@ -123,7 +125,9 @@ def execute_diff(options: DiffOptions) -> PrDiffSummary:
 def apply_cmd(
     input_path: Annotated[
         Path,
-        typer.Argument(help="Path to input topology/trace file (.dot, .json, .scip, .puml)."),
+        typer.Argument(
+            help="Path to input Python directory/.py or topology/trace file (.dot, .json, .scip)."
+        ),
     ],
     spec: Annotated[
         Path,
@@ -136,7 +140,9 @@ def apply_cmd(
     input_format: Annotated[
         InputFormat,
         typer.Option(
-            "--format", "-f", help="Input format (auto, ir_json, dot, scip, otlp_json, class_json)."
+            "--format",
+            "-f",
+            help="Input format (auto, ir_json, dot, scip, otlp_json, class_json, python_ast).",
         ),
     ] = InputFormat.AUTO,
     check: Annotated[
@@ -146,6 +152,13 @@ def apply_cmd(
             help="Verify committed diagram outputs match freshly compiled outputs byte-for-byte.",
         ),
     ] = False,
+    sync_md: Annotated[
+        Path | None,
+        typer.Option(
+            "--sync-md",
+            help="Optional Markdown file or directory to sync inline archigram diagram blocks.",
+        ),
+    ] = None,
 ) -> None:
     """Compile Canonical IR + CurationSpecV1 into deterministic diagram files (or --check)."""
     try:
@@ -156,6 +169,7 @@ def apply_cmd(
                 out_dir=out_dir,
                 input_format=input_format,
                 check_only=check,
+                sync_md=sync_md,
             )
         )
     except (FileNotFoundError, OSError, ValueError, ValidationError) as exc:
