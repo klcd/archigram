@@ -111,6 +111,7 @@ modules = [
     "archigram.features.ingest_scip",
     "archigram.features.ingest_otel",
     "archigram.features.ingest_class",
+    "archigram.features.ingest_python",
     "archigram.features.reduce_structural",
     "archigram.features.reduce_trace",
     "archigram.features.lint_grounding",
