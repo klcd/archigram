@@ -297,12 +297,25 @@ def propose_cmd(
         )
         raise typer.Exit(code=EXIT_USAGE_ERROR)
 
-    exit_code = runner(
-        input_path=input_path,
-        out_spec=out_spec,
-        input_format=input_format.value,
-        max_turns=max_turns,
-    )
+    if out_spec is not None:
+        exit_code = runner(
+            input_path=str(input_path),
+            out_spec_path=str(out_spec),
+            max_turns=max_turns,
+        )
+    else:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_out = Path(tmp_dir) / "diagram-views.yaml"
+            exit_code = runner(
+                input_path=str(input_path),
+                out_spec_path=str(tmp_out),
+                max_turns=max_turns,
+            )
+            if exit_code == 0 and tmp_out.is_file():
+                typer.echo(tmp_out.read_text(encoding="utf-8"), nl=False)
+
     if isinstance(exit_code, int) and exit_code != 0:
         raise typer.Exit(code=exit_code)
 
