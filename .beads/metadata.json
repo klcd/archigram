@@ -1,0 +1,10 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "server",
+  "dolt_server_host": "dolt.billfish-burbot.ts.net",
+  "dolt_server_port": 3306,
+  "dolt_server_user": "dolt",
+  "dolt_database": "archigram",
+  "project_id": "d6be0d22-bef2-47d0-9c0c-1004a61788a5"
+}
