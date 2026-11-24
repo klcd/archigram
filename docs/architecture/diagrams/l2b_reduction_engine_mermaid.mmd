@@ -1,11 +1,11 @@
 ---
 config:
   layout: elk
-  look: classic
   elk:
     mergeEdges: false
     nodePlacementStrategy: BRANDES_KOEPF
   flowchart:
+    defaultRenderer: elk
     curve: linear
   themeVariables:
     primaryColor: transparent
@@ -19,72 +19,53 @@ config:
 ---
 flowchart TD
   classDef default fill:transparent,stroke:#64748b,stroke-width:1.5px
-  subgraph n_0_archigram_983b03["archigram"]
-    subgraph n_1_archigram_domain_6f6ac3["domain"]
-      n_9_domain_concurren_454309["domain.concurrency (SP-Poset & Overlap Clustering)"]
-      n_10_domain_ir_and_sp_b5f20e["domain.ir & domain.spec (Canonical IR & Spec)"]
+  subgraph n0["archigram"]
+    subgraph n1["domain"]
+      n9["domain.concurrency (SP-Poset & Overlap Clustering)"]
+      n10["domain.ir & domain.spec (Canonical IR & Spec)"]
     end
-    subgraph n_2_archigram_entryp_6a8ce0["entrypoints"]
-      n_11_driving_entrypoi_ee541f["Driving Adapters (cli.pipeline & mcp.propose_loop)"]
+    subgraph n2["entrypoints"]
+      n11["Driving Adapters (cli.pipeline & mcp.propose_loop)"]
     end
-    subgraph n_3_archigram_featur_e6f01e["features"]
-      subgraph n_4_archigram_featur_f89487["reduce_structural"]
-        subgraph n_5_archigram_featur_df5fa8["reducer"]
-          n_12_reduce_structura_7d424e["StructuralTopologicalReducer"]
-          n_13_reduce_structura_e46926["Structural Operators (k_hop, prune, bypass, collapse, SCC, TR)"]
+    subgraph n3["features"]
+      subgraph n4["reduce_structural"]
+        subgraph n5["reducer"]
+          n12["StructuralTopologicalReducer"]
+          n13["Structural Operators (k_hop, prune, bypass, collapse, SCC, TR)"]
         end
       end
-      subgraph n_6_archigram_featur_e135d3["reduce_trace"]
-        subgraph n_7_archigram_featur_3ee542["compactor"]
-          n_14_reduce_trace_eng_1fb2ed["TraceCompactionEngine (R1-R6 + SP-Poset)"]
-          n_15_trace_fragment_t_0a27fc["TraceFragment Tree Builder"]
+      subgraph n6["reduce_trace"]
+        subgraph n7["compactor"]
+          n14["TraceCompactionEngine (R1-R6 + SP-Poset)"]
+          n15["TraceFragment Tree Builder"]
         end
       end
-      n_8_concurrency_cons_e749ae["Other Concurrency Consumers (lint_budget, digest)"]
+      n8["Other Concurrency Consumers (lint_budget, digest)"]
     end
   end
-  style n_0_archigram_983b03 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
-  style n_1_archigram_domain_6f6ac3 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
-  style n_2_archigram_entryp_6a8ce0 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
-  style n_3_archigram_featur_e6f01e fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
-  style n_4_archigram_featur_f89487 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
-  style n_5_archigram_featur_df5fa8 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
-  style n_6_archigram_featur_e135d3 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
-  style n_7_archigram_featur_3ee542 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
-  n_11_driving_entrypoi_ee541f -.->|"imports"| n_4_archigram_featur_f89487
-  n_11_driving_entrypoi_ee541f -.->|"imports"| n_6_archigram_featur_e135d3
-  n_7_archigram_featur_3ee542 -.->|"imports"| n_9_domain_concurren_454309
-  n_14_reduce_trace_eng_1fb2ed e_3@-->|"calls"| n_10_domain_ir_and_sp_b5f20e
-  e_3@{ animate: true }
-  n_5_archigram_featur_df5fa8 -.->|"imports"| n_10_domain_ir_and_sp_b5f20e
-  n_7_archigram_featur_3ee542 -.->|"imports"| n_10_domain_ir_and_sp_b5f20e
-  n_10_domain_ir_and_sp_b5f20e -.->|"imports"| n_1_archigram_domain_6f6ac3
-  n_8_concurrency_cons_e749ae -.->|"imports"| n_9_domain_concurren_454309
-  n_8_concurrency_cons_e749ae -.->|"imports"| n_10_domain_ir_and_sp_b5f20e
-  n_11_driving_entrypoi_ee541f -.->|"imports"| n_8_concurrency_cons_e749ae
-  n_11_driving_entrypoi_ee541f e_10@-->|"calls"| n_12_reduce_structura_7d424e
-  e_10@{ animate: true }
-  n_12_reduce_structura_7d424e e_11@-->|"calls"| n_13_reduce_structura_e46926
-  e_11@{ animate: true }
-  n_11_driving_entrypoi_ee541f e_12@-->|"calls"| n_14_reduce_trace_eng_1fb2ed
-  e_12@{ animate: true }
-  n_14_reduce_trace_eng_1fb2ed e_13@-->|"calls"| n_15_trace_fragment_t_0a27fc
-  e_13@{ animate: true }
-  n_4_archigram_featur_f89487 -.->|"imports"| n_5_archigram_featur_df5fa8
-  n_6_archigram_featur_e135d3 -.->|"imports"| n_7_archigram_featur_3ee542
-  linkStyle 0 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 1 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 2 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 3 stroke:#3b82f6,stroke-width:1.75px
-  linkStyle 4 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 5 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 6 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 7 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 8 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 9 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 10 stroke:#3b82f6,stroke-width:1.75px
-  linkStyle 11 stroke:#3b82f6,stroke-width:1.75px
-  linkStyle 12 stroke:#3b82f6,stroke-width:1.75px
-  linkStyle 13 stroke:#3b82f6,stroke-width:1.75px
-  linkStyle 14 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 15 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  style n0 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  style n1 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  style n2 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  style n3 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  style n4 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  style n5 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  style n6 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  style n7 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  n11 -.->|"imports"| n4
+  n11 -.->|"imports"| n6
+  n7 -.->|"imports"| n9
+  n14 -->|"calls"| n10
+  n5 -.->|"imports"| n10
+  n7 -.->|"imports"| n10
+  n10 -.->|"imports"| n1
+  n8 -.->|"imports"| n9
+  n8 -.->|"imports"| n10
+  n11 -.->|"imports"| n8
+  n11 -->|"calls"| n12
+  n12 -->|"calls"| n13
+  n11 -->|"calls"| n14
+  n14 -->|"calls"| n15
+  n4 -.->|"imports"| n5
+  n6 -.->|"imports"| n7
+  linkStyle 0,1,2,4,5,6,7,8,9,14,15 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 3,10,11,12,13 stroke:#3b82f6,stroke-width:1.75px

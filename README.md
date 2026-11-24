@@ -2,6 +2,21 @@
 
 Deterministic graph projection, runtime concurrency trace compaction (`R1–R6` + Series-Parallel poset lowering), and 5-gate semantic/topological linting CLI + MCP server.
 
+## Why We Created ArchiGram
+
+Software teams face three recurring failure modes whenever they try to keep architecture diagrams accurate and readable:
+
+1. **Hand-drawn diagrams silently rot:** Diagrams sketched in Excalidraw, Lucidchart, or hand-edited Markdown have zero connection to the codebase. Within days of refactoring, boxes point to deleted modules, omit newly introduced dependencies, and turn architecture docs into misleading folklore.
+2. **Naive auto-generators dump unreadable "hairballs":** Raw AST, dependency, and OpenTelemetry trace visualizers swing to the opposite extreme—dumping 500 classes or 1,000 runtime spans onto a canvas. The result overwhelms human working memory *and* breaks platform rendering limits (such as Gitea's `5,000`-character Mermaid cap).
+3. **Unbounded LLM diagramming hallucinates topology and syntax:** Asking an LLM to write raw Mermaid, D2, or PlantUML directly invents non-existent symbols, silently drops critical security or data-flow paths when summarizing, trips over parser version skew, and produces noisy non-deterministic diffs on every run.
+
+**ArchiGram's thesis is that architecture diagrams should be compiled and formally verified, not hand-drawn or freehand-prompted.** ArchiGram separates deterministic compilation (the **Data Plane**) from declarative abstraction intent (the **Control Plane**):
+
+- **Ground-Truth Ingestion (`OBSERVED` Provenance):** Deterministic extractors ingest real symbols, types, edges, and happens-before spans from Python ASTs, SCIP indexes, Graphviz DOT, OOP class hierarchies, OpenTelemetry traces, or live `sys.monitoring` execution—stamping every fact with cryptographic provenance.
+- **Declarative Curation (`CurationSpecV1`) Instead of Pixel Pushing:** Humans and AI agents never edit raw diagram syntax. Instead, they author small, version-controlled YAML views (`collapse_partition`, `k_hop_neighborhood`, `bypass_vertices`, `prune_leaves`, and `R1–R6` + Series-Parallel poset trace compaction) that distill large systems into focused `10–25` node views across zoom levels (`L0`–`L3`).
+- **5-Gate Mathematical Verification Before Emission:** Every view must pass **Gate 1** (100% symbol grounding—zero hallucinations), **Gate 2** (protected boundary survival), **Gate 3** (transitive reachability, cycle discipline & concurrency happens-before preservation with concrete witness counterexamples), **Gate 4** (cognitive node/edge budgets), and **Gate 5** (headless target syntax validation).
+- **Bounded Self-Healing AI Loop + Zero-Cost Deterministic CI:** When an LLM curates views via `archigram propose` or the MCP server, it only proposes `CurationSpecV1` rules inside a bounded 3-turn lint-and-repair loop guided by formal counterexamples. Once committed, `archigram apply --check` enforces **zero documentation drift** in CI and Git hooks in milliseconds with zero LLM calls and byte-identical output across Mermaid (`< 5,000` chars for Gitea/GitHub), D2 (+ animated `.d2.svg`), PlantUML, LikeC4, and Graphviz DOT.
+
 ## Architecture Documentation (4 Zoom Levels)
 
 ArchiGram dogfoods itself to generate and lint its own architecture docs (`0` hand-drawn drift, verified by `--sync-md --check` across all 5 Gates). Start at **[docs/architecture/README.md](docs/architecture/README.md)** or jump straight to the abstraction level you need:
@@ -12,7 +27,7 @@ ArchiGram dogfoods itself to generate and lint its own architecture docs (`0` ha
 | **L1** | [Feature-Slice Map](docs/architecture/L1-feature-slices.md) | All 16 strictly independent vertical slices + checklist to add a 17th slice | 16 slices + 4 rings |
 | **L2** | [Subsystem Guides](docs/architecture/L2-subsystem-guides.md) | Focused `k_hop_neighborhood` zooms: Domain & Ports (L2a), Reducers (L2b), 5-Gate Linter (L2c), CLI & MCP (L2d) | 9–18 nodes per view |
 | **L3** | [Runtime Execution & Self-Healing Traces](docs/architecture/L3-runtime-traces.md) | Live `sys.monitoring` trace of `compile_and_lint_pipeline` & 3-turn `run_propose_loop` compacted via `R1–R6` | 15 participants, 48 events |
-| **Gallery** | [Styling Policy & Multi-Target Gallery](docs/architecture/diagram-styling-and-gallery.md) | Dual-mode transparent styling (`domain/style.py`), edge-only semantic colors, flowing runtime edges, animated D2 `steps` playback, orthogonal routing, UML arrows & all 13 rendered diagram modes | All 5 renderers × 13 modes |
+| **Gallery** | [Styling Policy & Multi-Target Gallery](docs/architecture/diagram-styling-and-gallery.md) | Dual-mode transparent styling (`domain/style.py`), edge-only semantic colors, flowing D2 SVGs, animated `steps` playback, compact `< 5,000`-char Gitea-ready Mermaid & all 13 modes | All 5 renderers × 13 modes |
 
 ## Developer & CLI Quickstart (`justfile`)
 

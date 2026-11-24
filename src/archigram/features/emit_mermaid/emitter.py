@@ -1,8 +1,7 @@
-"""Deterministic Mermaid v12 Emitter for Flowchart ELK, OOP Class, and Sequence par/loop."""
+"""Deterministic Mermaid Emitter compatible with Gitea (Mermaid v10+) and Mermaid v11/v12."""
 
 from __future__ import annotations
 
-import hashlib
 import re
 from dataclasses import dataclass
 
@@ -26,7 +25,6 @@ from archigram.domain.style import (
     MERMAID_STRUCTURAL_FRONTMATTER,
     MERMAID_SUBGRAPH_STYLE_ATTRS,
     LinePattern,
-    resolve_edge_animated,
     resolve_edge_visual_style,
 )
 
@@ -55,7 +53,7 @@ _STEREOTYPES: dict[NodeKind, str] = {
 
 
 def sanitize_mermaid_text(raw: str) -> str:
-    """Escape semicolons, quotes, brackets, and control characters for Mermaid v12 labels."""
+    """Escape semicolons, quotes, brackets, and control characters for Mermaid quoted labels."""
     text = raw.replace("\r\n", " ").replace("\r", " ").replace("\n", " ").replace("\t", " ")
     text = text.replace("#", "#35;")
     text = text.replace('"', "#quot;")
@@ -71,18 +69,14 @@ def sanitize_sequence_text(raw: str) -> str:
     return sanitize_mermaid_text(raw).replace(":", "#58;")
 
 
-def _make_safe_alias(prefix: str, index: int, raw_id: str) -> str:
-    """Build a collision-free Mermaid identifier guaranteed never to match reserved keywords."""
-    slug = _SLUG_RE.sub("_", raw_id).strip("_").lower()[:16]
-    digest = hashlib.sha256(raw_id.encode("utf-8")).hexdigest()[:6]
-    if slug:
-        return f"{prefix}_{index}_{slug}_{digest}"
-    return f"{prefix}_{index}_{digest}"
+def _make_safe_alias(prefix: str, index: int) -> str:
+    """Build a compact collision-free Mermaid identifier (`n0`, `c0`, `p0`)."""
+    return f"{prefix}{index}"
 
 
 def build_alias_map(ids: list[str], prefix: str = "n") -> dict[str, str]:
-    """Map sorted raw identifiers to collision-free deterministic Mermaid aliases."""
-    return {raw_id: _make_safe_alias(prefix, idx, raw_id) for idx, raw_id in enumerate(sorted(ids))}
+    """Map sorted raw identifiers to compact deterministic Mermaid aliases."""
+    return {raw_id: _make_safe_alias(prefix, idx) for idx, raw_id in enumerate(sorted(set(ids)))}
 
 
 _OOP_NODE_KINDS: frozenset[NodeKind] = frozenset(
@@ -112,6 +106,23 @@ _RESERVED_TOKENS: frozenset[str] = frozenset(
     {"end", "subgraph", "class", "par", "loop", "and", "participant"}
 )
 
+_CLASS_SIG_STRIP_TRANS = str.maketrans(
+    {
+        "\r": " ",
+        "\n": " ",
+        "\t": " ",
+        '"': " ",
+        "'": " ",
+        ";": " ",
+        "{": " ",
+        "}": " ",
+        "(": " ",
+        ")": " ",
+        "#": " ",
+        "~": " ",
+    }
+)
+
 
 def _sanitize_token(raw: str) -> str:
     """Sanitize an identifier token inside a class member or generic parameter."""
@@ -121,6 +132,33 @@ def _sanitize_token(raw: str) -> str:
     if token.lower() in _RESERVED_TOKENS:
         return f"{token}_"
     return token
+
+
+def _brackets_balanced(text: str, opener: str, closer: str) -> bool:
+    """Return True when opener/closer brackets in `text` are properly balanced."""
+    depth = 0
+    for ch in text:
+        if ch == opener:
+            depth += 1
+        elif ch == closer:
+            depth -= 1
+            if depth < 0:
+                return False
+    return depth == 0
+
+
+def _sanitize_class_sig(raw: str) -> str:
+    """Sanitize a class member signature without semicolon entities for Mermaid classDiagram."""
+    cleaned = raw.replace("->", " ").translate(_CLASS_SIG_STRIP_TRANS)
+    cleaned = re.sub(r",\s*\.\.\.", "", cleaned).replace("...", "")
+    if "[" in cleaned or "]" in cleaned:
+        rep = "~" if _brackets_balanced(cleaned, "[", "]") else "_"
+        cleaned = cleaned.replace("[", rep).replace("]", rep)
+    if "<" in cleaned or ">" in cleaned:
+        rep = "~" if _brackets_balanced(cleaned, "<", ">") else "_"
+        cleaned = cleaned.replace("<", rep).replace(">", rep)
+    printable = "".join(ch if ch.isprintable() else " " for ch in cleaned)
+    return " ".join(printable.split())
 
 
 def _format_class_member(member: ClassMember) -> str:
@@ -133,21 +171,17 @@ def _format_class_member(member: ClassMember) -> str:
         else ""
     )
     raw_sig = member.signature.strip()
-    sig = (
-        sanitize_mermaid_text(raw_sig).replace("(", " ").replace(")", " ").strip()
-        if raw_sig
-        else ""
-    )
     mods = f" {' '.join(_sanitize_token(m) for m in member.modifiers)}" if member.modifiers else ""
     if member.is_method:
-        if "->" in sig:
-            params_part, ret_part = sig.split("->", 1)
-            params_clean = params_part.strip()
-            ret_clean = _sanitize_token(ret_part.strip())
+        if "->" in raw_sig:
+            params_part, ret_part = raw_sig.split("->", 1)
+            params_clean = _sanitize_class_sig(params_part)
+            ret_clean = _sanitize_class_sig(ret_part) or "None"
             return f"    {vis}{name}{generics}({params_clean}) {ret_clean}{mods}"
-        return f"    {vis}{name}{generics}({sig}){mods}"
-    if sig:
-        return f"    {vis}{sig} {name}{generics}{mods}"
+        return f"    {vis}{name}{generics}({_sanitize_class_sig(raw_sig)}){mods}"
+    sig_clean = _sanitize_class_sig(raw_sig)
+    if sig_clean:
+        return f"    {vis}{sig_clean} {name}{generics}{mods}"
     return f"    {vis}{name}{generics}{mods}"
 
 
@@ -193,7 +227,7 @@ def _emit_class_edge(edge: IREdge, aliases: dict[str, str]) -> str:
 
 
 def _emit_class_diagram(ir: StructuralGraphIR) -> str:
-    """Emit a deterministic Mermaid v12 OOP classDiagram with ELK layout frontmatter."""
+    """Emit a deterministic Mermaid OOP classDiagram compatible with Gitea and Mermaid v10+."""
     parent_ids = {n.parent_id for n in ir.nodes.values() if n.parent_id is not None}
     incident_ids = {e.source for e in ir.edges} | {e.target for e in ir.edges}
     visible_ids = [
@@ -209,7 +243,6 @@ def _emit_class_diagram(ir: StructuralGraphIR) -> str:
     lines: list[str] = [
         MERMAID_STRUCTURAL_FRONTMATTER,
         "classDiagram",
-        f"  {MERMAID_DEFAULT_CLASSDEF}",
     ]
     for sym_id in visible_ids:
         lines.extend(_emit_class_node(ir.nodes[sym_id], aliases[sym_id]))
@@ -253,44 +286,48 @@ def _emit_flowchart_subtree(
     return lines
 
 
-def _emit_flowchart_edge_and_linkstyle(
+def _coalesce_link_styles(style_specs: list[str]) -> list[str]:
+    """Group edge indices sharing identical stroke attributes into compact `linkStyle` lines."""
+    grouped: dict[str, list[str]] = {}
+    for edge_idx, spec in enumerate(style_specs):
+        grouped.setdefault(spec, []).append(str(edge_idx))
+    return [f"  linkStyle {','.join(indices)} {spec}" for spec, indices in grouped.items()]
+
+
+def _emit_flowchart_edge_and_style(
     edge: IREdge,
     edge_idx: int,
     aliases: dict[str, str],
     animate_override: str | None = None,
 ) -> tuple[list[str], str]:
-    """Emit flowchart edge line(s) (with v11+ animation when active) and `linkStyle` directive."""
+    """Emit flowchart edge line(s) (opt-in v11.4+ animation) and stroke style spec."""
     src = aliases[edge.source]
     tgt = aliases[edge.target]
     label = sanitize_mermaid_text(edge.relation.value)
     visual = resolve_edge_visual_style(edge.relation, edge.sync_kind)
     if visual.line_pattern is LinePattern.BOLD:
         arrow = "==>"
-        link_style = f"  linkStyle {edge_idx} stroke:{visual.stroke_hex},stroke-width:2.5px"
+        style_spec = f"stroke:{visual.stroke_hex},stroke-width:2.5px"
     elif visual.line_pattern is LinePattern.DASHED:
         arrow = "-.->"
-        link_style = (
-            f"  linkStyle {edge_idx} stroke:{visual.stroke_hex},"
+        style_spec = (
+            f"stroke:{visual.stroke_hex},"
             f"stroke-width:{DEFAULT_STROKE_WIDTH_PX},stroke-dasharray:5 5"
         )
     else:
         arrow = "-->"
-        link_style = (
-            f"  linkStyle {edge_idx} stroke:{visual.stroke_hex},"
-            f"stroke-width:{DEFAULT_STROKE_WIDTH_PX}"
-        )
-    if resolve_edge_animated(visual, animate_override):
-        edge_id = f"e_{edge_idx}"
-        edge_lines = [
+        style_spec = f"stroke:{visual.stroke_hex},stroke-width:{DEFAULT_STROKE_WIDTH_PX}"
+    if animate_override == "true":
+        edge_id = f"e{edge_idx}"
+        return [
             f'  {src} {edge_id}@{arrow}|"{label}"| {tgt}',
             f"  {edge_id}@{{ animate: true }}",
-        ]
-        return edge_lines, link_style
-    return [f'  {src} {arrow}|"{label}"| {tgt}'], link_style
+        ], style_spec
+    return [f'  {src} {arrow}|"{label}"| {tgt}'], style_spec
 
 
 def _emit_flowchart(ir: StructuralGraphIR) -> str:
-    """Emit a deterministic Mermaid v12 ELK orthogonal flowchart TD diagram."""
+    """Emit a deterministic ELK orthogonal flowchart TD diagram."""
     sorted_ids = sorted(ir.nodes)
     aliases = build_alias_map(sorted_ids, prefix="n")
     roots, children = _build_children_map(ir.nodes)
@@ -305,17 +342,17 @@ def _emit_flowchart(ir: StructuralGraphIR) -> str:
     for sym_id in sorted_ids:
         if children[sym_id]:
             lines.append(f"  style {aliases[sym_id]} {MERMAID_SUBGRAPH_STYLE_ATTRS}")
-    link_styles: list[str] = []
+    style_specs: list[str] = []
     for edge_idx, edge in enumerate(sorted(ir.edges, key=lambda item: item.edge_id)):
-        edge_lines, style_line = _emit_flowchart_edge_and_linkstyle(
+        edge_lines, style_spec = _emit_flowchart_edge_and_style(
             edge,
             edge_idx,
             aliases,
             animate_override,
         )
         lines.extend(edge_lines)
-        link_styles.append(style_line)
-    lines.extend(link_styles)
+        style_specs.append(style_spec)
+    lines.extend(_coalesce_link_styles(style_specs))
     return "\n".join(lines) + "\n"
 
 
@@ -430,7 +467,7 @@ def _emit_event_invocation(
     lines = [f"{indent}{caller}->>+{callee}: {sig}"]
     if child_events:
         lines.extend(_emit_sibling_list(child_events, children_by_parent, aliases, depth))
-    lines.append(f"{indent}{callee}-->>-{caller}: return {sig}")
+    lines.append(f"{indent}{callee}-->>-{caller}: return")
     return lines
 
 

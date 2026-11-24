@@ -1,11 +1,11 @@
 ---
 config:
   layout: elk
-  look: classic
   elk:
     mergeEdges: false
     nodePlacementStrategy: BRANDES_KOEPF
   flowchart:
+    defaultRenderer: elk
     curve: linear
   themeVariables:
     primaryColor: transparent
@@ -19,26 +19,23 @@ config:
 ---
 flowchart TD
   classDef default fill:transparent,stroke:#64748b,stroke-width:1.5px
-  subgraph n_0_archigram_983b03["archigram"]
-    subgraph n_1_archigram_domain_6f6ac3["domain"]
-      subgraph n_2_archigram_domain_ae7fc5["ir"]
-        n_5_domain_ir_graph_6792fb["StructuralGraphIR, IRNode, IREdge"]
-        n_6_domain_ir_trace_8295b5["InteractionTraceIR, TraceEvent, TraceParticipant"]
+  subgraph n0["archigram"]
+    subgraph n1["domain"]
+      subgraph n2["ir"]
+        n5["StructuralGraphIR, IRNode, IREdge"]
+        n6["InteractionTraceIR, TraceEvent, TraceParticipant"]
       end
-      n_3_domain_concurren_e2754c["domain.concurrency (PosetCotreeNode, SP-Poset Decomposition)"]
-      n_4_domain_diagnosti_fc27fb["domain.diagnostics (LintReport, LintDiagnostic, GateId)"]
-      n_7_domain_spec_d7d1fd["domain.spec (CurationSpecV1, DiagramViewSpec, Rules & Invariants)"]
+      n3["domain.concurrency (PosetCotreeNode, SP-Poset Decomposition)"]
+      n4["domain.diagnostics (LintReport, LintDiagnostic, GateId)"]
+      n7["domain.spec (CurationSpecV1, DiagramViewSpec, Rules & Invariants)"]
     end
-    n_8_ports_protocols_b2b1c2["ports.contracts (Ingestor, Reducer, Compactor, LintGate, Emitter, Digest)"]
+    n8["ports.contracts (Ingestor, Reducer, Compactor, LintGate, Emitter, Digest)"]
   end
-  style n_0_archigram_983b03 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
-  style n_1_archigram_domain_6f6ac3 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
-  style n_2_archigram_domain_ae7fc5 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
-  n_8_ports_protocols_b2b1c2 -.->|"imports"| n_4_domain_diagnosti_fc27fb
-  n_8_ports_protocols_b2b1c2 -.->|"imports"| n_2_archigram_domain_ae7fc5
-  n_8_ports_protocols_b2b1c2 -.->|"imports"| n_7_domain_spec_d7d1fd
-  n_2_archigram_domain_ae7fc5 -.->|"imports"| n_1_archigram_domain_6f6ac3
-  linkStyle 0 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 1 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 2 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 3 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  style n0 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  style n1 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  style n2 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  n8 -.->|"imports"| n4
+  n8 -.->|"imports"| n2
+  n8 -.->|"imports"| n7
+  n2 -.->|"imports"| n1
+  linkStyle 0,1,2,3 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5

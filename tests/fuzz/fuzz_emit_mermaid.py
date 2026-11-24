@@ -327,6 +327,7 @@ def test_flowchart_emission_determinism_and_syntax_invariants(
         MERMAID_DEFAULT_CLASSDEF,
         MERMAID_STRUCTURAL_FRONTMATTER,
     )
+    from archigram.features.lint_syntax import MermaidSyntaxValidator
 
     emitter = MermaidEmitter()
     assert isinstance(emitter, DiagramEmitterPort)
@@ -347,11 +348,13 @@ def test_flowchart_emission_determinism_and_syntax_invariants(
     assert first.startswith(f"{MERMAID_STRUCTURAL_FRONTMATTER}\nflowchart TD\n")
     assert MERMAID_DEFAULT_CLASSDEF in first
     assert "curve: linear" in first
+    assert "defaultRenderer: elk" in first
     if graph.edges:
-        assert "\n  linkStyle 0 stroke:#" in first
+        assert re.search(r"\n  linkStyle 0(?:,\d+)* stroke:#", first) is not None
+    assert MermaidSyntaxValidator().validate(first).valid
     _assert_no_unescaped_semicolons_in_quoted_labels(first)
     _assert_balanced_mermaid_blocks(first)
-    assert re.search(r"\bsubgraph\s+end\b", first, re.IGNORECASE) is None
+    assert re.search(r"\bsubgraph[ \t]+end\b", first, re.IGNORECASE) is None
 
 
 @settings(max_examples=50)
@@ -359,10 +362,8 @@ def test_flowchart_emission_determinism_and_syntax_invariants(
 def test_class_diagram_emission_determinism_and_syntax_invariants(
     graph: StructuralGraphIR,
 ) -> None:
-    from archigram.domain.style import (
-        MERMAID_DEFAULT_CLASSDEF,
-        MERMAID_STRUCTURAL_FRONTMATTER,
-    )
+    from archigram.domain.style import MERMAID_STRUCTURAL_FRONTMATTER
+    from archigram.features.lint_syntax import MermaidSyntaxValidator
 
     emitter = MermaidEmitter()
     first = emitter.emit(graph)
@@ -376,9 +377,10 @@ def test_class_diagram_emission_determinism_and_syntax_invariants(
 
     assert first == second
     assert first.startswith(f"{MERMAID_STRUCTURAL_FRONTMATTER}\nclassDiagram\n")
-    assert MERMAID_DEFAULT_CLASSDEF in first
+    assert "classDef " not in first
+    assert MermaidSyntaxValidator().validate(first).valid
     _assert_no_unescaped_semicolons_in_quoted_labels(first)
-    assert re.search(r"\bclass\s+end\b", first, re.IGNORECASE) is None
+    assert re.search(r"\bclass[ \t]+end\b", first, re.IGNORECASE) is None
 
 
 @settings(max_examples=50)
@@ -387,6 +389,7 @@ def test_sequence_diagram_par_loop_and_end_aliasing_invariants(
     trace: InteractionTraceIR,
 ) -> None:
     from archigram.domain.style import MERMAID_SEQUENCE_FRONTMATTER
+    from archigram.features.lint_syntax import MermaidSyntaxValidator
 
     emitter = MermaidEmitter()
     first = emitter.emit(trace)
@@ -401,9 +404,10 @@ def test_sequence_diagram_par_loop_and_end_aliasing_invariants(
     assert first == second
     assert first.startswith(f"{MERMAID_SEQUENCE_FRONTMATTER}\nsequenceDiagram\n")
     assert "actorBkg: transparent" in first
+    assert MermaidSyntaxValidator().validate(first).valid
     _assert_no_unescaped_semicolons_in_quoted_labels(first)
     _assert_balanced_mermaid_blocks(first)
-    assert re.search(r"\bparticipant\s+end\b", first, re.IGNORECASE) is None
+    assert re.search(r"\bparticipant[ \t]+end\b", first, re.IGNORECASE) is None
     assert "\n  par " in first
     assert "\n  and " in first
     assert "\n  loop [" in first

@@ -37,6 +37,7 @@ from archigram.domain.style import (
     CANONICAL_EDGE_STYLES,
     D2_CANONICAL_HEADER,
     MERMAID_DEFAULT_CLASSDEF,
+    MERMAID_GITEA_MAX_SOURCE_CHARS,
     MERMAID_SEQUENCE_FRONTMATTER,
     MERMAID_STRUCTURAL_FRONTMATTER,
     NEUTRAL_BORDER_HEX,
@@ -148,7 +149,9 @@ def test_transparent_preambles_and_view_spec_variant_roundtrip(
 ) -> None:
     """Canonical target preambles enforce transparent fills and DiagramViewSpec round-trips."""
     assert TRANSPARENT_FILL == "transparent"
+    assert MERMAID_GITEA_MAX_SOURCE_CHARS == 5000
     assert _HEX_RE.match(NEUTRAL_BORDER_HEX) is not None
+    assert "defaultRenderer: elk" in MERMAID_STRUCTURAL_FRONTMATTER
     assert "curve: linear" in MERMAID_STRUCTURAL_FRONTMATTER
     assert "primaryColor: transparent" in MERMAID_STRUCTURAL_FRONTMATTER
     assert "actorBkg: transparent" in MERMAID_SEQUENCE_FRONTMATTER
@@ -304,9 +307,10 @@ def test_animated_edges_and_d2_steps_trace_compilation(
             ),
         ),
     )
-    expected_anim = (
+    expected_d2_anim = (
         animate_edges if animate_edges is not None else (relation in _RUNTIME_ANIMATED_RELATIONS)
     )
+    expected_mmd_anim = animate_edges is True
     spec = CurationSpecV1(
         views=(
             DiagramViewSpec(
@@ -329,8 +333,8 @@ def test_animated_edges_and_d2_steps_trace_compilation(
     )
     res = compile_and_lint_pipeline(ir, spec)
     assert res.lint_report.passed
-    assert ("@{ animate: true }" in res.views["mmd_anim"].diagram_source) is expected_anim
-    assert ("style.animated: true" in res.views["d2_anim"].diagram_source) is expected_anim
+    assert ("@{ animate: true }" in res.views["mmd_anim"].diagram_source) is expected_mmd_anim
+    assert ("style.animated: true" in res.views["d2_anim"].diagram_source) is expected_d2_anim
 
     trace = InteractionTraceIR(
         trace_id="steps_trace",

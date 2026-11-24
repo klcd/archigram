@@ -1,11 +1,11 @@
 ---
 config:
   layout: elk
-  look: classic
   elk:
     mergeEdges: false
     nodePlacementStrategy: BRANDES_KOEPF
   flowchart:
+    defaultRenderer: elk
     curve: linear
   themeVariables:
     primaryColor: transparent
@@ -18,61 +18,60 @@ config:
     lineColor: '#64748b'
 ---
 classDiagram
-  classDef default fill:transparent,stroke:#64748b,stroke-width:1.5px
-  class c_0_archigram_featur_ba3738["lint_syntax"]
-  class c_1_archigram_featur_d6e8be["validators"]
-  class c_2_archigram_featur_bb531f["D2SyntaxValidator"] {
+  class c0["lint_syntax"]
+  class c1["validators"]
+  class c2["D2SyntaxValidator"] {
     +init(use_cli: bool, cli_timeout: float) None
     +target_format() str property
     +validate(diagram_source: str) SyntaxValidationResult
   }
-  class c_3_archigram_featur_86114b["DotSyntaxValidator"] {
+  class c3["DotSyntaxValidator"] {
     +init(use_cli: bool, cli_timeout: float) None
     +target_format() str property
     +validate(diagram_source: str) SyntaxValidationResult
   }
-  class c_4_archigram_featur_4106c5["Gate5SyntaxHarness"] {
+  class c4["Gate5SyntaxHarness"] {
     +str slice_name
-    +init(validators: Mapping#91;str, SyntaxValidatorPort#93; | None) None
-    +supported_formats() tuple_91_str_93 property
-    +get_validator(target_format: str) SyntaxValidatorPort_None
+    +init(validators: Mapping~str, SyntaxValidatorPort~ | None) None
+    +supported_formats() tuple~str~ property
+    +get_validator(target_format: str) SyntaxValidatorPort | None
     +validate(target_format: str, diagram_source: str) SyntaxValidationResult
   }
-  class c_5_archigram_featur_c2d69d["LikeC4SyntaxValidator"] {
+  class c5["LikeC4SyntaxValidator"] {
     +target_format() str property
     +validate(diagram_source: str) SyntaxValidationResult
   }
-  class c_6_archigram_featur_086112["MermaidSyntaxValidator"] {
+  class c6["MermaidSyntaxValidator"] {
     +target_format() str property
     +validate(diagram_source: str) SyntaxValidationResult
   }
-  class c_7_archigram_featur_46a958["PlantUmlSyntaxValidator"] {
+  class c7["PlantUmlSyntaxValidator"] {
     +init(use_cli: bool, cli_timeout: float) None
     +target_format() str property
     +validate(diagram_source: str) SyntaxValidationResult
   }
-  class c_8_archigram_ports__7ed230["contracts"]
-  class c_9_archigram_ports__58ed33["SyntaxValidationResult"] {
+  class c8["contracts"]
+  class c9["SyntaxValidationResult"] {
     +bool valid
     +str target_format
-    +tuple#91;str, ...#93; errors
+    +tuple~str~ errors
   }
-  class c_10_archigram_ports__993eea["SyntaxValidatorPort"] {
+  class c10["SyntaxValidatorPort"] {
     <<interface>>
     +target_format() str property
     +validate(diagram_source: str) SyntaxValidationResult
   }
-  c_0_archigram_featur_ba3738 ..> c_1_archigram_featur_d6e8be : imports
-  c_1_archigram_featur_d6e8be ..> c_8_archigram_ports__7ed230 : imports
-  c_2_archigram_featur_bb531f --> c_9_archigram_ports__58ed33 : calls
-  c_10_archigram_ports__993eea <|.. c_2_archigram_featur_bb531f : implements
-  c_3_archigram_featur_86114b --> c_9_archigram_ports__58ed33 : calls
-  c_10_archigram_ports__993eea <|.. c_3_archigram_featur_86114b : implements
-  c_4_archigram_featur_4106c5 --> c_9_archigram_ports__58ed33 : calls
-  c_10_archigram_ports__993eea *-- c_4_archigram_featur_4106c5 : composes
-  c_5_archigram_featur_c2d69d --> c_9_archigram_ports__58ed33 : calls
-  c_10_archigram_ports__993eea <|.. c_5_archigram_featur_c2d69d : implements
-  c_6_archigram_featur_086112 --> c_9_archigram_ports__58ed33 : calls
-  c_10_archigram_ports__993eea <|.. c_6_archigram_featur_086112 : implements
-  c_7_archigram_featur_46a958 --> c_9_archigram_ports__58ed33 : calls
-  c_10_archigram_ports__993eea <|.. c_7_archigram_featur_46a958 : implements
+  c0 ..> c1 : imports
+  c1 ..> c8 : imports
+  c2 --> c9 : calls
+  c10 <|.. c2 : implements
+  c3 --> c9 : calls
+  c10 <|.. c3 : implements
+  c4 --> c9 : calls
+  c10 *-- c4 : composes
+  c5 --> c9 : calls
+  c10 <|.. c5 : implements
+  c6 --> c9 : calls
+  c10 <|.. c6 : implements
+  c7 --> c9 : calls
+  c10 <|.. c7 : implements

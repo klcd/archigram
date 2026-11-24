@@ -121,6 +121,8 @@ def adversarial_mermaid_diagrams(draw: st.DrawFn) -> str:
                 f"sequenceDiagram\n  else\n  {n1}->>{n2}: orphan",
                 f"sequenceDiagram\n  alt Guard\n    {n1}->>{n2}: a\n  and\n"
                 f"    {n1}->>{n2}: b\n  end",
+                f"classDiagram\n  classDef default fill:transparent,stroke:#64748b\n  class {n1}",
+                f"classDiagram\n  class {n1} {{\n    +tuple#91;str#93; items\n  }}",
             ]
         )
     )

@@ -228,15 +228,17 @@ def relative_luminance(hex_color: str) -> float:
     return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2]
 
 
+MERMAID_GITEA_MAX_SOURCE_CHARS = 5000
+
 MERMAID_STRUCTURAL_FRONTMATTER = (
     "---\n"
     "config:\n"
     "  layout: elk\n"
-    "  look: classic\n"
     "  elk:\n"
     "    mergeEdges: false\n"
     "    nodePlacementStrategy: BRANDES_KOEPF\n"
     "  flowchart:\n"
+    "    defaultRenderer: elk\n"
     "    curve: linear\n"
     "  themeVariables:\n"
     "    primaryColor: transparent\n"

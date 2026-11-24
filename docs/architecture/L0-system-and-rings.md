@@ -37,11 +37,11 @@ Proven by Gate 3 invariants in [`diagram-views.yaml`](diagram-views.yaml):
 ---
 config:
   layout: elk
-  look: classic
   elk:
     mergeEdges: false
     nodePlacementStrategy: BRANDES_KOEPF
   flowchart:
+    defaultRenderer: elk
     curve: linear
   themeVariables:
     primaryColor: transparent
@@ -55,73 +55,50 @@ config:
 ---
 flowchart TD
   classDef default fill:transparent,stroke:#64748b,stroke-width:1.5px
-  subgraph n_0_archigram_983b03["archigram"]
-    subgraph n_1_archigram_entryp_6a8ce0["entrypoints"]
-      n_3_cli_dataplane_493a5b["CLI Data Plane (entrypoints.cli)"]
-      n_10_mcp_controlplane_ff4d3b["MCP Control Plane (entrypoints.mcp)"]
+  subgraph n0["archigram"]
+    subgraph n1["entrypoints"]
+      n3["CLI Data Plane (entrypoints.cli)"]
+      n10["MCP Control Plane (entrypoints.mcp)"]
     end
-    subgraph n_2_archigram_featur_e6f01e["features"]
-      n_5_feature_digest_52876d["Digest Slice (Graph & Trace Digest)"]
-      n_6_feature_emitters_75a4c0["Emitter Slices (Mermaid, D2, PlantUML, LikeC4)"]
-      n_7_feature_ingestor_73234e["Ingestor Slices (DOT, SCIP, OTLP, Class, Python)"]
-      n_8_feature_linters_57c819["5-Gate Linter Slices (Grounding, Topology, Budget, Syntax)"]
-      n_9_feature_reducers_8a2858["Reducer Slices (Structural + Trace Compactor)"]
+    subgraph n2["features"]
+      n5["Digest Slice (Graph & Trace Digest)"]
+      n6["Emitter Slices (Mermaid, D2, PlantUML, LikeC4)"]
+      n7["Ingestor Slices (DOT, SCIP, OTLP, Class, Python)"]
+      n8["5-Gate Linter Slices (Grounding, Topology, Budget, Syntax)"]
+      n9["Reducer Slices (Structural + Trace Compactor)"]
     end
-    n_4_domain_core_f195b2["Domain Core (Canonical IR, Spec, Poset, Diagnostics)"]
-    n_11_ports_contracts_d0accd["Ports & Contracts (archigram.ports)"]
+    n4["Domain Core (Canonical IR, Spec, Poset, Diagnostics)"]
+    n11["Ports & Contracts (archigram.ports)"]
   end
-  style n_0_archigram_983b03 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
-  style n_1_archigram_entryp_6a8ce0 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
-  style n_2_archigram_featur_e6f01e fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
-  n_5_feature_digest_52876d -.->|"imports"| n_4_domain_core_f195b2
-  n_5_feature_digest_52876d -->|"composes"| n_4_domain_core_f195b2
-  n_9_feature_reducers_8a2858 -.->|"imports"| n_4_domain_core_f195b2
-  n_9_feature_reducers_8a2858 e_3@-->|"calls"| n_4_domain_core_f195b2
-  e_3@{ animate: true }
-  n_11_ports_contracts_d0accd -.->|"imports"| n_4_domain_core_f195b2
-  n_6_feature_emitters_75a4c0 -.->|"imports"| n_4_domain_core_f195b2
-  n_6_feature_emitters_75a4c0 -->|"composes"| n_4_domain_core_f195b2
-  n_10_mcp_controlplane_ff4d3b -.->|"imports"| n_5_feature_digest_52876d
-  n_10_mcp_controlplane_ff4d3b -.->|"imports"| n_6_feature_emitters_75a4c0
-  n_3_cli_dataplane_493a5b e_9@-->|"calls"| n_7_feature_ingestor_73234e
-  e_9@{ animate: true }
-  n_3_cli_dataplane_493a5b -.->|"imports"| n_7_feature_ingestor_73234e
-  n_10_mcp_controlplane_ff4d3b -.->|"imports"| n_8_feature_linters_57c819
-  n_10_mcp_controlplane_ff4d3b e_12@-->|"calls"| n_8_feature_linters_57c819
-  e_12@{ animate: true }
-  n_10_mcp_controlplane_ff4d3b -.->|"imports"| n_9_feature_reducers_8a2858
-  n_3_cli_dataplane_493a5b e_14@-->|"calls"| n_10_mcp_controlplane_ff4d3b
-  e_14@{ animate: true }
-  n_3_cli_dataplane_493a5b -.->|"imports"| n_10_mcp_controlplane_ff4d3b
-  n_8_feature_linters_57c819 -.->|"implements"| n_11_ports_contracts_d0accd
-  n_8_feature_linters_57c819 -.->|"imports"| n_11_ports_contracts_d0accd
-  n_7_feature_ingestor_73234e -.->|"implements"| n_11_ports_contracts_d0accd
-  n_7_feature_ingestor_73234e -.->|"imports"| n_11_ports_contracts_d0accd
-  n_8_feature_linters_57c819 -->|"composes"| n_11_ports_contracts_d0accd
-  n_8_feature_linters_57c819 e_21@-->|"calls"| n_11_ports_contracts_d0accd
-  e_21@{ animate: true }
-  linkStyle 0 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 1 stroke:#14b8a6,stroke-width:1.75px
-  linkStyle 2 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 3 stroke:#3b82f6,stroke-width:1.75px
-  linkStyle 4 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 5 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 6 stroke:#14b8a6,stroke-width:1.75px
-  linkStyle 7 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 8 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 9 stroke:#3b82f6,stroke-width:1.75px
-  linkStyle 10 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 11 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 12 stroke:#3b82f6,stroke-width:1.75px
-  linkStyle 13 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 14 stroke:#3b82f6,stroke-width:1.75px
-  linkStyle 15 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 16 stroke:#a855f7,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 17 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 18 stroke:#a855f7,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 19 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 20 stroke:#14b8a6,stroke-width:1.75px
-  linkStyle 21 stroke:#3b82f6,stroke-width:1.75px
+  style n0 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  style n1 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  style n2 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  n5 -.->|"imports"| n4
+  n5 -->|"composes"| n4
+  n9 -.->|"imports"| n4
+  n9 -->|"calls"| n4
+  n11 -.->|"imports"| n4
+  n6 -.->|"imports"| n4
+  n6 -->|"composes"| n4
+  n10 -.->|"imports"| n5
+  n10 -.->|"imports"| n6
+  n3 -->|"calls"| n7
+  n3 -.->|"imports"| n7
+  n10 -.->|"imports"| n8
+  n10 -->|"calls"| n8
+  n10 -.->|"imports"| n9
+  n3 -->|"calls"| n10
+  n3 -.->|"imports"| n10
+  n8 -.->|"implements"| n11
+  n8 -.->|"imports"| n11
+  n7 -.->|"implements"| n11
+  n7 -.->|"imports"| n11
+  n8 -->|"composes"| n11
+  n8 -->|"calls"| n11
+  linkStyle 0,2,4,5,7,8,10,11,13,15,17,19 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 1,6,20 stroke:#14b8a6,stroke-width:1.75px
+  linkStyle 3,9,12,14,21 stroke:#3b82f6,stroke-width:1.75px
+  linkStyle 16,18 stroke:#a855f7,stroke-width:1.75px,stroke-dasharray:5 5
 ```
 <!-- archigram:end l0_hexagonal_rings_mermaid -->
 

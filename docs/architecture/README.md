@@ -1,6 +1,14 @@
 # ArchiGram Architecture Documentation
 
-> **100% Self-Hosted, Zero Hand-Drawn Drift:** Every diagram in this folder is compiled directly from live `src/archigram` AST symbols and a reproducible `sys.monitoring` runtime trace snapshot using ArchiGram's own `CurationSpecV1` specs, verified by all **5 ArchiGram Linter Gates**, and synced into Markdown via `archigram apply --sync-md docs/architecture`.
+> **100% Self-Hosted, Zero Hand-Drawn Drift:** Every diagram in this folder is compiled directly from live `src/archigram` AST symbols and a reproducible `sys.monitoring` runtime trace snapshot using ArchiGram's own `CurationSpecV1` specs, verified by all **5 ArchiGram Linter Gates**, compacted below Gitea's `5,000`-character Mermaid limit (`1,413–3,866` chars), and synced into Markdown via `archigram apply --sync-md docs/architecture`.
+
+## Why ArchiGram Exists
+
+Architecture diagrams traditionally fail in one of three ways: **hand-drawn boxes silently drift** as code evolves, **raw AST/trace dumpers emit 500-node hairballs** that exceed human working memory and platform limits (such as Gitea's `5,000`-character Mermaid cap), and **freehand LLM prompts hallucinate symbols**, drop critical paths, or emit broken syntax.
+
+ArchiGram solves this by treating diagrams as **compiled, formally verified projections**:
+1. **Deterministic Data Plane (`ingest_*` -> `reduce_*` -> `lint_*` -> `emit_*`):** Factual code and runtime traces (`OBSERVED` provenance) are reduced via declarative YAML rules (`CurationSpecV1`) and checked by **5 mathematical gates** (Grounding, Boundary Survival, Reachability & Concurrency Poset Preservation, Cognitive Budget, and Headless Syntax) before a single byte is written.
+2. **Bounded AI Control Plane (`entrypoints/mcp` & `archigram propose`):** LLMs never emit raw diagram syntax—they only propose declarative `CurationSpecV1` rules inside a bounded 3-turn self-healing loop guided by formal counterexamples, leaving CI (`just docs-check`) 100% deterministic and zero-cost.
 
 ## Choose Your Abstraction Level
 

@@ -16,13 +16,13 @@ ArchiGram centralizes all visual defaults—element transparency, light/dark mod
 2. **Never Color Element Backgrounds — Color Only the Edges:**
    - Nodes and containers carry **zero background fill** so visual hierarchy comes from containment structure rather than competing pastel boxes.
    - Semantic color is applied **exclusively to edges** (`linkStyle` in Mermaid flowcharts, `style.stroke` in D2, `[#hex]` in PlantUML, `relationship` styles in LikeC4, and `color="#hex"` in Graphviz DOT). Every palette color is fuzz-tested (`tests/fuzz/fuzz_diagram_style.py`) to keep WCAG relative luminance within `[0.08, 0.65]`.
-3. **Straight / 90-Degree Orthogonal Lines & Standard UML Arrows:**
-   - **Mermaid:** `layout: elk` with `flowchart: { curve: linear }` produces straight and 90-degree orthogonal segments instead of curved splines; `classDiagram` emits UML `<|--`, `<|..`, `*--`, `o--`, `..>`, and `-->`; `sequenceDiagram` emits UML `->>+`, `-->>-`, and `-)`.
+3. **Straight / 90-Degree Orthogonal Lines, UML Arrows & Gitea `< 5,000`-Char Compaction:**
+   - **Mermaid (Gitea v10+ & GitHub v11/v12 Ready):** `flowchart: { defaultRenderer: elk, curve: linear }` + `layout: elk` activates orthogonal ELK routing on both Gitea (Mermaid v10) and Mermaid v11/v12; compact aliases (`n0`, `c0`, `p0`) and coalesced `linkStyle` directives keep all self-hosted views well under Gitea's `5,000`-character Mermaid limit (`1,413–3,866` chars); `classDiagram` emits clean `~T~` UML generics and `<|--`, `<|..`, `*--`, `o--`, `..>`, `-->` without semicolon entities; `sequenceDiagram` emits `->>+`, `-->>-`, and `-)`.
    - **D2:** `layout-engine: elk` routes edges orthogonally; OOP relationships emit UML hollow-triangle (`shape: triangle, style.filled: false`) and diamond (`shape: diamond`) arrowheads.
    - **PlantUML:** `!pragma layout elk` + `skinparam linetype ortho` enforces 90-degree routing across component and class diagrams; `!pragma teoz true` renders true parallel `par`/`else` spans in sequence traces.
    - **Graphviz DOT:** `splines="ortho"` + `xlabel` labels produce warning-free 90-degree right-angle channels.
 4. **Semantic Motion — Flowing Runtime Edges vs. Calm Structural Lines + Multi-Step Playback:**
-   - **Flowing Runtime Edges ("Marching Ants"):** Active runtime/data-flow relations (`calls`, `reads_data`, `writes_data`, `async_spawn`, `fork_join`) default to `animated=True` in [`domain/style.py`](../../src/archigram/domain/style.py), emitting pure-CSS `@keyframes` (`style.animated: true`) in **D2** SVGs and Mermaid v11+ edge animation (`e_0@-->` + `e_0@{ animate: true }`) in **Mermaid** flowcharts—while static compile-time/OOP relations (`imports`, `inherits`, `implements`, `composes`, `aggregates`, `associates`) stay calm (`animated=False`). Any view can override this via `animate_edges: true | false`.
+   - **Flowing Runtime Edges ("Marching Ants"):** Active runtime/data-flow relations (`calls`, `reads_data`, `writes_data`, `async_spawn`, `fork_join`) default to `animated=True` in [`domain/style.py`](../../src/archigram/domain/style.py), emitting pure-CSS `@keyframes` (`style.animated: true`) in **D2** `.d2.svg` diagrams (which render natively in Gitea/GitHub `<img>` tags with zero JS parser dependencies)—while static compile-time/OOP relations stay calm (`animated=False`). Mermaid flowcharts stay Gitea/Mermaid-v10 safe by default and emit v11.4+ edge animation (`e0@-->` + `e0@{ animate: true }`) when explicitly opted in via `animate_edges: true`.
    - **Step-by-Step Animated Trace Playback (`diagram_variant: steps`):** Setting `diagram_variant: steps` on a D2 `interaction_trace` view emits ordered causal waves (`steps: { step_1: { ... } ... }`) compiled with `d2 --animate-interval 1200` into a self-playing multi-frame SVG.
 
 ---
@@ -63,11 +63,11 @@ Uses ELK layout, `curve: linear` straight/orthogonal segments, transparent `clas
 ---
 config:
   layout: elk
-  look: classic
   elk:
     mergeEdges: false
     nodePlacementStrategy: BRANDES_KOEPF
   flowchart:
+    defaultRenderer: elk
     curve: linear
   themeVariables:
     primaryColor: transparent
@@ -81,73 +81,50 @@ config:
 ---
 flowchart TD
   classDef default fill:transparent,stroke:#64748b,stroke-width:1.5px
-  subgraph n_0_archigram_983b03["archigram"]
-    subgraph n_1_archigram_entryp_6a8ce0["entrypoints"]
-      n_3_cli_dataplane_493a5b["CLI Data Plane (entrypoints.cli)"]
-      n_10_mcp_controlplane_ff4d3b["MCP Control Plane (entrypoints.mcp)"]
+  subgraph n0["archigram"]
+    subgraph n1["entrypoints"]
+      n3["CLI Data Plane (entrypoints.cli)"]
+      n10["MCP Control Plane (entrypoints.mcp)"]
     end
-    subgraph n_2_archigram_featur_e6f01e["features"]
-      n_5_feature_digest_52876d["Digest Slice (Graph & Trace Digest)"]
-      n_6_feature_emitters_75a4c0["Emitter Slices (Mermaid, D2, PlantUML, LikeC4)"]
-      n_7_feature_ingestor_73234e["Ingestor Slices (DOT, SCIP, OTLP, Class, Python)"]
-      n_8_feature_linters_57c819["5-Gate Linter Slices (Grounding, Topology, Budget, Syntax)"]
-      n_9_feature_reducers_8a2858["Reducer Slices (Structural + Trace Compactor)"]
+    subgraph n2["features"]
+      n5["Digest Slice (Graph & Trace Digest)"]
+      n6["Emitter Slices (Mermaid, D2, PlantUML, LikeC4)"]
+      n7["Ingestor Slices (DOT, SCIP, OTLP, Class, Python)"]
+      n8["5-Gate Linter Slices (Grounding, Topology, Budget, Syntax)"]
+      n9["Reducer Slices (Structural + Trace Compactor)"]
     end
-    n_4_domain_core_f195b2["Domain Core (Canonical IR, Spec, Poset, Diagnostics)"]
-    n_11_ports_contracts_d0accd["Ports & Contracts (archigram.ports)"]
+    n4["Domain Core (Canonical IR, Spec, Poset, Diagnostics)"]
+    n11["Ports & Contracts (archigram.ports)"]
   end
-  style n_0_archigram_983b03 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
-  style n_1_archigram_entryp_6a8ce0 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
-  style n_2_archigram_featur_e6f01e fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
-  n_5_feature_digest_52876d -.->|"imports"| n_4_domain_core_f195b2
-  n_5_feature_digest_52876d -->|"composes"| n_4_domain_core_f195b2
-  n_9_feature_reducers_8a2858 -.->|"imports"| n_4_domain_core_f195b2
-  n_9_feature_reducers_8a2858 e_3@-->|"calls"| n_4_domain_core_f195b2
-  e_3@{ animate: true }
-  n_11_ports_contracts_d0accd -.->|"imports"| n_4_domain_core_f195b2
-  n_6_feature_emitters_75a4c0 -.->|"imports"| n_4_domain_core_f195b2
-  n_6_feature_emitters_75a4c0 -->|"composes"| n_4_domain_core_f195b2
-  n_10_mcp_controlplane_ff4d3b -.->|"imports"| n_5_feature_digest_52876d
-  n_10_mcp_controlplane_ff4d3b -.->|"imports"| n_6_feature_emitters_75a4c0
-  n_3_cli_dataplane_493a5b e_9@-->|"calls"| n_7_feature_ingestor_73234e
-  e_9@{ animate: true }
-  n_3_cli_dataplane_493a5b -.->|"imports"| n_7_feature_ingestor_73234e
-  n_10_mcp_controlplane_ff4d3b -.->|"imports"| n_8_feature_linters_57c819
-  n_10_mcp_controlplane_ff4d3b e_12@-->|"calls"| n_8_feature_linters_57c819
-  e_12@{ animate: true }
-  n_10_mcp_controlplane_ff4d3b -.->|"imports"| n_9_feature_reducers_8a2858
-  n_3_cli_dataplane_493a5b e_14@-->|"calls"| n_10_mcp_controlplane_ff4d3b
-  e_14@{ animate: true }
-  n_3_cli_dataplane_493a5b -.->|"imports"| n_10_mcp_controlplane_ff4d3b
-  n_8_feature_linters_57c819 -.->|"implements"| n_11_ports_contracts_d0accd
-  n_8_feature_linters_57c819 -.->|"imports"| n_11_ports_contracts_d0accd
-  n_7_feature_ingestor_73234e -.->|"implements"| n_11_ports_contracts_d0accd
-  n_7_feature_ingestor_73234e -.->|"imports"| n_11_ports_contracts_d0accd
-  n_8_feature_linters_57c819 -->|"composes"| n_11_ports_contracts_d0accd
-  n_8_feature_linters_57c819 e_21@-->|"calls"| n_11_ports_contracts_d0accd
-  e_21@{ animate: true }
-  linkStyle 0 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 1 stroke:#14b8a6,stroke-width:1.75px
-  linkStyle 2 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 3 stroke:#3b82f6,stroke-width:1.75px
-  linkStyle 4 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 5 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 6 stroke:#14b8a6,stroke-width:1.75px
-  linkStyle 7 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 8 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 9 stroke:#3b82f6,stroke-width:1.75px
-  linkStyle 10 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 11 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 12 stroke:#3b82f6,stroke-width:1.75px
-  linkStyle 13 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 14 stroke:#3b82f6,stroke-width:1.75px
-  linkStyle 15 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 16 stroke:#a855f7,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 17 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 18 stroke:#a855f7,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 19 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 20 stroke:#14b8a6,stroke-width:1.75px
-  linkStyle 21 stroke:#3b82f6,stroke-width:1.75px
+  style n0 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  style n1 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  style n2 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  n5 -.->|"imports"| n4
+  n5 -->|"composes"| n4
+  n9 -.->|"imports"| n4
+  n9 -->|"calls"| n4
+  n11 -.->|"imports"| n4
+  n6 -.->|"imports"| n4
+  n6 -->|"composes"| n4
+  n10 -.->|"imports"| n5
+  n10 -.->|"imports"| n6
+  n3 -->|"calls"| n7
+  n3 -.->|"imports"| n7
+  n10 -.->|"imports"| n8
+  n10 -->|"calls"| n8
+  n10 -.->|"imports"| n9
+  n3 -->|"calls"| n10
+  n3 -.->|"imports"| n10
+  n8 -.->|"implements"| n11
+  n8 -.->|"imports"| n11
+  n7 -.->|"implements"| n11
+  n7 -.->|"imports"| n11
+  n8 -->|"composes"| n11
+  n8 -->|"calls"| n11
+  linkStyle 0,2,4,5,7,8,10,11,13,15,17,19 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 1,6,20 stroke:#14b8a6,stroke-width:1.75px
+  linkStyle 3,9,12,14,21 stroke:#3b82f6,stroke-width:1.75px
+  linkStyle 16,18 stroke:#a855f7,stroke-width:1.75px,stroke-dasharray:5 5
 ```
 <!-- archigram:end l0_hexagonal_rings_mermaid -->
 
@@ -670,11 +647,11 @@ Emits `<<interface>>` stereotypes, visibility-prefixed field/method compartments
 ---
 config:
   layout: elk
-  look: classic
   elk:
     mergeEdges: false
     nodePlacementStrategy: BRANDES_KOEPF
   flowchart:
+    defaultRenderer: elk
     curve: linear
   themeVariables:
     primaryColor: transparent
@@ -687,64 +664,63 @@ config:
     lineColor: '#64748b'
 ---
 classDiagram
-  classDef default fill:transparent,stroke:#64748b,stroke-width:1.5px
-  class c_0_archigram_featur_ba3738["lint_syntax"]
-  class c_1_archigram_featur_d6e8be["validators"]
-  class c_2_archigram_featur_bb531f["D2SyntaxValidator"] {
+  class c0["lint_syntax"]
+  class c1["validators"]
+  class c2["D2SyntaxValidator"] {
     +init(use_cli: bool, cli_timeout: float) None
     +target_format() str property
     +validate(diagram_source: str) SyntaxValidationResult
   }
-  class c_3_archigram_featur_86114b["DotSyntaxValidator"] {
+  class c3["DotSyntaxValidator"] {
     +init(use_cli: bool, cli_timeout: float) None
     +target_format() str property
     +validate(diagram_source: str) SyntaxValidationResult
   }
-  class c_4_archigram_featur_4106c5["Gate5SyntaxHarness"] {
+  class c4["Gate5SyntaxHarness"] {
     +str slice_name
-    +init(validators: Mapping#91;str, SyntaxValidatorPort#93; | None) None
-    +supported_formats() tuple_91_str_93 property
-    +get_validator(target_format: str) SyntaxValidatorPort_None
+    +init(validators: Mapping~str, SyntaxValidatorPort~ | None) None
+    +supported_formats() tuple~str~ property
+    +get_validator(target_format: str) SyntaxValidatorPort | None
     +validate(target_format: str, diagram_source: str) SyntaxValidationResult
   }
-  class c_5_archigram_featur_c2d69d["LikeC4SyntaxValidator"] {
+  class c5["LikeC4SyntaxValidator"] {
     +target_format() str property
     +validate(diagram_source: str) SyntaxValidationResult
   }
-  class c_6_archigram_featur_086112["MermaidSyntaxValidator"] {
+  class c6["MermaidSyntaxValidator"] {
     +target_format() str property
     +validate(diagram_source: str) SyntaxValidationResult
   }
-  class c_7_archigram_featur_46a958["PlantUmlSyntaxValidator"] {
+  class c7["PlantUmlSyntaxValidator"] {
     +init(use_cli: bool, cli_timeout: float) None
     +target_format() str property
     +validate(diagram_source: str) SyntaxValidationResult
   }
-  class c_8_archigram_ports__7ed230["contracts"]
-  class c_9_archigram_ports__58ed33["SyntaxValidationResult"] {
+  class c8["contracts"]
+  class c9["SyntaxValidationResult"] {
     +bool valid
     +str target_format
-    +tuple#91;str, ...#93; errors
+    +tuple~str~ errors
   }
-  class c_10_archigram_ports__993eea["SyntaxValidatorPort"] {
+  class c10["SyntaxValidatorPort"] {
     <<interface>>
     +target_format() str property
     +validate(diagram_source: str) SyntaxValidationResult
   }
-  c_0_archigram_featur_ba3738 ..> c_1_archigram_featur_d6e8be : imports
-  c_1_archigram_featur_d6e8be ..> c_8_archigram_ports__7ed230 : imports
-  c_2_archigram_featur_bb531f --> c_9_archigram_ports__58ed33 : calls
-  c_10_archigram_ports__993eea <|.. c_2_archigram_featur_bb531f : implements
-  c_3_archigram_featur_86114b --> c_9_archigram_ports__58ed33 : calls
-  c_10_archigram_ports__993eea <|.. c_3_archigram_featur_86114b : implements
-  c_4_archigram_featur_4106c5 --> c_9_archigram_ports__58ed33 : calls
-  c_10_archigram_ports__993eea *-- c_4_archigram_featur_4106c5 : composes
-  c_5_archigram_featur_c2d69d --> c_9_archigram_ports__58ed33 : calls
-  c_10_archigram_ports__993eea <|.. c_5_archigram_featur_c2d69d : implements
-  c_6_archigram_featur_086112 --> c_9_archigram_ports__58ed33 : calls
-  c_10_archigram_ports__993eea <|.. c_6_archigram_featur_086112 : implements
-  c_7_archigram_featur_46a958 --> c_9_archigram_ports__58ed33 : calls
-  c_10_archigram_ports__993eea <|.. c_7_archigram_featur_46a958 : implements
+  c0 ..> c1 : imports
+  c1 ..> c8 : imports
+  c2 --> c9 : calls
+  c10 <|.. c2 : implements
+  c3 --> c9 : calls
+  c10 <|.. c3 : implements
+  c4 --> c9 : calls
+  c10 *-- c4 : composes
+  c5 --> c9 : calls
+  c10 <|.. c5 : implements
+  c6 --> c9 : calls
+  c10 <|.. c6 : implements
+  c7 --> c9 : calls
+  c10 <|.. c7 : implements
 ```
 <!-- archigram:end l2c_oop_syntax_validators_mermaid -->
 
@@ -1059,117 +1035,117 @@ config:
     noteBorderColor: '#64748b'
 ---
 sequenceDiagram
-  participant p_0_archigram_domain_71c3aa as "diagnostics"
-  participant p_1_archigram_domain_ae7fc5 as "ir"
-  participant p_2_archigram_domain_498ecc as "spec"
-  participant p_3_archigram_domain_baf783 as "style"
-  participant p_4_archigram_entryp_8024d0 as "pipeline"
-  participant p_5_archigram_entryp_a3efe2 as "propose_loop"
-  participant p_6_archigram_featur_603002 as "generator"
-  participant p_7_archigram_featur_65f494 as "emit_d2.emitter"
-  participant p_8_archigram_featur_4d345c as "emit_mermaid.emitter"
-  participant p_9_archigram_featur_ddda4c as "emit_plantuml.emitter"
-  participant p_10_archigram_featur_9a2480 as "lint_budget.gate"
-  participant p_11_archigram_featur_d444ee as "gates"
-  participant p_12_archigram_featur_d6e8be as "validators"
-  participant p_13_archigram_featur_2a23e8 as "lint_topology.gate"
-  participant p_14_archigram_featur_df5fa8 as "reducer"
-  p_4_archigram_entryp_8024d0->>+p_4_archigram_entryp_8024d0: compile_and_lint_pipeline
-  p_4_archigram_entryp_8024d0->>+p_14_archigram_featur_df5fa8: StructuralTopologicalReducer.reduce
-  p_14_archigram_featur_df5fa8-->>-p_4_archigram_entryp_8024d0: return StructuralTopologicalReducer.reduce
-  p_4_archigram_entryp_8024d0->>+p_8_archigram_featur_4d345c: MermaidEmitter.emit
-  p_8_archigram_featur_4d345c-->>-p_4_archigram_entryp_8024d0: return MermaidEmitter.emit
-  p_4_archigram_entryp_8024d0->>+p_14_archigram_featur_df5fa8: StructuralTopologicalReducer.reduce
-  p_14_archigram_featur_df5fa8-->>-p_4_archigram_entryp_8024d0: return StructuralTopologicalReducer.reduce
-  p_4_archigram_entryp_8024d0->>+p_7_archigram_featur_65f494: D2Emitter.emit
-  p_7_archigram_featur_65f494-->>-p_4_archigram_entryp_8024d0: return D2Emitter.emit
-  p_4_archigram_entryp_8024d0->>+p_14_archigram_featur_df5fa8: StructuralTopologicalReducer.reduce
-  p_14_archigram_featur_df5fa8-->>-p_4_archigram_entryp_8024d0: return StructuralTopologicalReducer.reduce
-  p_4_archigram_entryp_8024d0->>+p_9_archigram_featur_ddda4c: PlantUmlEmitter.emit
-  p_9_archigram_featur_ddda4c-->>-p_4_archigram_entryp_8024d0: return PlantUmlEmitter.emit
-  p_4_archigram_entryp_8024d0->>+p_11_archigram_featur_d444ee: GroundingAndBoundaryGate.__init__
-  p_11_archigram_featur_d444ee-->>-p_4_archigram_entryp_8024d0: return GroundingAndBoundaryGate.__init__
-  p_4_archigram_entryp_8024d0->>+p_11_archigram_featur_d444ee: GroundingAndBoundaryGate.check
-  p_11_archigram_featur_d444ee-->>-p_4_archigram_entryp_8024d0: return GroundingAndBoundaryGate.check
-  p_4_archigram_entryp_8024d0->>+p_13_archigram_featur_2a23e8: TopologicalInvariantGate.__init__
-  p_13_archigram_featur_2a23e8-->>-p_4_archigram_entryp_8024d0: return TopologicalInvariantGate.__init__
-  p_4_archigram_entryp_8024d0->>+p_13_archigram_featur_2a23e8: TopologicalInvariantGate.check
-  p_13_archigram_featur_2a23e8-->>-p_4_archigram_entryp_8024d0: return TopologicalInvariantGate.check
-  p_4_archigram_entryp_8024d0->>+p_10_archigram_featur_9a2480: CognitiveBudgetAndOrphanGate.check
-  p_10_archigram_featur_9a2480-->>-p_4_archigram_entryp_8024d0: return CognitiveBudgetAndOrphanGate.check
-  p_4_archigram_entryp_8024d0->>+p_12_archigram_featur_d6e8be: build_default_validators
-  p_12_archigram_featur_d6e8be-->>-p_4_archigram_entryp_8024d0: return build_default_validators
-  p_4_archigram_entryp_8024d0->>+p_12_archigram_featur_d6e8be: Gate5SyntaxHarness.__init__
-  p_12_archigram_featur_d6e8be-->>-p_4_archigram_entryp_8024d0: return Gate5SyntaxHarness.__init__
-  p_4_archigram_entryp_8024d0->>+p_12_archigram_featur_d6e8be: Gate5SyntaxHarness.validate #91;loop x3#93;
-  p_12_archigram_featur_d6e8be-->>-p_4_archigram_entryp_8024d0: return Gate5SyntaxHarness.validate #91;loop x3#93;
-  p_4_archigram_entryp_8024d0->>+p_0_archigram_domain_71c3aa: LintReport.from_diagnostics
-  p_0_archigram_domain_71c3aa-->>-p_4_archigram_entryp_8024d0: return LintReport.from_diagnostics
-  p_4_archigram_entryp_8024d0-->>-p_4_archigram_entryp_8024d0: return compile_and_lint_pipeline
-  p_5_archigram_entryp_a3efe2->>+p_5_archigram_entryp_a3efe2: run_propose_loop
-  p_5_archigram_entryp_a3efe2->>+p_6_archigram_featur_603002: GraphDigestGenerator.to_compact_markdown
-  p_6_archigram_featur_603002-->>-p_5_archigram_entryp_a3efe2: return GraphDigestGenerator.to_compact_markdown
-  p_5_archigram_entryp_a3efe2->>+p_2_archigram_domain_498ecc: parse_curation_spec_yaml
-  p_2_archigram_domain_498ecc-->>-p_5_archigram_entryp_a3efe2: return parse_curation_spec_yaml
-  p_5_archigram_entryp_a3efe2->>+p_11_archigram_featur_d444ee: GroundingAndBoundaryGate.check #91;loop x2#93;
-  p_11_archigram_featur_d444ee-->>-p_5_archigram_entryp_a3efe2: return GroundingAndBoundaryGate.check #91;loop x2#93;
-  p_5_archigram_entryp_a3efe2->>+p_13_archigram_featur_2a23e8: TopologicalInvariantGate.check
-  p_13_archigram_featur_2a23e8-->>-p_5_archigram_entryp_a3efe2: return TopologicalInvariantGate.check
-  p_5_archigram_entryp_a3efe2->>+p_0_archigram_domain_71c3aa: LintReport.from_diagnostics
-  p_0_archigram_domain_71c3aa-->>-p_5_archigram_entryp_a3efe2: return LintReport.from_diagnostics
-  p_5_archigram_entryp_a3efe2->>+p_0_archigram_domain_71c3aa: LintReport._validate_passed_invariant
-  p_0_archigram_domain_71c3aa-->>-p_5_archigram_entryp_a3efe2: return LintReport._validate_passed_invariant
-  p_5_archigram_entryp_a3efe2->>+p_2_archigram_domain_498ecc: parse_curation_spec_yaml
-  p_2_archigram_domain_498ecc-->>-p_5_archigram_entryp_a3efe2: return parse_curation_spec_yaml
-  p_5_archigram_entryp_a3efe2->>+p_11_archigram_featur_d444ee: collect_observed_symbols
-  p_11_archigram_featur_d444ee-->>-p_5_archigram_entryp_a3efe2: return collect_observed_symbols
-  p_5_archigram_entryp_a3efe2->>+p_2_archigram_domain_498ecc: DiagramViewSpec._validate_unique_view_rules
-  p_2_archigram_domain_498ecc-->>-p_5_archigram_entryp_a3efe2: return DiagramViewSpec._validate_unique_view_rules
-  p_5_archigram_entryp_a3efe2->>+p_2_archigram_domain_498ecc: CurationSpecV1._validate_spec_uniqueness
-  p_2_archigram_domain_498ecc-->>-p_5_archigram_entryp_a3efe2: return CurationSpecV1._validate_spec_uniqueness
-  p_5_archigram_entryp_a3efe2->>+p_11_archigram_featur_d444ee: GroundingAndBoundaryGate.check
-  p_11_archigram_featur_d444ee-->>-p_5_archigram_entryp_a3efe2: return GroundingAndBoundaryGate.check
-  p_5_archigram_entryp_a3efe2->>+p_14_archigram_featur_df5fa8: StructuralTopologicalReducer.reduce
-  p_14_archigram_featur_df5fa8-->>-p_5_archigram_entryp_a3efe2: return StructuralTopologicalReducer.reduce
-  p_5_archigram_entryp_a3efe2->>+p_11_archigram_featur_d444ee: GroundingAndBoundaryGate.check
-  p_11_archigram_featur_d444ee-->>-p_5_archigram_entryp_a3efe2: return GroundingAndBoundaryGate.check
-  p_5_archigram_entryp_a3efe2->>+p_13_archigram_featur_2a23e8: TopologicalInvariantGate.check
-  p_13_archigram_featur_2a23e8-->>-p_5_archigram_entryp_a3efe2: return TopologicalInvariantGate.check
-  p_5_archigram_entryp_a3efe2->>+p_10_archigram_featur_9a2480: CognitiveBudgetAndOrphanGate.check
-  p_10_archigram_featur_9a2480-->>-p_5_archigram_entryp_a3efe2: return CognitiveBudgetAndOrphanGate.check
-  p_5_archigram_entryp_a3efe2->>+p_8_archigram_featur_4d345c: MermaidEmitter.emit
-  p_8_archigram_featur_4d345c-->>-p_5_archigram_entryp_a3efe2: return MermaidEmitter.emit
-  p_5_archigram_entryp_a3efe2->>+p_12_archigram_featur_d6e8be: Gate5SyntaxHarness.validate
-  p_12_archigram_featur_d6e8be-->>-p_5_archigram_entryp_a3efe2: return Gate5SyntaxHarness.validate
-  p_5_archigram_entryp_a3efe2->>+p_0_archigram_domain_71c3aa: LintReport.from_diagnostics
-  p_0_archigram_domain_71c3aa-->>-p_5_archigram_entryp_a3efe2: return LintReport.from_diagnostics
-  p_5_archigram_entryp_a3efe2->>+p_0_archigram_domain_71c3aa: LintReport._validate_passed_invariant
-  p_0_archigram_domain_71c3aa-->>-p_5_archigram_entryp_a3efe2: return LintReport._validate_passed_invariant
-  p_5_archigram_entryp_a3efe2->>+p_2_archigram_domain_498ecc: dump_curation_spec_yaml
-  p_2_archigram_domain_498ecc-->>-p_5_archigram_entryp_a3efe2: return dump_curation_spec_yaml
-  p_5_archigram_entryp_a3efe2->>+p_2_archigram_domain_498ecc: parse_curation_spec_yaml
-  p_2_archigram_domain_498ecc-->>-p_5_archigram_entryp_a3efe2: return parse_curation_spec_yaml
-  p_5_archigram_entryp_a3efe2->>+p_11_archigram_featur_d444ee: GroundingAndBoundaryGate.check
-  p_11_archigram_featur_d444ee-->>-p_5_archigram_entryp_a3efe2: return GroundingAndBoundaryGate.check
-  p_5_archigram_entryp_a3efe2->>+p_14_archigram_featur_df5fa8: StructuralTopologicalReducer.reduce
-  p_14_archigram_featur_df5fa8-->>-p_5_archigram_entryp_a3efe2: return StructuralTopologicalReducer.reduce
-  p_5_archigram_entryp_a3efe2->>+p_11_archigram_featur_d444ee: GroundingAndBoundaryGate.check
-  p_11_archigram_featur_d444ee-->>-p_5_archigram_entryp_a3efe2: return GroundingAndBoundaryGate.check
-  p_5_archigram_entryp_a3efe2->>+p_13_archigram_featur_2a23e8: TopologicalInvariantGate.check
-  p_13_archigram_featur_2a23e8-->>-p_5_archigram_entryp_a3efe2: return TopologicalInvariantGate.check
-  p_5_archigram_entryp_a3efe2->>+p_10_archigram_featur_9a2480: CognitiveBudgetAndOrphanGate.check
-  p_10_archigram_featur_9a2480-->>-p_5_archigram_entryp_a3efe2: return CognitiveBudgetAndOrphanGate.check
-  p_5_archigram_entryp_a3efe2->>+p_8_archigram_featur_4d345c: MermaidEmitter.emit
-  p_8_archigram_featur_4d345c-->>-p_5_archigram_entryp_a3efe2: return MermaidEmitter.emit
-  p_5_archigram_entryp_a3efe2->>+p_12_archigram_featur_d6e8be: Gate5SyntaxHarness.validate
-  p_12_archigram_featur_d6e8be-->>-p_5_archigram_entryp_a3efe2: return Gate5SyntaxHarness.validate
-  p_5_archigram_entryp_a3efe2->>+p_0_archigram_domain_71c3aa: LintReport.from_diagnostics
-  p_0_archigram_domain_71c3aa-->>-p_5_archigram_entryp_a3efe2: return LintReport.from_diagnostics
-  p_5_archigram_entryp_a3efe2->>+p_0_archigram_domain_71c3aa: LintReport._validate_passed_invariant
-  p_0_archigram_domain_71c3aa-->>-p_5_archigram_entryp_a3efe2: return LintReport._validate_passed_invariant
-  p_5_archigram_entryp_a3efe2->>+p_2_archigram_domain_498ecc: dump_curation_spec_yaml
-  p_2_archigram_domain_498ecc-->>-p_5_archigram_entryp_a3efe2: return dump_curation_spec_yaml
-  p_5_archigram_entryp_a3efe2-->>-p_5_archigram_entryp_a3efe2: return run_propose_loop
+  participant p0 as "diagnostics"
+  participant p1 as "ir"
+  participant p2 as "spec"
+  participant p3 as "style"
+  participant p4 as "pipeline"
+  participant p5 as "propose_loop"
+  participant p6 as "generator"
+  participant p7 as "emit_d2.emitter"
+  participant p8 as "emit_mermaid.emitter"
+  participant p9 as "emit_plantuml.emitter"
+  participant p10 as "lint_budget.gate"
+  participant p11 as "gates"
+  participant p12 as "validators"
+  participant p13 as "lint_topology.gate"
+  participant p14 as "reducer"
+  p4->>+p4: compile_and_lint_pipeline
+  p4->>+p14: StructuralTopologicalReducer.reduce
+  p14-->>-p4: return
+  p4->>+p8: MermaidEmitter.emit
+  p8-->>-p4: return
+  p4->>+p14: StructuralTopologicalReducer.reduce
+  p14-->>-p4: return
+  p4->>+p7: D2Emitter.emit
+  p7-->>-p4: return
+  p4->>+p14: StructuralTopologicalReducer.reduce
+  p14-->>-p4: return
+  p4->>+p9: PlantUmlEmitter.emit
+  p9-->>-p4: return
+  p4->>+p11: GroundingAndBoundaryGate.__init__
+  p11-->>-p4: return
+  p4->>+p11: GroundingAndBoundaryGate.check
+  p11-->>-p4: return
+  p4->>+p13: TopologicalInvariantGate.__init__
+  p13-->>-p4: return
+  p4->>+p13: TopologicalInvariantGate.check
+  p13-->>-p4: return
+  p4->>+p10: CognitiveBudgetAndOrphanGate.check
+  p10-->>-p4: return
+  p4->>+p12: build_default_validators
+  p12-->>-p4: return
+  p4->>+p12: Gate5SyntaxHarness.__init__
+  p12-->>-p4: return
+  p4->>+p12: Gate5SyntaxHarness.validate #91;loop x3#93;
+  p12-->>-p4: return
+  p4->>+p0: LintReport.from_diagnostics
+  p0-->>-p4: return
+  p4-->>-p4: return
+  p5->>+p5: run_propose_loop
+  p5->>+p6: GraphDigestGenerator.to_compact_markdown
+  p6-->>-p5: return
+  p5->>+p2: parse_curation_spec_yaml
+  p2-->>-p5: return
+  p5->>+p11: GroundingAndBoundaryGate.check #91;loop x2#93;
+  p11-->>-p5: return
+  p5->>+p13: TopologicalInvariantGate.check
+  p13-->>-p5: return
+  p5->>+p0: LintReport.from_diagnostics
+  p0-->>-p5: return
+  p5->>+p0: LintReport._validate_passed_invariant
+  p0-->>-p5: return
+  p5->>+p2: parse_curation_spec_yaml
+  p2-->>-p5: return
+  p5->>+p11: collect_observed_symbols
+  p11-->>-p5: return
+  p5->>+p2: DiagramViewSpec._validate_unique_view_rules
+  p2-->>-p5: return
+  p5->>+p2: CurationSpecV1._validate_spec_uniqueness
+  p2-->>-p5: return
+  p5->>+p11: GroundingAndBoundaryGate.check
+  p11-->>-p5: return
+  p5->>+p14: StructuralTopologicalReducer.reduce
+  p14-->>-p5: return
+  p5->>+p11: GroundingAndBoundaryGate.check
+  p11-->>-p5: return
+  p5->>+p13: TopologicalInvariantGate.check
+  p13-->>-p5: return
+  p5->>+p10: CognitiveBudgetAndOrphanGate.check
+  p10-->>-p5: return
+  p5->>+p8: MermaidEmitter.emit
+  p8-->>-p5: return
+  p5->>+p12: Gate5SyntaxHarness.validate
+  p12-->>-p5: return
+  p5->>+p0: LintReport.from_diagnostics
+  p0-->>-p5: return
+  p5->>+p0: LintReport._validate_passed_invariant
+  p0-->>-p5: return
+  p5->>+p2: dump_curation_spec_yaml
+  p2-->>-p5: return
+  p5->>+p2: parse_curation_spec_yaml
+  p2-->>-p5: return
+  p5->>+p11: GroundingAndBoundaryGate.check
+  p11-->>-p5: return
+  p5->>+p14: StructuralTopologicalReducer.reduce
+  p14-->>-p5: return
+  p5->>+p11: GroundingAndBoundaryGate.check
+  p11-->>-p5: return
+  p5->>+p13: TopologicalInvariantGate.check
+  p13-->>-p5: return
+  p5->>+p10: CognitiveBudgetAndOrphanGate.check
+  p10-->>-p5: return
+  p5->>+p8: MermaidEmitter.emit
+  p8-->>-p5: return
+  p5->>+p12: Gate5SyntaxHarness.validate
+  p12-->>-p5: return
+  p5->>+p0: LintReport.from_diagnostics
+  p0-->>-p5: return
+  p5->>+p0: LintReport._validate_passed_invariant
+  p0-->>-p5: return
+  p5->>+p2: dump_curation_spec_yaml
+  p2-->>-p5: return
+  p5-->>-p5: return
 ```
 <!-- archigram:end l3_runtime_pipeline_mermaid -->
 

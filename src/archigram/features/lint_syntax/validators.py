@@ -452,6 +452,48 @@ def _check_mermaid_sequence_line(
     return errors
 
 
+def _check_mermaid_flowchart_line(
+    stripped: str,
+    raw_line: str,
+    line_no: int,
+    stack: list[str],
+) -> list[str]:
+    errors: list[str] = []
+    head = stripped.split()[0]
+    if head == "subgraph":
+        stack.append("subgraph")
+    elif head == "end":
+        if not stack:
+            errors.append(f"Line {line_no}: unexpected 'end' with no open subgraph")
+        else:
+            stack.pop()
+    errors.extend(_check_mermaid_flowchart_labels(raw_line, line_no))
+    return errors
+
+
+def _check_mermaid_class_line(
+    stripped: str,
+    raw_line: str,
+    line_no: int,
+    in_class_body: bool,
+) -> tuple[bool, list[str]]:
+    lowered = stripped.lower()
+    errors: list[str] = []
+    if not in_class_body and lowered.startswith(("classdef ", "style ")) and ":" in stripped:
+        errors.append(
+            f"Line {line_no}: '{stripped.split()[0]}' with ':' attributes "
+            "is invalid in Mermaid classDiagram"
+        )
+    if in_class_body:
+        if stripped == "}":
+            return False, errors
+        if ";" in raw_line:
+            errors.append(f"Line {line_no}: ';' inside Mermaid classDiagram member block")
+    elif stripped.endswith("{"):
+        return True, errors
+    return in_class_body, errors
+
+
 def _validate_mermaid_body(
     kind: str,
     masked_lines: Sequence[str],
@@ -460,21 +502,20 @@ def _validate_mermaid_body(
 ) -> list[str]:
     errors: list[str] = []
     stack: list[str] = []
+    in_class_body = False
     for offset, masked in enumerate(masked_lines[body_start:]):
         line_no = body_start + offset + 1
         stripped = masked.strip()
         if not stripped:
             continue
+        raw_line = raw_lines[line_no - 1]
         if kind == "flowchart":
-            head = stripped.split()[0]
-            if head == "subgraph":
-                stack.append("subgraph")
-            elif head == "end":
-                if not stack:
-                    errors.append(f"Line {line_no}: unexpected 'end' with no open subgraph")
-                else:
-                    stack.pop()
-            errors.extend(_check_mermaid_flowchart_labels(raw_lines[line_no - 1], line_no))
+            errors.extend(_check_mermaid_flowchart_line(stripped, raw_line, line_no, stack))
+        elif kind == "classDiagram":
+            in_class_body, cls_errs = _check_mermaid_class_line(
+                stripped, raw_line, line_no, in_class_body
+            )
+            errors.extend(cls_errs)
         elif kind == "sequenceDiagram":
             errors.extend(_check_mermaid_sequence_line(stripped, line_no, stack))
     if stack:

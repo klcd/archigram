@@ -114,10 +114,14 @@ def test_self_hosted_structural_views_pass_all_gates_and_sync_check(
     result = compile_and_lint_pipeline(_cached_self_ir(), subset_spec)
     assert result.lint_report.passed, f"Self-hosted lint errors: {result.lint_report.diagnostics}"
 
+    from archigram.domain.style import MERMAID_GITEA_MAX_SOURCE_CHARS
+
     for view in subset_spec.views:
         artifact = result.views[view.id]
         committed = (_DIAGRAMS_DIR / artifact.output_filename).read_text(encoding="utf-8")
         assert artifact.diagram_source == committed
+        if view.target_renderer is TargetRenderer.MERMAID:
+            assert len(artifact.diagram_source) < MERMAID_GITEA_MAX_SOURCE_CHARS
 
     sync_res = sync_markdown_views(result.views, _DOCS_ARCH, check_only=True)
     assert sync_res.is_clean
@@ -130,6 +134,8 @@ def test_self_hosted_trace_views_and_snapshot_determinism(
     reverse_participants: bool,
 ) -> None:
     """Committed L3 trace matches live capture and passes all 5 Gates invariant to order."""
+    from archigram.domain.style import MERMAID_GITEA_MAX_SOURCE_CHARS
+
     snapshot = _cached_trace_snapshot()
     live = _cached_live_self_trace()
     assert live.model_dump(mode="json") == snapshot.model_dump(mode="json")
@@ -158,6 +164,8 @@ def test_self_hosted_trace_views_and_snapshot_determinism(
         artifact = result.views[view.id]
         committed = (_DIAGRAMS_DIR / artifact.output_filename).read_text(encoding="utf-8")
         assert artifact.diagram_source == committed
+        if view.target_renderer is TargetRenderer.MERMAID:
+            assert len(artifact.diagram_source) < MERMAID_GITEA_MAX_SOURCE_CHARS
 
     sync_res = sync_markdown_views(result.views, _DOCS_ARCH, check_only=True)
     assert sync_res.is_clean
