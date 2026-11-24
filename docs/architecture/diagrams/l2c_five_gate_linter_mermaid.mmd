@@ -1,0 +1,37 @@
+---
+config:
+  layout: elk
+---
+flowchart TD
+  subgraph n_0_archigram_983b03["archigram"]
+    subgraph n_1_archigram_domain_6f6ac3["domain"]
+      n_5_domain_diagnosti_fc27fb["domain.diagnostics (LintReport, LintDiagnostic, GateId)"]
+      n_6_domain_ir_spec_p_0383ff["domain.ir, domain.spec & domain.concurrency"]
+    end
+    subgraph n_2_archigram_entryp_6a8ce0["entrypoints"]
+      n_4_cli_pipeline_run_774c88["entrypoints.cli (pipeline & diff_report)"]
+      n_11_mcp_repair_loop_f2e883["entrypoints.mcp (propose_loop & server)"]
+    end
+    subgraph n_3_archigram_featur_e6f01e["features"]
+      n_7_gate_1_2_groundi_256693["Gates 1-2: lint_grounding (Referential & Leaf Safety)"]
+      n_8_gate_3_topology_b45c48["Gate 3: lint_topology (Reachability, Cycles, Poset)"]
+      n_9_gate_4_budget_6e89c3["Gate 4: lint_budget (Node/Edge Budgets & Orphans)"]
+      n_10_gate_5_syntax_76244e["Gate 5: lint_syntax (Headless Mermaid/D2/PUML/C4/DOT)"]
+    end
+    n_12_ports_contracts_d0accd["ports.contracts (LintGatePort, SyntaxValidatorPort)"]
+  end
+  n_9_gate_4_budget_6e89c3 -.->|"imports"| n_5_domain_diagnosti_fc27fb
+  n_8_gate_3_topology_b45c48 -.->|"imports"| n_5_domain_diagnosti_fc27fb
+  n_7_gate_1_2_groundi_256693 -.->|"imports"| n_5_domain_diagnosti_fc27fb
+  n_6_domain_ir_spec_p_0383ff -.->|"imports"| n_1_archigram_domain_6f6ac3
+  n_8_gate_3_topology_b45c48 -.->|"imports"| n_6_domain_ir_spec_p_0383ff
+  n_7_gate_1_2_groundi_256693 -.->|"imports"| n_6_domain_ir_spec_p_0383ff
+  n_12_ports_contracts_d0accd -.->|"imports"| n_6_domain_ir_spec_p_0383ff
+  n_9_gate_4_budget_6e89c3 -.->|"imports"| n_6_domain_ir_spec_p_0383ff
+  n_11_mcp_repair_loop_f2e883 -.->|"imports"| n_7_gate_1_2_groundi_256693
+  n_11_mcp_repair_loop_f2e883 -.->|"imports"| n_8_gate_3_topology_b45c48
+  n_11_mcp_repair_loop_f2e883 -.->|"imports"| n_9_gate_4_budget_6e89c3
+  n_11_mcp_repair_loop_f2e883 -.->|"imports"| n_10_gate_5_syntax_76244e
+  n_4_cli_pipeline_run_774c88 -.->|"imports"| n_11_mcp_repair_loop_f2e883
+  n_12_ports_contracts_d0accd -.->|"imports"| n_5_domain_diagnosti_fc27fb
+  n_10_gate_5_syntax_76244e -.->|"imports"| n_12_ports_contracts_d0accd

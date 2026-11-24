@@ -342,13 +342,22 @@ class _TraceRecorder:
         ).encode("utf-8")
         input_sha256 = hashlib.sha256(digest_payload).hexdigest()
 
+        label_counts: dict[str, int] = {}
+        for pmeta in self.participants.values():
+            label_counts[pmeta.label] = label_counts.get(pmeta.label, 0) + 1
+
         participants: dict[str, TraceParticipant] = {}
         for pid in sorted(self.participants):
             pmeta = self.participants[pid]
+            display_label = (
+                ".".join(pid.split(".")[-2:])
+                if label_counts.get(pmeta.label, 0) > 1 and "." in pid
+                else pmeta.label
+            )
             participants[pid] = TraceParticipant(
                 participant_id=pmeta.participant_id,
                 symbol_id=pmeta.participant_id,
-                label=pmeta.label,
+                label=display_label,
                 kind=pmeta.kind,
                 provenance=ProvenanceStamp(
                     grade=ProvenanceGrade.OBSERVED,

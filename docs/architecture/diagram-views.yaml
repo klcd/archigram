@@ -1,0 +1,1116 @@
+# ArchiGram Self-Hosted Structural Curation Spec (CurationSpecV1)
+# Compiled directly against `src/archigram` via:
+#   uv run archigram apply src/archigram \
+#     --spec docs/architecture/diagram-views.yaml \
+#     --out-dir docs/architecture/diagrams \
+#     --sync-md docs/architecture
+schema_version: '1.0'
+metadata:
+  project: ArchiGram
+  purpose: Multi-level self-hosted architecture views (L0 Hexagonal Rings -> L1 Feature Slices -> L2 Subsystems)
+
+global_abstractions:
+  # Prune top-level namespace package stubs that only serve as Python containment anchors
+  - op: prune_leaves
+    id: prune_namespace_roots
+    node_id_globs:
+      - archigram
+      - archigram.entrypoints
+      - archigram.features
+    direction: both
+
+views:
+  # ============================================================================
+  # LEVEL 0: System & Hexagonal Rings (9 Supernodes)
+  # ============================================================================
+  - id: l0_hexagonal_rings_mermaid
+    title: "L0: ArchiGram Hexagonal Rings & Capability Groups (Mermaid)"
+    ir_mode: structural_graph
+    target_renderer: mermaid
+    scope:
+      mode: full
+    rules:
+      - op: collapse_partition
+        id: l0_mmd_cli_dataplane
+        target_node_id: cli_dataplane
+        label: "CLI Data Plane (entrypoints.cli)"
+        summary: "Zero-LLM deterministic apply, lint, diff, markdown_sync & self_trace"
+        member_globs:
+          - archigram.entrypoints.cli
+          - archigram.entrypoints.cli.*
+      - op: collapse_partition
+        id: l0_mmd_mcp_controlplane
+        target_node_id: mcp_controlplane
+        label: "MCP Control Plane (entrypoints.mcp)"
+        summary: "MCP server tools & bounded 3-turn self-healing repair loop"
+        member_globs:
+          - archigram.entrypoints.mcp
+          - archigram.entrypoints.mcp.*
+      - op: collapse_partition
+        id: l0_mmd_feature_ingestors
+        target_node_id: feature_ingestors
+        label: "Ingestor Slices (DOT, SCIP, OTLP, Class, Python)"
+        summary: "5 independent factual extractors emitting OBSERVED Canonical IR"
+        member_globs:
+          - archigram.features.ingest_*
+      - op: collapse_partition
+        id: l0_mmd_feature_reducers
+        target_node_id: feature_reducers
+        label: "Reducer Slices (Structural + Trace Compactor)"
+        summary: "Topological graph reduction & R1-R6 + SP-Poset trace compaction"
+        member_globs:
+          - archigram.features.reduce_*
+      - op: collapse_partition
+        id: l0_mmd_feature_linters
+        target_node_id: feature_linters
+        label: "5-Gate Linter Slices (Grounding, Topology, Budget, Syntax)"
+        summary: "Mathematical verification gates with witness paths & repair hints"
+        member_globs:
+          - archigram.features.lint_*
+      - op: collapse_partition
+        id: l0_mmd_feature_emitters
+        target_node_id: feature_emitters
+        label: "Emitter Slices (Mermaid, D2, PlantUML, LikeC4)"
+        summary: "4 deterministic multi-target renderers"
+        member_globs:
+          - archigram.features.emit_*
+      - op: collapse_partition
+        id: l0_mmd_feature_digest
+        target_node_id: feature_digest
+        label: "Digest Slice (Graph & Trace Digest)"
+        summary: "Token-efficient Louvain/PageRank/hotspot digests for MCP"
+        member_globs:
+          - archigram.features.digest
+          - archigram.features.digest.*
+      - op: collapse_partition
+        id: l0_mmd_ports_contracts
+        target_node_id: ports_contracts
+        label: "Ports & Contracts (archigram.ports)"
+        summary: "Hexagonal Protocol interfaces isolating feature slices"
+        member_globs:
+          - archigram.ports
+          - archigram.ports.*
+      - op: collapse_partition
+        id: l0_mmd_domain_core
+        target_node_id: domain_core
+        label: "Domain Core (Canonical IR, Spec, Poset, Diagnostics)"
+        summary: "Zero-I/O pure Pydantic v2 value objects and concurrency math"
+        member_globs:
+          - archigram.domain
+          - archigram.domain.*
+    simplify:
+      condense_sccs: true
+      transitive_reduction: true
+    invariants:
+      protected_nodes:
+        - cli_dataplane
+        - mcp_controlplane
+        - ports_contracts
+        - domain_core
+      preserve_reachability:
+        - from_node: archigram.entrypoints.cli.pipeline
+          to_node: archigram.ports.contracts
+        - from_node: archigram.ports.contracts
+          to_node: archigram.domain.ir
+        - from_node: archigram.entrypoints.cli.pipeline
+          to_node: archigram.domain.ir
+      forbid_new_cycles: true
+      node_budget:
+        min_count: 6
+        max_count: 12
+      edge_budget_max: 40
+
+  - id: l0_hexagonal_rings_likec4
+    title: "L0: ArchiGram Hexagonal Rings & Capability Groups (LikeC4)"
+    ir_mode: structural_graph
+    target_renderer: likec4
+    scope:
+      mode: full
+    rules:
+      - op: collapse_partition
+        id: l0_c4_cli_dataplane
+        target_node_id: cli_dataplane
+        label: "CLI Data Plane"
+        member_globs:
+          - archigram.entrypoints.cli
+          - archigram.entrypoints.cli.*
+      - op: collapse_partition
+        id: l0_c4_mcp_controlplane
+        target_node_id: mcp_controlplane
+        label: "MCP Control Plane"
+        member_globs:
+          - archigram.entrypoints.mcp
+          - archigram.entrypoints.mcp.*
+      - op: collapse_partition
+        id: l0_c4_feature_ingestors
+        target_node_id: feature_ingestors
+        label: "Ingestor Slices"
+        member_globs:
+          - archigram.features.ingest_*
+      - op: collapse_partition
+        id: l0_c4_feature_reducers
+        target_node_id: feature_reducers
+        label: "Reducer Slices"
+        member_globs:
+          - archigram.features.reduce_*
+      - op: collapse_partition
+        id: l0_c4_feature_linters
+        target_node_id: feature_linters
+        label: "5-Gate Linter Slices"
+        member_globs:
+          - archigram.features.lint_*
+      - op: collapse_partition
+        id: l0_c4_feature_emitters
+        target_node_id: feature_emitters
+        label: "Emitter Slices"
+        member_globs:
+          - archigram.features.emit_*
+      - op: collapse_partition
+        id: l0_c4_feature_digest
+        target_node_id: feature_digest
+        label: "Digest Slice"
+        member_globs:
+          - archigram.features.digest
+          - archigram.features.digest.*
+      - op: collapse_partition
+        id: l0_c4_ports_contracts
+        target_node_id: ports_contracts
+        label: "Ports & Contracts"
+        member_globs:
+          - archigram.ports
+          - archigram.ports.*
+      - op: collapse_partition
+        id: l0_c4_domain_core
+        target_node_id: domain_core
+        label: "Domain Core"
+        member_globs:
+          - archigram.domain
+          - archigram.domain.*
+    simplify:
+      condense_sccs: true
+      transitive_reduction: true
+    invariants:
+      protected_nodes:
+        - cli_dataplane
+        - mcp_controlplane
+        - ports_contracts
+        - domain_core
+      preserve_reachability:
+        - from_node: archigram.entrypoints.cli.pipeline
+          to_node: archigram.ports.contracts
+        - from_node: archigram.ports.contracts
+          to_node: archigram.domain.ir
+      forbid_new_cycles: true
+      node_budget:
+        min_count: 6
+        max_count: 12
+      edge_budget_max: 40
+
+  - id: l0_hexagonal_rings_d2
+    title: "L0: ArchiGram Hexagonal Rings & Capability Groups (D2)"
+    ir_mode: structural_graph
+    target_renderer: d2
+    scope:
+      mode: full
+    rules:
+      - op: collapse_partition
+        id: l0_d2_cli_dataplane
+        target_node_id: cli_dataplane
+        label: "CLI Data Plane"
+        member_globs:
+          - archigram.entrypoints.cli
+          - archigram.entrypoints.cli.*
+      - op: collapse_partition
+        id: l0_d2_mcp_controlplane
+        target_node_id: mcp_controlplane
+        label: "MCP Control Plane"
+        member_globs:
+          - archigram.entrypoints.mcp
+          - archigram.entrypoints.mcp.*
+      - op: collapse_partition
+        id: l0_d2_feature_ingestors
+        target_node_id: feature_ingestors
+        label: "Ingestor Slices"
+        member_globs:
+          - archigram.features.ingest_*
+      - op: collapse_partition
+        id: l0_d2_feature_reducers
+        target_node_id: feature_reducers
+        label: "Reducer Slices"
+        member_globs:
+          - archigram.features.reduce_*
+      - op: collapse_partition
+        id: l0_d2_feature_linters
+        target_node_id: feature_linters
+        label: "5-Gate Linter Slices"
+        member_globs:
+          - archigram.features.lint_*
+      - op: collapse_partition
+        id: l0_d2_feature_emitters
+        target_node_id: feature_emitters
+        label: "Emitter Slices"
+        member_globs:
+          - archigram.features.emit_*
+      - op: collapse_partition
+        id: l0_d2_feature_digest
+        target_node_id: feature_digest
+        label: "Digest Slice"
+        member_globs:
+          - archigram.features.digest
+          - archigram.features.digest.*
+      - op: collapse_partition
+        id: l0_d2_ports_contracts
+        target_node_id: ports_contracts
+        label: "Ports & Contracts"
+        member_globs:
+          - archigram.ports
+          - archigram.ports.*
+      - op: collapse_partition
+        id: l0_d2_domain_core
+        target_node_id: domain_core
+        label: "Domain Core"
+        member_globs:
+          - archigram.domain
+          - archigram.domain.*
+    simplify:
+      condense_sccs: true
+      transitive_reduction: true
+    invariants:
+      protected_nodes:
+        - cli_dataplane
+        - mcp_controlplane
+        - ports_contracts
+        - domain_core
+      preserve_reachability:
+        - from_node: archigram.entrypoints.cli.pipeline
+          to_node: archigram.ports.contracts
+        - from_node: archigram.ports.contracts
+          to_node: archigram.domain.ir
+      forbid_new_cycles: true
+      node_budget:
+        min_count: 6
+        max_count: 12
+      edge_budget_max: 40
+
+  # ============================================================================
+  # LEVEL 1: 16 Independent Feature Slices + Entrypoints, Ports & Domain (20 Supernodes)
+  # ============================================================================
+  - id: l1_feature_slices_mermaid
+    title: "L1: 16 Independent Vertical Feature Slices (Mermaid)"
+    ir_mode: structural_graph
+    target_renderer: mermaid
+    scope:
+      mode: full
+    rules:
+      - op: collapse_partition
+        id: l1_mmd_cli
+        target_node_id: entrypoints_cli
+        label: "entrypoints.cli"
+        member_globs: ["archigram.entrypoints.cli", "archigram.entrypoints.cli.*"]
+      - op: collapse_partition
+        id: l1_mmd_mcp
+        target_node_id: entrypoints_mcp
+        label: "entrypoints.mcp"
+        member_globs: ["archigram.entrypoints.mcp", "archigram.entrypoints.mcp.*"]
+      - op: collapse_partition
+        id: l1_mmd_ingest_dot
+        target_node_id: ingest_dot
+        label: "ingest_dot"
+        member_globs: ["archigram.features.ingest_dot", "archigram.features.ingest_dot.*"]
+      - op: collapse_partition
+        id: l1_mmd_ingest_scip
+        target_node_id: ingest_scip
+        label: "ingest_scip"
+        member_globs: ["archigram.features.ingest_scip", "archigram.features.ingest_scip.*"]
+      - op: collapse_partition
+        id: l1_mmd_ingest_otel
+        target_node_id: ingest_otel
+        label: "ingest_otel"
+        member_globs: ["archigram.features.ingest_otel", "archigram.features.ingest_otel.*"]
+      - op: collapse_partition
+        id: l1_mmd_ingest_class
+        target_node_id: ingest_class
+        label: "ingest_class"
+        member_globs: ["archigram.features.ingest_class", "archigram.features.ingest_class.*"]
+      - op: collapse_partition
+        id: l1_mmd_ingest_python
+        target_node_id: ingest_python
+        label: "ingest_python"
+        member_globs: ["archigram.features.ingest_python", "archigram.features.ingest_python.*"]
+      - op: collapse_partition
+        id: l1_mmd_reduce_structural
+        target_node_id: reduce_structural
+        label: "reduce_structural"
+        member_globs: ["archigram.features.reduce_structural", "archigram.features.reduce_structural.*"]
+      - op: collapse_partition
+        id: l1_mmd_reduce_trace
+        target_node_id: reduce_trace
+        label: "reduce_trace"
+        member_globs: ["archigram.features.reduce_trace", "archigram.features.reduce_trace.*"]
+      - op: collapse_partition
+        id: l1_mmd_lint_grounding
+        target_node_id: lint_grounding
+        label: "lint_grounding"
+        member_globs: ["archigram.features.lint_grounding", "archigram.features.lint_grounding.*"]
+      - op: collapse_partition
+        id: l1_mmd_lint_topology
+        target_node_id: lint_topology
+        label: "lint_topology"
+        member_globs: ["archigram.features.lint_topology", "archigram.features.lint_topology.*"]
+      - op: collapse_partition
+        id: l1_mmd_lint_budget
+        target_node_id: lint_budget
+        label: "lint_budget"
+        member_globs: ["archigram.features.lint_budget", "archigram.features.lint_budget.*"]
+      - op: collapse_partition
+        id: l1_mmd_lint_syntax
+        target_node_id: lint_syntax
+        label: "lint_syntax"
+        member_globs: ["archigram.features.lint_syntax", "archigram.features.lint_syntax.*"]
+      - op: collapse_partition
+        id: l1_mmd_emit_mermaid
+        target_node_id: emit_mermaid
+        label: "emit_mermaid"
+        member_globs: ["archigram.features.emit_mermaid", "archigram.features.emit_mermaid.*"]
+      - op: collapse_partition
+        id: l1_mmd_emit_d2
+        target_node_id: emit_d2
+        label: "emit_d2"
+        member_globs: ["archigram.features.emit_d2", "archigram.features.emit_d2.*"]
+      - op: collapse_partition
+        id: l1_mmd_emit_plantuml
+        target_node_id: emit_plantuml
+        label: "emit_plantuml"
+        member_globs: ["archigram.features.emit_plantuml", "archigram.features.emit_plantuml.*"]
+      - op: collapse_partition
+        id: l1_mmd_emit_likec4
+        target_node_id: emit_likec4
+        label: "emit_likec4"
+        member_globs: ["archigram.features.emit_likec4", "archigram.features.emit_likec4.*"]
+      - op: collapse_partition
+        id: l1_mmd_digest
+        target_node_id: digest
+        label: "digest"
+        member_globs: ["archigram.features.digest", "archigram.features.digest.*"]
+      - op: collapse_partition
+        id: l1_mmd_ports
+        target_node_id: ports
+        label: "ports"
+        member_globs: ["archigram.ports", "archigram.ports.*"]
+      - op: collapse_partition
+        id: l1_mmd_domain
+        target_node_id: domain
+        label: "domain"
+        member_globs: ["archigram.domain", "archigram.domain.*"]
+    simplify:
+      condense_sccs: true
+      transitive_reduction: true
+    invariants:
+      protected_nodes:
+        - entrypoints_cli
+        - entrypoints_mcp
+        - ports
+        - domain
+      preserve_reachability:
+        - from_node: archigram.entrypoints.cli.pipeline
+          to_node: archigram.domain.ir
+        - from_node: archigram.entrypoints.mcp.server
+          to_node: archigram.domain.diagnostics
+      forbid_new_cycles: true
+      node_budget:
+        min_count: 18
+        max_count: 25
+      edge_budget_max: 80
+
+  - id: l1_feature_slices_d2
+    title: "L1: 16 Independent Vertical Feature Slices (D2)"
+    ir_mode: structural_graph
+    target_renderer: d2
+    scope:
+      mode: full
+    rules:
+      - op: collapse_partition
+        id: l1_d2_cli
+        target_node_id: entrypoints_cli
+        label: "entrypoints.cli"
+        member_globs: ["archigram.entrypoints.cli", "archigram.entrypoints.cli.*"]
+      - op: collapse_partition
+        id: l1_d2_mcp
+        target_node_id: entrypoints_mcp
+        label: "entrypoints.mcp"
+        member_globs: ["archigram.entrypoints.mcp", "archigram.entrypoints.mcp.*"]
+      - op: collapse_partition
+        id: l1_d2_ingest_dot
+        target_node_id: ingest_dot
+        label: "ingest_dot"
+        member_globs: ["archigram.features.ingest_dot", "archigram.features.ingest_dot.*"]
+      - op: collapse_partition
+        id: l1_d2_ingest_scip
+        target_node_id: ingest_scip
+        label: "ingest_scip"
+        member_globs: ["archigram.features.ingest_scip", "archigram.features.ingest_scip.*"]
+      - op: collapse_partition
+        id: l1_d2_ingest_otel
+        target_node_id: ingest_otel
+        label: "ingest_otel"
+        member_globs: ["archigram.features.ingest_otel", "archigram.features.ingest_otel.*"]
+      - op: collapse_partition
+        id: l1_d2_ingest_class
+        target_node_id: ingest_class
+        label: "ingest_class"
+        member_globs: ["archigram.features.ingest_class", "archigram.features.ingest_class.*"]
+      - op: collapse_partition
+        id: l1_d2_ingest_python
+        target_node_id: ingest_python
+        label: "ingest_python"
+        member_globs: ["archigram.features.ingest_python", "archigram.features.ingest_python.*"]
+      - op: collapse_partition
+        id: l1_d2_reduce_structural
+        target_node_id: reduce_structural
+        label: "reduce_structural"
+        member_globs: ["archigram.features.reduce_structural", "archigram.features.reduce_structural.*"]
+      - op: collapse_partition
+        id: l1_d2_reduce_trace
+        target_node_id: reduce_trace
+        label: "reduce_trace"
+        member_globs: ["archigram.features.reduce_trace", "archigram.features.reduce_trace.*"]
+      - op: collapse_partition
+        id: l1_d2_lint_grounding
+        target_node_id: lint_grounding
+        label: "lint_grounding"
+        member_globs: ["archigram.features.lint_grounding", "archigram.features.lint_grounding.*"]
+      - op: collapse_partition
+        id: l1_d2_lint_topology
+        target_node_id: lint_topology
+        label: "lint_topology"
+        member_globs: ["archigram.features.lint_topology", "archigram.features.lint_topology.*"]
+      - op: collapse_partition
+        id: l1_d2_lint_budget
+        target_node_id: lint_budget
+        label: "lint_budget"
+        member_globs: ["archigram.features.lint_budget", "archigram.features.lint_budget.*"]
+      - op: collapse_partition
+        id: l1_d2_lint_syntax
+        target_node_id: lint_syntax
+        label: "lint_syntax"
+        member_globs: ["archigram.features.lint_syntax", "archigram.features.lint_syntax.*"]
+      - op: collapse_partition
+        id: l1_d2_emit_mermaid
+        target_node_id: emit_mermaid
+        label: "emit_mermaid"
+        member_globs: ["archigram.features.emit_mermaid", "archigram.features.emit_mermaid.*"]
+      - op: collapse_partition
+        id: l1_d2_emit_d2
+        target_node_id: emit_d2
+        label: "emit_d2"
+        member_globs: ["archigram.features.emit_d2", "archigram.features.emit_d2.*"]
+      - op: collapse_partition
+        id: l1_d2_emit_plantuml
+        target_node_id: emit_plantuml
+        label: "emit_plantuml"
+        member_globs: ["archigram.features.emit_plantuml", "archigram.features.emit_plantuml.*"]
+      - op: collapse_partition
+        id: l1_d2_emit_likec4
+        target_node_id: emit_likec4
+        label: "emit_likec4"
+        member_globs: ["archigram.features.emit_likec4", "archigram.features.emit_likec4.*"]
+      - op: collapse_partition
+        id: l1_d2_digest
+        target_node_id: digest
+        label: "digest"
+        member_globs: ["archigram.features.digest", "archigram.features.digest.*"]
+      - op: collapse_partition
+        id: l1_d2_ports
+        target_node_id: ports
+        label: "ports"
+        member_globs: ["archigram.ports", "archigram.ports.*"]
+      - op: collapse_partition
+        id: l1_d2_domain
+        target_node_id: domain
+        label: "domain"
+        member_globs: ["archigram.domain", "archigram.domain.*"]
+    simplify:
+      condense_sccs: true
+      transitive_reduction: true
+    invariants:
+      protected_nodes:
+        - entrypoints_cli
+        - entrypoints_mcp
+        - ports
+        - domain
+      preserve_reachability:
+        - from_node: archigram.entrypoints.cli.pipeline
+          to_node: archigram.domain.ir
+      forbid_new_cycles: true
+      node_budget:
+        min_count: 18
+        max_count: 25
+      edge_budget_max: 80
+
+  # ============================================================================
+  # LEVEL 2a: Domain Models & Hexagonal Ports Contracts
+  # ============================================================================
+  - id: l2a_domain_and_ports_mermaid
+    title: "L2a: Domain Core & Hexagonal Port Contracts (Mermaid)"
+    ir_mode: structural_graph
+    target_renderer: mermaid
+    scope:
+      mode: k_hop_neighborhood
+      focal_nodes:
+        - archigram.ports.contracts
+        - archigram.domain.ir
+        - archigram.domain.spec
+        - archigram.domain.diagnostics
+        - archigram.domain.concurrency
+        - archigram.domain.ir.StructuralGraphIR
+        - archigram.domain.ir.InteractionTraceIR
+        - archigram.domain.spec.CurationSpecV1
+        - archigram.domain.diagnostics.LintReport
+        - archigram.domain.concurrency.PosetCotreeNode
+      upstream_depth: 0
+      downstream_depth: 1
+    rules:
+      - op: collapse_partition
+        id: l2a_mmd_ports
+        target_node_id: ports_protocols
+        label: "ports.contracts (Ingestor, Reducer, Compactor, LintGate, Emitter, Digest)"
+        member_globs: ["archigram.ports", "archigram.ports.*"]
+      - op: collapse_partition
+        id: l2a_mmd_ir_types
+        target_node_id: domain_ir_graph
+        label: "StructuralGraphIR, IRNode, IREdge"
+        member_globs:
+          - archigram.domain.ir.StructuralGraphIR
+          - archigram.domain.ir.IRNode
+          - archigram.domain.ir.IREdge
+          - archigram.domain.ir.ClassMember
+          - archigram.domain.ir.NodeKind
+          - archigram.domain.ir.EdgeRelation
+          - archigram.domain.ir.SyncKind
+          - archigram.domain.ir.Visibility
+      - op: collapse_partition
+        id: l2a_mmd_ir_trace
+        target_node_id: domain_ir_trace
+        label: "InteractionTraceIR, TraceEvent, TraceParticipant"
+        member_globs:
+          - archigram.domain.ir.InteractionTraceIR
+          - archigram.domain.ir.TraceEvent
+          - archigram.domain.ir.TraceParticipant
+          - archigram.domain.ir.EventStatus
+      - op: collapse_partition
+        id: l2a_mmd_spec
+        target_node_id: domain_spec
+        label: "domain.spec (CurationSpecV1, DiagramViewSpec, Rules & Invariants)"
+        member_globs: ["archigram.domain.spec", "archigram.domain.spec.*"]
+      - op: collapse_partition
+        id: l2a_mmd_diagnostics
+        target_node_id: domain_diagnostics
+        label: "domain.diagnostics (LintReport, LintDiagnostic, GateId)"
+        member_globs: ["archigram.domain.diagnostics", "archigram.domain.diagnostics.*"]
+      - op: collapse_partition
+        id: l2a_mmd_concurrency
+        target_node_id: domain_concurrency
+        label: "domain.concurrency (PosetCotreeNode, SP-Poset Decomposition)"
+        member_globs: ["archigram.domain.concurrency", "archigram.domain.concurrency.*"]
+    simplify:
+      condense_sccs: true
+      transitive_reduction: true
+    invariants:
+      protected_nodes:
+        - ports_protocols
+        - domain_ir_graph
+        - domain_spec
+        - domain_diagnostics
+        - domain_concurrency
+      preserve_reachability:
+        - from_node: archigram.ports.contracts
+          to_node: archigram.domain.ir
+        - from_node: archigram.ports.contracts
+          to_node: archigram.domain.spec
+        - from_node: archigram.ports.contracts
+          to_node: archigram.domain.diagnostics
+      forbid_new_cycles: true
+      node_budget:
+        min_count: 5
+        max_count: 15
+      edge_budget_max: 30
+
+  - id: l2a_domain_and_ports_puml
+    title: "L2a: Domain Core & Hexagonal Port Contracts (PlantUML)"
+    ir_mode: structural_graph
+    target_renderer: plantuml
+    scope:
+      mode: k_hop_neighborhood
+      focal_nodes:
+        - archigram.ports.contracts
+        - archigram.domain.ir
+        - archigram.domain.spec
+        - archigram.domain.diagnostics
+        - archigram.domain.concurrency
+        - archigram.domain.ir.StructuralGraphIR
+        - archigram.domain.ir.InteractionTraceIR
+        - archigram.domain.spec.CurationSpecV1
+        - archigram.domain.diagnostics.LintReport
+        - archigram.domain.concurrency.PosetCotreeNode
+      upstream_depth: 0
+      downstream_depth: 1
+    rules:
+      - op: collapse_partition
+        id: l2a_puml_ports
+        target_node_id: ports_protocols
+        label: "ports.contracts Protocols"
+        member_globs: ["archigram.ports", "archigram.ports.*"]
+      - op: collapse_partition
+        id: l2a_puml_ir_graph
+        target_node_id: domain_ir_graph
+        label: "StructuralGraphIR, IRNode, IREdge"
+        member_globs:
+          - archigram.domain.ir.StructuralGraphIR
+          - archigram.domain.ir.IRNode
+          - archigram.domain.ir.IREdge
+          - archigram.domain.ir.ClassMember
+          - archigram.domain.ir.NodeKind
+          - archigram.domain.ir.EdgeRelation
+          - archigram.domain.ir.SyncKind
+          - archigram.domain.ir.Visibility
+      - op: collapse_partition
+        id: l2a_puml_ir_trace
+        target_node_id: domain_ir_trace
+        label: "InteractionTraceIR, TraceEvent, TraceParticipant"
+        member_globs:
+          - archigram.domain.ir.InteractionTraceIR
+          - archigram.domain.ir.TraceEvent
+          - archigram.domain.ir.TraceParticipant
+          - archigram.domain.ir.EventStatus
+      - op: collapse_partition
+        id: l2a_puml_spec
+        target_node_id: domain_spec
+        label: "domain.spec (CurationSpecV1)"
+        member_globs: ["archigram.domain.spec", "archigram.domain.spec.*"]
+      - op: collapse_partition
+        id: l2a_puml_diagnostics
+        target_node_id: domain_diagnostics
+        label: "domain.diagnostics (LintReport)"
+        member_globs: ["archigram.domain.diagnostics", "archigram.domain.diagnostics.*"]
+      - op: collapse_partition
+        id: l2a_puml_concurrency
+        target_node_id: domain_concurrency
+        label: "domain.concurrency (PosetCotreeNode)"
+        member_globs: ["archigram.domain.concurrency", "archigram.domain.concurrency.*"]
+    simplify:
+      condense_sccs: true
+      transitive_reduction: true
+    invariants:
+      protected_nodes:
+        - ports_protocols
+        - domain_ir_graph
+        - domain_spec
+        - domain_diagnostics
+      preserve_reachability:
+        - from_node: archigram.ports.contracts
+          to_node: archigram.domain.ir
+      forbid_new_cycles: true
+      node_budget:
+        min_count: 5
+        max_count: 15
+      edge_budget_max: 30
+
+  # ============================================================================
+  # LEVEL 2b: Reduction & Concurrency Compaction Engine
+  # ============================================================================
+  - id: l2b_reduction_engine_mermaid
+    title: "L2b: Structural Reducer, Trace Compactor & SP-Poset Engine (Mermaid)"
+    ir_mode: structural_graph
+    target_renderer: mermaid
+    scope:
+      mode: k_hop_neighborhood
+      focal_nodes:
+        - archigram.features.reduce_structural.reducer
+        - archigram.features.reduce_structural.reducer.StructuralTopologicalReducer
+        - archigram.features.reduce_trace.compactor
+        - archigram.features.reduce_trace.compactor.TraceCompactionEngine
+        - archigram.domain.concurrency
+      upstream_depth: 1
+      downstream_depth: 1
+    rules:
+      - op: collapse_partition
+        id: l2b_mmd_callers
+        target_node_id: driving_entrypoints
+        label: "Driving Adapters (cli.pipeline & mcp.propose_loop)"
+        member_globs:
+          - archigram.entrypoints.*
+      - op: collapse_partition
+        id: l2b_mmd_structural_ops
+        target_node_id: reduce_structural_ops
+        label: "Structural Operators (k_hop, prune, bypass, collapse, SCC, TR)"
+        member_globs:
+          - archigram.features.reduce_structural.reducer.apply_structural_rule
+          - archigram.features.reduce_structural.reducer.bypass_vertices
+          - archigram.features.reduce_structural.reducer.collapse_partition
+          - archigram.features.reduce_structural.reducer.condense_sccs
+          - archigram.features.reduce_structural.reducer.k_hop_neighborhood
+          - archigram.features.reduce_structural.reducer.prune_leaves
+          - archigram.features.reduce_structural.reducer.transitive_reduction
+          - archigram.features.reduce_structural.reducer.CycleInducedError
+      - op: collapse_partition
+        id: l2b_mmd_structural_engine
+        target_node_id: reduce_structural_engine
+        label: "StructuralTopologicalReducer"
+        member_globs:
+          - archigram.features.reduce_structural.reducer.StructuralTopologicalReducer
+      - op: collapse_partition
+        id: l2b_mmd_trace_engine
+        target_node_id: reduce_trace_engine
+        label: "TraceCompactionEngine (R1-R6 + SP-Poset)"
+        member_globs:
+          - archigram.features.reduce_trace.compactor.TraceCompactionEngine
+      - op: collapse_partition
+        id: l2b_mmd_trace_fragments
+        target_node_id: trace_fragment_tree
+        label: "TraceFragment Tree Builder"
+        member_globs:
+          - archigram.features.reduce_trace.compactor.TraceFragment
+          - archigram.features.reduce_trace.compactor.TraceFragmentKind
+          - archigram.features.reduce_trace.compactor.build_fragment_tree_for_siblings
+          - archigram.features.reduce_trace.compactor.build_trace_fragment_tree
+          - archigram.features.reduce_trace.compactor.collect_trace_backing_ids
+      - op: collapse_partition
+        id: l2b_mmd_concurrency
+        target_node_id: domain_concurrency_poset
+        label: "domain.concurrency (SP-Poset & Overlap Clustering)"
+        member_globs: ["archigram.domain.concurrency", "archigram.domain.concurrency.*"]
+      - op: collapse_partition
+        id: l2b_mmd_domain_ir_spec
+        target_node_id: domain_ir_and_spec
+        label: "domain.ir & domain.spec (Canonical IR & Spec)"
+        member_globs:
+          - archigram.domain.Provenance*
+          - archigram.domain.ir
+          - archigram.domain.ir.*
+          - archigram.domain.spec
+          - archigram.domain.spec.*
+      - op: collapse_partition
+        id: l2b_mmd_lint_consumers
+        target_node_id: concurrency_consumers
+        label: "Other Concurrency Consumers (lint_budget, digest)"
+        member_globs:
+          - archigram.features.lint_*
+          - archigram.features.digest
+          - archigram.features.digest.*
+    simplify:
+      condense_sccs: true
+      transitive_reduction: true
+    invariants:
+      protected_nodes:
+        - reduce_structural_engine
+        - reduce_trace_engine
+        - domain_concurrency_poset
+      preserve_reachability:
+        - from_node: archigram.features.reduce_trace.compactor
+          to_node: archigram.domain.concurrency
+        - from_node: archigram.features.reduce_structural.reducer
+          to_node: archigram.domain.ir
+      forbid_new_cycles: true
+      node_budget:
+        min_count: 5
+        max_count: 18
+      edge_budget_max: 35
+
+  - id: l2b_reduction_engine_d2
+    title: "L2b: Structural Reducer, Trace Compactor & SP-Poset Engine (D2)"
+    ir_mode: structural_graph
+    target_renderer: d2
+    scope:
+      mode: k_hop_neighborhood
+      focal_nodes:
+        - archigram.features.reduce_structural.reducer
+        - archigram.features.reduce_structural.reducer.StructuralTopologicalReducer
+        - archigram.features.reduce_trace.compactor
+        - archigram.features.reduce_trace.compactor.TraceCompactionEngine
+        - archigram.domain.concurrency
+      upstream_depth: 1
+      downstream_depth: 1
+    rules:
+      - op: collapse_partition
+        id: l2b_d2_callers
+        target_node_id: driving_entrypoints
+        label: "Driving Adapters (cli.pipeline & mcp.propose_loop)"
+        member_globs:
+          - archigram.entrypoints.*
+      - op: collapse_partition
+        id: l2b_d2_structural_ops
+        target_node_id: reduce_structural_ops
+        label: "Structural Operators (k_hop, prune, bypass, collapse, SCC, TR)"
+        member_globs:
+          - archigram.features.reduce_structural.reducer.apply_structural_rule
+          - archigram.features.reduce_structural.reducer.bypass_vertices
+          - archigram.features.reduce_structural.reducer.collapse_partition
+          - archigram.features.reduce_structural.reducer.condense_sccs
+          - archigram.features.reduce_structural.reducer.k_hop_neighborhood
+          - archigram.features.reduce_structural.reducer.prune_leaves
+          - archigram.features.reduce_structural.reducer.transitive_reduction
+          - archigram.features.reduce_structural.reducer.CycleInducedError
+      - op: collapse_partition
+        id: l2b_d2_structural_engine
+        target_node_id: reduce_structural_engine
+        label: "StructuralTopologicalReducer"
+        member_globs:
+          - archigram.features.reduce_structural.reducer.StructuralTopologicalReducer
+      - op: collapse_partition
+        id: l2b_d2_trace_engine
+        target_node_id: reduce_trace_engine
+        label: "TraceCompactionEngine (R1-R6 + SP-Poset)"
+        member_globs:
+          - archigram.features.reduce_trace.compactor.TraceCompactionEngine
+      - op: collapse_partition
+        id: l2b_d2_trace_fragments
+        target_node_id: trace_fragment_tree
+        label: "TraceFragment Tree Builder"
+        member_globs:
+          - archigram.features.reduce_trace.compactor.TraceFragment
+          - archigram.features.reduce_trace.compactor.TraceFragmentKind
+          - archigram.features.reduce_trace.compactor.build_fragment_tree_for_siblings
+          - archigram.features.reduce_trace.compactor.build_trace_fragment_tree
+          - archigram.features.reduce_trace.compactor.collect_trace_backing_ids
+      - op: collapse_partition
+        id: l2b_d2_concurrency
+        target_node_id: domain_concurrency_poset
+        label: "domain.concurrency (SP-Poset & Overlap Clustering)"
+        member_globs: ["archigram.domain.concurrency", "archigram.domain.concurrency.*"]
+      - op: collapse_partition
+        id: l2b_d2_domain_ir_spec
+        target_node_id: domain_ir_and_spec
+        label: "domain.ir & domain.spec (Canonical IR & Spec)"
+        member_globs:
+          - archigram.domain.Provenance*
+          - archigram.domain.ir
+          - archigram.domain.ir.*
+          - archigram.domain.spec
+          - archigram.domain.spec.*
+      - op: collapse_partition
+        id: l2b_d2_lint_consumers
+        target_node_id: concurrency_consumers
+        label: "Other Concurrency Consumers (lint_budget, digest)"
+        member_globs:
+          - archigram.features.lint_*
+          - archigram.features.digest
+          - archigram.features.digest.*
+    simplify:
+      condense_sccs: true
+      transitive_reduction: true
+    invariants:
+      protected_nodes:
+        - reduce_structural_engine
+        - reduce_trace_engine
+        - domain_concurrency_poset
+      forbid_new_cycles: true
+      node_budget:
+        min_count: 5
+        max_count: 18
+      edge_budget_max: 35
+
+  # ============================================================================
+  # LEVEL 2c: 5-Gate Semantic, Topological, Budget & Syntax Linter
+  # ============================================================================
+  - id: l2c_five_gate_linter_mermaid
+    title: "L2c: 5-Gate Semantic, Topological, Budget & Syntax Linter (Mermaid)"
+    ir_mode: structural_graph
+    target_renderer: mermaid
+    scope:
+      mode: k_hop_neighborhood
+      focal_nodes:
+        - archigram.features.lint_grounding.gates
+        - archigram.features.lint_topology.gate
+        - archigram.features.lint_budget.gate
+        - archigram.features.lint_syntax.validators
+        - archigram.domain.diagnostics
+      upstream_depth: 1
+      downstream_depth: 1
+    rules:
+      - op: collapse_partition
+        id: l2c_mmd_cli_caller
+        target_node_id: cli_pipeline_runner
+        label: "entrypoints.cli (pipeline & diff_report)"
+        member_globs: ["archigram.entrypoints.cli", "archigram.entrypoints.cli.*"]
+      - op: collapse_partition
+        id: l2c_mmd_mcp_caller
+        target_node_id: mcp_repair_loop
+        label: "entrypoints.mcp (propose_loop & server)"
+        member_globs: ["archigram.entrypoints.mcp", "archigram.entrypoints.mcp.*"]
+      - op: collapse_partition
+        id: l2c_mmd_gate12
+        target_node_id: gate_1_2_grounding
+        label: "Gates 1-2: lint_grounding (Referential & Leaf Safety)"
+        member_globs: ["archigram.features.lint_grounding", "archigram.features.lint_grounding.*"]
+      - op: collapse_partition
+        id: l2c_mmd_gate3
+        target_node_id: gate_3_topology
+        label: "Gate 3: lint_topology (Reachability, Cycles, Poset)"
+        member_globs: ["archigram.features.lint_topology", "archigram.features.lint_topology.*"]
+      - op: collapse_partition
+        id: l2c_mmd_gate4
+        target_node_id: gate_4_budget
+        label: "Gate 4: lint_budget (Node/Edge Budgets & Orphans)"
+        member_globs: ["archigram.features.lint_budget", "archigram.features.lint_budget.*"]
+      - op: collapse_partition
+        id: l2c_mmd_gate5
+        target_node_id: gate_5_syntax
+        label: "Gate 5: lint_syntax (Headless Mermaid/D2/PUML/C4/DOT)"
+        member_globs: ["archigram.features.lint_syntax", "archigram.features.lint_syntax.*"]
+      - op: collapse_partition
+        id: l2c_mmd_diagnostics
+        target_node_id: domain_diagnostics
+        label: "domain.diagnostics (LintReport, LintDiagnostic, GateId)"
+        member_globs: ["archigram.domain.diagnostics", "archigram.domain.diagnostics.*"]
+      - op: collapse_partition
+        id: l2c_mmd_ports
+        target_node_id: ports_contracts
+        label: "ports.contracts (LintGatePort, SyntaxValidatorPort)"
+        member_globs: ["archigram.ports", "archigram.ports.*"]
+      - op: collapse_partition
+        id: l2c_mmd_domain_models
+        target_node_id: domain_ir_spec_poset
+        label: "domain.ir, domain.spec & domain.concurrency"
+        member_globs:
+          - archigram.domain.Provenance*
+          - archigram.domain.ir
+          - archigram.domain.ir.*
+          - archigram.domain.spec
+          - archigram.domain.spec.*
+          - archigram.domain.concurrency
+          - archigram.domain.concurrency.*
+    simplify:
+      condense_sccs: true
+      transitive_reduction: true
+    invariants:
+      protected_nodes:
+        - gate_1_2_grounding
+        - gate_3_topology
+        - gate_4_budget
+        - gate_5_syntax
+        - domain_diagnostics
+      preserve_reachability:
+        - from_node: archigram.features.lint_grounding.gates
+          to_node: archigram.domain.diagnostics
+        - from_node: archigram.features.lint_topology.gate
+          to_node: archigram.domain.diagnostics
+        - from_node: archigram.features.lint_budget.gate
+          to_node: archigram.domain.diagnostics
+      forbid_new_cycles: true
+      node_budget:
+        min_count: 6
+        max_count: 16
+      edge_budget_max: 35
+
+  # ============================================================================
+  # LEVEL 2d: CLI Data Plane & MCP Control Plane Driving Adapters
+  # ============================================================================
+  - id: l2d_cli_and_mcp_adapters_mermaid
+    title: "L2d: CLI Data Plane & MCP Control Plane Adapters (Mermaid)"
+    ir_mode: structural_graph
+    target_renderer: mermaid
+    scope:
+      mode: k_hop_neighborhood
+      focal_nodes:
+        - archigram.entrypoints.cli.app
+        - archigram.entrypoints.cli.pipeline
+        - archigram.entrypoints.cli.diff_report
+        - archigram.entrypoints.cli.markdown_sync
+        - archigram.entrypoints.cli.self_trace
+        - archigram.entrypoints.mcp.server
+        - archigram.entrypoints.mcp.propose_loop
+        - archigram.features.digest.generator
+      upstream_depth: 1
+      downstream_depth: 1
+    rules:
+      - op: collapse_partition
+        id: l2d_mmd_cli_app
+        target_node_id: cli_app
+        label: "cli.app (Typer apply/lint/diff/propose)"
+        member_globs: ["archigram.entrypoints.cli.app", "archigram.entrypoints.cli.app.*"]
+      - op: collapse_partition
+        id: l2d_mmd_cli_pipeline
+        target_node_id: cli_pipeline
+        label: "cli.pipeline (Zero-LLM Compile & Lint Orchestrator)"
+        member_globs: ["archigram.entrypoints.cli.pipeline", "archigram.entrypoints.cli.pipeline.*"]
+      - op: collapse_partition
+        id: l2d_mmd_cli_diff
+        target_node_id: cli_diff_report
+        label: "cli.diff_report (PR Regression Diff)"
+        member_globs: ["archigram.entrypoints.cli.diff_report", "archigram.entrypoints.cli.diff_report.*"]
+      - op: collapse_partition
+        id: l2d_mmd_cli_mdsync
+        target_node_id: cli_markdown_sync
+        label: "cli.markdown_sync (--sync-md Inline Blocks)"
+        member_globs: ["archigram.entrypoints.cli.markdown_sync", "archigram.entrypoints.cli.markdown_sync.*"]
+      - op: collapse_partition
+        id: l2d_mmd_cli_selftrace
+        target_node_id: cli_self_trace
+        label: "cli.self_trace (Live Trace Snapshotter)"
+        member_globs: ["archigram.entrypoints.cli.self_trace", "archigram.entrypoints.cli.self_trace.*"]
+      - op: collapse_partition
+        id: l2d_mmd_mcp_server
+        target_node_id: mcp_server
+        label: "mcp.server (FastMCP Tools: digest, lint, preview)"
+        member_globs: ["archigram.entrypoints.mcp.server", "archigram.entrypoints.mcp.server.*"]
+      - op: collapse_partition
+        id: l2d_mmd_mcp_propose
+        target_node_id: mcp_propose_loop
+        label: "mcp.propose_loop (Bounded 3-Turn Repair Loop)"
+        member_globs: ["archigram.entrypoints.mcp.propose_loop", "archigram.entrypoints.mcp.propose_loop.*"]
+      - op: collapse_partition
+        id: l2d_mmd_digest
+        target_node_id: feature_digest
+        label: "features.digest (GraphDigestGenerator)"
+        member_globs: ["archigram.features.digest", "archigram.features.digest.*"]
+      - op: collapse_partition
+        id: l2d_mmd_ingestors
+        target_node_id: feature_ingestors
+        label: "Ingestor Slices (DOT/SCIP/OTLP/Class/Python)"
+        member_globs: ["archigram.features.ingest_*"]
+      - op: collapse_partition
+        id: l2d_mmd_reducers
+        target_node_id: feature_reducers
+        label: "Reducer Slices (Structural & Trace)"
+        member_globs: ["archigram.features.reduce_*"]
+      - op: collapse_partition
+        id: l2d_mmd_linters
+        target_node_id: feature_linters
+        label: "5-Gate Linter Slices"
+        member_globs: ["archigram.features.lint_*"]
+      - op: collapse_partition
+        id: l2d_mmd_emitters
+        target_node_id: feature_emitters
+        label: "Emitter Slices (Mermaid/D2/PUML/LikeC4)"
+        member_globs: ["archigram.features.emit_*"]
+      - op: collapse_partition
+        id: l2d_mmd_ports_domain
+        target_node_id: ports_and_domain
+        label: "Ports & Domain Core"
+        member_globs:
+          - archigram.ports
+          - archigram.ports.*
+          - archigram.domain
+          - archigram.domain.*
+    simplify:
+      condense_sccs: true
+      transitive_reduction: true
+    invariants:
+      protected_nodes:
+        - cli_app
+        - cli_pipeline
+        - cli_diff_report
+        - cli_markdown_sync
+        - mcp_server
+        - mcp_propose_loop
+        - feature_digest
+      preserve_reachability:
+        - from_node: archigram.entrypoints.cli.app
+          to_node: archigram.entrypoints.cli.pipeline
+        - from_node: archigram.entrypoints.mcp.server
+          to_node: archigram.entrypoints.mcp.propose_loop
+      forbid_new_cycles: true
+      node_budget:
+        min_count: 8
+        max_count: 20
+      edge_budget_max: 40

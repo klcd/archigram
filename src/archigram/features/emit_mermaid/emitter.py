@@ -76,12 +76,23 @@ def build_alias_map(ids: list[str], prefix: str = "n") -> dict[str, str]:
     return {raw_id: _make_safe_alias(prefix, idx, raw_id) for idx, raw_id in enumerate(sorted(ids))}
 
 
+_OOP_NODE_KINDS: frozenset[NodeKind] = frozenset(
+    {
+        NodeKind.CLASS,
+        NodeKind.INTERFACE,
+        NodeKind.ENUM,
+    }
+)
+
+
 def _is_class_diagram_mode(ir: StructuralGraphIR) -> bool:
     """Determine if a StructuralGraphIR should emit an OOP classDiagram instead of flowchart."""
     if ir.metadata.get("diagram_variant") == "class":
         return True
     if any(bool(node.members) for node in ir.nodes.values()):
         return True
+    if not any(node.kind in _OOP_NODE_KINDS for node in ir.nodes.values()):
+        return False
     return any(edge.relation in _OOP_RELATIONS for edge in ir.edges)
 
 
