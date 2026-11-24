@@ -1,0 +1,177 @@
+vars: {
+  d2-config: {
+    layout-engine: elk
+    theme-id: 0
+    dark-theme-id: 200
+  }
+}
+style.fill: transparent
+
+direction: right
+archigram: "<<executionEnv>> archigram" {
+  style.fill: transparent
+  style.stroke: "#64748b"
+  "archigram.entrypoints": "<<executionEnv>> entrypoints" {
+    style.fill: transparent
+    style.stroke: "#64748b"
+    cli_dataplane: "<<artifact>> CLI Data Plane (entrypoints.cli)" {
+      style.3d: true
+      style.fill: transparent
+      style.stroke: "#64748b"
+    }
+    mcp_controlplane: "<<artifact>> MCP Control Plane (entrypoints.mcp)" {
+      style.3d: true
+      style.fill: transparent
+      style.stroke: "#64748b"
+    }
+  }
+  "archigram.features": "<<executionEnv>> features" {
+    style.fill: transparent
+    style.stroke: "#64748b"
+    feature_digest: "<<artifact>> Digest Slice (Graph & Trace)" {
+      style.3d: true
+      style.fill: transparent
+      style.stroke: "#64748b"
+    }
+    feature_emitters: "<<artifact>> Emitter Slices (Mermaid, D2, PlantUML, LikeC4)" {
+      style.3d: true
+      style.fill: transparent
+      style.stroke: "#64748b"
+    }
+    feature_ingestors: "<<artifact>> Ingestor Slices (5 Extractors)" {
+      style.3d: true
+      style.fill: transparent
+      style.stroke: "#64748b"
+    }
+    feature_linters: "<<artifact>> 5-Gate Linter Slices" {
+      style.3d: true
+      style.fill: transparent
+      style.stroke: "#64748b"
+    }
+    feature_reducers: "<<artifact>> Reducer Slices (Graph & Trace)" {
+      style.3d: true
+      style.fill: transparent
+      style.stroke: "#64748b"
+    }
+  }
+  domain_core: "<<artifact>> Domain Core (Canonical IR, Spec, Style)" {
+    style.3d: true
+    style.fill: transparent
+    style.stroke: "#64748b"
+  }
+  ports_contracts: "<<artifact>> Ports & Contracts (archigram.ports)" {
+    style.3d: true
+    style.fill: transparent
+    style.stroke: "#64748b"
+  }
+}
+archigram."archigram.entrypoints".mcp_controlplane -> archigram."archigram.features".feature_digest: "<<deploy>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+  style.animated: true
+}
+archigram."archigram.features".feature_digest -> archigram.domain_core: "<<deploy>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+  style.animated: true
+}
+archigram."archigram.features".feature_digest -> archigram.domain_core: "<<deploy>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+  style.animated: true
+}
+archigram."archigram.features".feature_reducers -> archigram.domain_core: "<<deploy>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+  style.animated: true
+}
+archigram.ports_contracts -> archigram.domain_core: "<<deploy>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+  style.animated: true
+}
+archigram."archigram.features".feature_emitters -> archigram.domain_core: "<<deploy>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+  style.animated: true
+}
+archigram."archigram.features".feature_reducers -> archigram.domain_core: "<<deploy>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+  style.animated: true
+}
+archigram."archigram.features".feature_emitters -> archigram.domain_core: "<<deploy>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+  style.animated: true
+}
+archigram."archigram.entrypoints".mcp_controlplane -> archigram."archigram.features".feature_emitters: "<<deploy>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+  style.animated: true
+}
+archigram."archigram.entrypoints".cli_dataplane -> archigram."archigram.features".feature_ingestors: "<<deploy>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+  style.animated: true
+}
+archigram."archigram.entrypoints".cli_dataplane -> archigram."archigram.features".feature_ingestors: "<<deploy>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+  style.animated: true
+}
+archigram."archigram.entrypoints".mcp_controlplane -> archigram."archigram.features".feature_linters: "<<deploy>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+  style.animated: true
+}
+archigram."archigram.entrypoints".mcp_controlplane -> archigram."archigram.features".feature_linters: "<<deploy>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+  style.animated: true
+}
+archigram."archigram.entrypoints".cli_dataplane -> archigram."archigram.entrypoints".mcp_controlplane: "<<deploy>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+  style.animated: true
+}
+archigram."archigram.entrypoints".cli_dataplane -> archigram."archigram.entrypoints".mcp_controlplane: "<<deploy>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+  style.animated: true
+}
+archigram."archigram.features".feature_linters -> archigram.ports_contracts: "<<deploy>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+  style.animated: true
+}
+archigram."archigram.features".feature_linters -> archigram.ports_contracts: "<<deploy>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+  style.animated: true
+}
+archigram."archigram.features".feature_linters -> archigram.ports_contracts: "<<deploy>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+  style.animated: true
+}
+archigram."archigram.features".feature_ingestors -> archigram.ports_contracts: "<<deploy>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+  style.animated: true
+}
+archigram."archigram.features".feature_ingestors -> archigram.ports_contracts: "<<deploy>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+  style.animated: true
+}
+archigram."archigram.features".feature_linters -> archigram.ports_contracts: "<<deploy>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+  style.animated: true
+}
+archigram."archigram.entrypoints".mcp_controlplane -> archigram."archigram.features".feature_reducers: "<<deploy>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+  style.animated: true
+}

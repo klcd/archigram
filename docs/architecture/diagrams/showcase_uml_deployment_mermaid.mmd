@@ -1,0 +1,62 @@
+---
+config:
+  layout: elk
+  elk:
+    mergeEdges: false
+    nodePlacementStrategy: BRANDES_KOEPF
+  flowchart:
+    defaultRenderer: elk
+    curve: linear
+  themeVariables:
+    primaryColor: transparent
+    secondaryColor: transparent
+    tertiaryColor: transparent
+    mainBkg: transparent
+    nodeBorder: '#64748b'
+    clusterBkg: transparent
+    clusterBorder: '#64748b'
+    lineColor: '#64748b'
+---
+flowchart LR
+  classDef default fill:transparent,stroke:#64748b,stroke-width:1.5px
+  subgraph n0["<<executionEnv>> archigram"]
+    subgraph n1["<<executionEnv>> entrypoints"]
+      n3["<<artifact>> CLI Data Plane (entrypoints.cli)"]
+      n10["<<artifact>> MCP Control Plane (entrypoints.mcp)"]
+    end
+    subgraph n2["<<executionEnv>> features"]
+      n5["<<artifact>> Digest Slice (Graph & Trace)"]
+      n6["<<artifact>> Emitter Slices (Mermaid, D2, PlantUML, LikeC4)"]
+      n7["<<artifact>> Ingestor Slices (5 Extractors)"]
+      n8["<<artifact>> 5-Gate Linter Slices"]
+      n9["<<artifact>> Reducer Slices (Graph & Trace)"]
+    end
+    n4["<<artifact>> Domain Core (Canonical IR, Spec, Style)"]
+    n11["<<artifact>> Ports & Contracts (archigram.ports)"]
+  end
+  style n0 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  style n1 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  style n2 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  n10 -.->|"<<deploy>>"| n5
+  n5 -.->|"<<deploy>>"| n4
+  n9 -.->|"<<deploy>>"| n4
+  n5 -.->|"<<deploy>>"| n4
+  n6 -.->|"<<deploy>>"| n4
+  n6 -.->|"<<deploy>>"| n4
+  n9 -.->|"<<deploy>>"| n4
+  n11 -.->|"<<deploy>>"| n4
+  n10 -.->|"<<deploy>>"| n6
+  n3 -.->|"<<deploy>>"| n7
+  n3 -.->|"<<deploy>>"| n7
+  n10 -.->|"<<deploy>>"| n8
+  n10 -.->|"<<deploy>>"| n8
+  n3 -.->|"<<deploy>>"| n10
+  n3 -.->|"<<deploy>>"| n10
+  n8 -.->|"<<deploy>>"| n11
+  n8 -.->|"<<deploy>>"| n11
+  n7 -.->|"<<deploy>>"| n11
+  n8 -.->|"<<deploy>>"| n11
+  n7 -.->|"<<deploy>>"| n11
+  n8 -.->|"<<deploy>>"| n11
+  n10 -.->|"<<deploy>>"| n9
+  linkStyle 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21 stroke:#3b82f6,stroke-width:1.75px,stroke-dasharray:5 5

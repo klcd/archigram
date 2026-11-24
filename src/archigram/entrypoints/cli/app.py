@@ -10,6 +10,7 @@ from typing import Annotated
 import typer
 from pydantic import ValidationError
 
+from archigram.entrypoints.cli.curate_cli import curate_app
 from archigram.entrypoints.cli.diff_report import PrDiffSummary, compute_pr_regression_diff
 from archigram.entrypoints.cli.pipeline import (
     ApplySyncOutcome,
@@ -21,6 +22,7 @@ from archigram.entrypoints.cli.pipeline import (
     load_curation_spec,
     sync_compiled_artifacts,
 )
+from archigram.entrypoints.cli.triage import TriageOptions, TriageOutcome, execute_triage
 
 EXIT_CLEAN = 0
 EXIT_LINT_OR_DRIFT = 1
@@ -32,6 +34,7 @@ app = typer.Typer(
     help="Deterministic graph projection, concurrency trace compaction, and 5-gate linter.",
     no_args_is_help=True,
 )
+app.add_typer(curate_app, name="curate")
 
 
 @dataclass(frozen=True, slots=True)
@@ -332,6 +335,80 @@ def propose_cmd(
 
     if isinstance(exit_code, int) and exit_code != 0:
         raise typer.Exit(code=exit_code)
+
+
+def _emit_triage_summary(outcome: TriageOutcome, *, check_only: bool) -> None:
+    st = outcome.stats
+    limit_note = (
+        "EXCEEDS 5,000 Gitea limit -> SVG comparison required"
+        if st.exceeds_gitea_mermaid_limit
+        else "within 5,000 Gitea limit"
+    )
+    typer.echo(format_lint_report_text(outcome.compilation.lint_report))
+    typer.echo(
+        f"Triage [{st.view_id}]: raw={st.raw_elements} nodes/{st.raw_links} links "
+        f"({st.raw_mermaid_chars} Mermaid chars: {limit_note}) -> "
+        f"curated={st.curated_elements} nodes/{st.curated_links} links "
+        f"({st.curated_mermaid_chars} Mermaid chars) | "
+        f"keep={st.kept_count}, remove={st.removed_count}, "
+        f"bypass={st.bypassed_count}, collapse={st.collapsed_count}"
+    )
+    if check_only:
+        for missing in outcome.missing_files:
+            typer.echo(f"  [STALE] Missing triage artifact: {missing}")
+        for drifted in outcome.drifted_files:
+            typer.echo(f"  [STALE] Drifted triage artifact: {drifted}")
+        return
+    for written in outcome.written_files:
+        typer.echo(f"  [WROTE] {written}")
+
+
+@app.command("triage")
+def triage_cmd(
+    input_path: Annotated[
+        Path,
+        typer.Argument(help="Path to program-extracted source directory, topology, or trace."),
+    ],
+    spec: Annotated[
+        Path,
+        typer.Option("--spec", "-s", help="Path to CurationSpecV1 YAML."),
+    ],
+    view: Annotated[
+        str,
+        typer.Option("--view", "-v", help="Target view ID to render 3-stage triage for."),
+    ],
+    out_dir: Annotated[
+        Path,
+        typer.Option("--out-dir", "-o", help="Directory for 1_original, 2_triage, 3_curated."),
+    ],
+    input_format: Annotated[
+        InputFormat,
+        typer.Option("--format", "-f", help="Input format (auto, python_ast, ir_json, ...)."),
+    ] = InputFormat.AUTO,
+    check: Annotated[
+        bool,
+        typer.Option("--check", help="Verify committed 3-stage triage files and SVGs match."),
+    ] = False,
+) -> None:
+    """Render 3-stage comparison (1_original -> 2_triage diff -> 3_curated) as SVGs + Mermaid."""
+    try:
+        outcome = execute_triage(
+            TriageOptions(
+                input_path=input_path,
+                spec_path=spec,
+                view_id=view,
+                out_dir=out_dir,
+                input_format=input_format,
+                check_only=check,
+            )
+        )
+    except (FileNotFoundError, OSError, ValueError, ValidationError) as exc:
+        typer.echo(f"Input/Usage Error: {exc}", err=True)
+        raise typer.Exit(code=EXIT_USAGE_ERROR) from exc
+
+    _emit_triage_summary(outcome, check_only=check)
+    if not outcome.is_clean:
+        raise typer.Exit(code=EXIT_LINT_OR_DRIFT)
 
 
 def main() -> None:

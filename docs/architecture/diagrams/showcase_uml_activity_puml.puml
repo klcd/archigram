@@ -1,0 +1,42 @@
+@startuml
+skinparam backgroundColor transparent
+skinparam shadowing false
+skinparam ArrowColor #3b82f6
+skinparam StateBackgroundColor transparent
+skinparam StateBorderColor #64748b
+skinparam ActivityBackgroundColor transparent
+skinparam ActivityBorderColor #64748b
+skinparam ActivityDiamondBackgroundColor transparent
+skinparam ActivityDiamondBorderColor #64748b
+skinparam UsecaseBackgroundColor transparent
+skinparam UsecaseBorderColor #64748b
+skinparam ActorBackgroundColor transparent
+skinparam ActorBorderColor #64748b
+skinparam RectangleBackgroundColor transparent
+skinparam RectangleBorderColor #64748b
+skinparam NodeBackgroundColor transparent
+skinparam NodeBorderColor #64748b
+skinparam ArtifactBackgroundColor transparent
+skinparam ArtifactBorderColor #64748b
+start
+:pipeline: compile_and_lint_pipeline;
+:reducer: StructuralTopologicalReducer.reduce;
+:emit_mermaid.emitter: MermaidEmitter.emit;
+:reducer: StructuralTopologicalReducer.reduce;
+:emit_d2.emitter: D2Emitter.emit;
+:reducer: StructuralTopologicalReducer.reduce;
+:emit_plantuml.emitter: PlantUmlEmitter.emit;
+:gates: GroundingAndBoundaryGate.__init__;
+:gates: GroundingAndBoundaryGate.check;
+:lint_topology.gate: TopologicalInvariantGate.__init__;
+:lint_topology.gate: TopologicalInvariantGate.check;
+:lint_budget.gate: CognitiveBudgetAndOrphanGate.check;
+:validators: build_default_validators;
+:validators: Gate5SyntaxHarness.__init__;
+:validators: Gate5SyntaxHarness.validate [loop x3;
+:diagnostics: LintReport.from_diagnostics;
+:propose_loop: run_propose_loop;
+:generator: GraphDigestGenerator.to_compact_mark;
+:+30 compacted actions;
+stop
+@enduml

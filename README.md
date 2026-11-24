@@ -27,7 +27,8 @@ ArchiGram dogfoods itself to generate and lint its own architecture docs (`0` ha
 | **L1** | [Feature-Slice Map](docs/architecture/L1-feature-slices.md) | All 16 strictly independent vertical slices + checklist to add a 17th slice | 16 slices + 4 rings |
 | **L2** | [Subsystem Guides](docs/architecture/L2-subsystem-guides.md) | Focused `k_hop_neighborhood` zooms: Domain & Ports (L2a), Reducers (L2b), 5-Gate Linter (L2c), CLI & MCP (L2d) | 9–18 nodes per view |
 | **L3** | [Runtime Execution & Self-Healing Traces](docs/architecture/L3-runtime-traces.md) | Live `sys.monitoring` trace of `compile_and_lint_pipeline` & 3-turn `run_propose_loop` compacted via `R1–R6` | 15 participants, 48 events |
-| **Gallery** | [Styling Policy & Multi-Target Gallery](docs/architecture/diagram-styling-and-gallery.md) | Dual-mode transparent styling (`domain/style.py`), edge-only semantic colors, flowing D2 SVGs, animated `steps` playback, compact `< 5,000`-char Gitea-ready Mermaid & all 13 modes | All 5 renderers × 13 modes |
+| **Gallery** | [Styling Policy & Multi-Target Gallery](docs/architecture/diagram-styling-and-gallery.md) | Dual-mode transparent styling (`domain/style.py`), edge-only semantic colors, flowing D2 SVGs, animated `steps` playback, compact `< 5,000`-char Gitea-ready Mermaid & all modes | All 5 renderers × all modes |
+| **UML & Triage** | [UML 2.5 & 3-Stage CLI Curation Showcase](docs/architecture/uml-and-curation-showcase.md) | Program-first AST/trace extraction (`50k` chars) -> CLI-only `curate` + `triage` 3-stage SVGs (`original` -> `triage` -> `curated`) & full 14-type UML 2.5 taxonomy (`package`, `deployment`, `use_case`, `communication`, `activity`, `state`) | 3-stage SVGs + 14 UML types |
 
 ## Developer & CLI Quickstart (`justfile`)
 
@@ -35,8 +36,8 @@ Run `just` to list all grouped quality and diagram recipes:
 
 ```bash
 just              # List all recipes (verify, lint, fmt, fuzz, perf, docs, docs-check, d2, watch-d2, trace, propose)
-just docs         # Re-capture live trace + compile all L0-L3 diagrams & animated SVGs + sync Markdown
-just docs-check   # Verify 5-Gate pass + zero Markdown/SVG drift
+just docs         # Re-capture live trace + compile L0-L3, 3-stage triage SVGs & UML 2.5 showcase + sync Markdown
+just docs-check   # Verify 5-Gate pass + zero Markdown/SVG/triage drift
 just d2 docs/architecture/diagrams/l3_runtime_pipeline_steps_d2.d2   # Compile single .d2 -> .d2.svg
 just watch-d2     # Live hot-reload D2 diagram preview in browser
 just verify       # Run all 8 mandatory ArchiGram quality gates
@@ -45,6 +46,14 @@ just verify       # Run all 8 mandatory ArchiGram quality gates
 Direct CLI usage (`archigram`):
 
 ```bash
+# Author or refine CurationSpecV1 views strictly via CLI (zero hand-edited YAML/diagram syntax)
+uv run archigram curate init curated.yaml -v core_pkg -t "Core Packages" -r mermaid --variant package
+uv run archigram curate prune-leaves curated.yaml -v core_pkg --id prune_stubs -g archigram
+
+# Render 3-stage before/after SVG triage (1_original -> 2_triage -> 3_curated) when raw graphs > 5k chars
+uv run archigram triage src/archigram --spec docs/architecture/showcase-structural-views.yaml \
+  --view showcase_cli_triage --out-dir docs/architecture/diagrams
+
 # Lint a curation spec against a codebase or trace IR through all 5 Gates
 uv run archigram lint src/archigram --spec docs/architecture/diagram-views.yaml
 

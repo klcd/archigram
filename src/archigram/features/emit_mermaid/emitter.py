@@ -526,8 +526,35 @@ def _emit_sequence_diagram(ir: InteractionTraceIR) -> str:
     return "\n".join(lines) + "\n"
 
 
+def _dispatch_mermaid_variant(ir: CanonicalIR, variant: str) -> str | None:
+    """Dispatch non-default UML 2.5 projection variants for MermaidEmitter."""
+    from archigram.features.emit_mermaid import uml_variants as uv
+
+    if variant == "package":
+        return uv.emit_mermaid_package(ir)
+    if variant == "deployment":
+        return uv.emit_mermaid_deployment(ir)
+    if isinstance(ir, StructuralGraphIR):
+        structural_map = {
+            "state": uv.emit_mermaid_state_structural,
+            "communication": uv.emit_mermaid_communication_structural,
+            "activity": uv.emit_mermaid_activity_structural,
+            "use_case": uv.emit_mermaid_use_case_structural,
+        }
+        fn_s = structural_map.get(variant)
+        return fn_s(ir) if fn_s is not None else None
+    trace_map = {
+        "state": uv.emit_mermaid_state_trace,
+        "communication": uv.emit_mermaid_communication_trace,
+        "activity": uv.emit_mermaid_activity_trace,
+        "use_case": uv.emit_mermaid_use_case_trace,
+    }
+    fn_t = trace_map.get(variant)
+    return fn_t(ir) if fn_t is not None else None
+
+
 class MermaidEmitter:
-    """Deterministic Mermaid v12 emitter implementing DiagramEmitterPort."""
+    """Deterministic Mermaid emitter implementing DiagramEmitterPort."""
 
     @property
     def target_format(self) -> str:
@@ -535,7 +562,11 @@ class MermaidEmitter:
         return "mermaid"
 
     def emit(self, ir: CanonicalIR) -> str:
-        """Emit deterministic Mermaid v12 syntax from a StructuralGraphIR or InteractionTraceIR."""
+        """Emit deterministic Mermaid syntax from a StructuralGraphIR or InteractionTraceIR."""
+        variant = ir.metadata.get("diagram_variant", "auto")
+        dispatched = _dispatch_mermaid_variant(ir, variant)
+        if dispatched is not None:
+            return dispatched
         if isinstance(ir, StructuralGraphIR):
             if _is_class_diagram_mode(ir):
                 return _emit_class_diagram(ir)

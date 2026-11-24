@@ -599,6 +599,22 @@ def _emit_interaction_trace(trace: InteractionTraceIR) -> str:
     return "\n".join(lines) + "\n"
 
 
+def _dispatch_d2_variant(ir: CanonicalIR, variant: str) -> str | None:
+    """Dispatch non-default UML 2.5 projection variants for D2Emitter."""
+    from archigram.features.emit_d2 import uml_variants as uv
+
+    if variant in {"package", "deployment"}:
+        return uv.emit_d2_package_or_deployment(ir, variant)
+    dispatch = {
+        "state": uv.emit_d2_state,
+        "communication": uv.emit_d2_communication,
+        "activity": uv.emit_d2_activity,
+        "use_case": uv.emit_d2_use_case,
+    }
+    fn = dispatch.get(variant)
+    return fn(ir) if fn is not None else None
+
+
 class D2Emitter:
     """Deterministic D2 diagram emitter implementing DiagramEmitterPort."""
 
@@ -609,6 +625,17 @@ class D2Emitter:
 
     def emit(self, ir: CanonicalIR) -> str:
         """Serialize a CanonicalIR (StructuralGraphIR or InteractionTraceIR) to D2."""
+        variant = ir.metadata.get("diagram_variant", "auto")
+        dispatched = _dispatch_d2_variant(ir, variant)
+        if dispatched is not None:
+            return dispatched
         if isinstance(ir, StructuralGraphIR):
             return _emit_structural_graph(ir)
         return _emit_interaction_trace(ir)
+
+
+quote_d2_string = _quote_d2_string
+format_d2_key = _format_d2_key
+build_safe_key_map = _build_safe_key_map
+build_qualified_paths = _build_qualified_paths
+order_d2_trace_events = _order_trace_events

@@ -1,0 +1,73 @@
+@startuml
+left to right direction
+skinparam backgroundColor transparent
+skinparam shadowing false
+skinparam ArrowColor #3b82f6
+skinparam StateBackgroundColor transparent
+skinparam StateBorderColor #64748b
+skinparam ActivityBackgroundColor transparent
+skinparam ActivityBorderColor #64748b
+skinparam ActivityDiamondBackgroundColor transparent
+skinparam ActivityDiamondBorderColor #64748b
+skinparam UsecaseBackgroundColor transparent
+skinparam UsecaseBorderColor #64748b
+skinparam ActorBackgroundColor transparent
+skinparam ActorBorderColor #64748b
+skinparam RectangleBackgroundColor transparent
+skinparam RectangleBorderColor #64748b
+skinparam NodeBackgroundColor transparent
+skinparam NodeBorderColor #64748b
+skinparam ArtifactBackgroundColor transparent
+skinparam ArtifactBorderColor #64748b
+actor "CLI Developer / CI Hook" as u_0_actor_cli_user_37c740
+actor "LLM Agent Client (MCP)" as u_1_actor_mcp_agent_5a7a76
+actor "entrypoints" as u_3_archigram_entryp_6a8ce0
+actor "cli" as u_4_archigram_entryp_f9dc23
+actor "mcp" as u_5_archigram_entryp_d739e6
+rectangle "System Subject Boundary" as sys_boundary {
+  usecase "archigram" as u_2_archigram_983b03
+  usecase "features" as u_6_archigram_featur_e6f01e
+  usecase "Compile Views, Diff & Sync Markdown" as u_7_uc_compile_sync_659047
+  usecase "Curate Specs & Render 3-Stage Triage" as u_8_uc_curate_triage_e2d844
+  usecase "Validate Canonical IR, Spec & Port Contracts" as u_9_uc_domain_contra_aeea6c
+  usecase "Emit Dual-Mode UML & Architecture Views" as u_10_uc_emit_targets_a564a8
+  usecase "Ingest Factual AST / SCIP / OTLP IR" as u_11_uc_ingest_ir_5b7061
+  usecase "Propose & Self-Heal Spec (3-Turn Loop)" as u_12_uc_propose_repai_524d26
+  usecase "Reduce Topology & Compact R1-R6 Traces" as u_13_uc_reduce_compac_3a534b
+  usecase "Verify 5 Mathematical Linter Gates" as u_14_uc_verify_gates_a83ee9
+}
+u_4_archigram_entryp_f9dc23 -->[#3b82f6] u_0_actor_cli_user_37c740 : invokes
+u_5_archigram_entryp_d739e6 -->[#3b82f6] u_1_actor_mcp_agent_5a7a76 : invokes
+u_8_uc_curate_triage_e2d844 ..>[#3b82f6] u_7_uc_compile_sync_659047 : <<include>>
+u_8_uc_curate_triage_e2d844 ..>[#3b82f6] u_7_uc_compile_sync_659047 : <<include>>
+u_8_uc_curate_triage_e2d844 ..>[#3b82f6] u_7_uc_compile_sync_659047 : <<include>>
+u_0_actor_cli_user_37c740 -->[#3b82f6] u_8_uc_curate_triage_e2d844 : invokes
+u_0_actor_cli_user_37c740 -->[#3b82f6] u_8_uc_curate_triage_e2d844 : invokes
+u_14_uc_verify_gates_a83ee9 ..>[#3b82f6] u_9_uc_domain_contra_aeea6c : <<include>>
+u_11_uc_ingest_ir_5b7061 ..>[#3b82f6] u_9_uc_domain_contra_aeea6c : <<include>>
+u_10_uc_emit_targets_a564a8 ..>[#3b82f6] u_9_uc_domain_contra_aeea6c : <<include>>
+u_13_uc_reduce_compac_3a534b ..>[#3b82f6] u_9_uc_domain_contra_aeea6c : <<include>>
+u_11_uc_ingest_ir_5b7061 ..>[#3b82f6] u_9_uc_domain_contra_aeea6c : <<include>>
+u_14_uc_verify_gates_a83ee9 ..>[#3b82f6] u_9_uc_domain_contra_aeea6c : <<include>>
+u_13_uc_reduce_compac_3a534b ..>[#3b82f6] u_9_uc_domain_contra_aeea6c : <<include>>
+u_10_uc_emit_targets_a564a8 ..>[#3b82f6] u_9_uc_domain_contra_aeea6c : <<include>>
+u_13_uc_reduce_compac_3a534b ..>[#3b82f6] u_9_uc_domain_contra_aeea6c : <<include>>
+u_14_uc_verify_gates_a83ee9 ..>[#3b82f6] u_9_uc_domain_contra_aeea6c : <<include>>
+u_14_uc_verify_gates_a83ee9 ..>[#3b82f6] u_9_uc_domain_contra_aeea6c : <<include>>
+u_11_uc_ingest_ir_5b7061 ..>[#3b82f6] u_9_uc_domain_contra_aeea6c : <<include>>
+u_11_uc_ingest_ir_5b7061 ..>[#3b82f6] u_9_uc_domain_contra_aeea6c : <<include>>
+u_7_uc_compile_sync_659047 ..>[#3b82f6] u_10_uc_emit_targets_a564a8 : <<include>>
+u_12_uc_propose_repai_524d26 ..>[#3b82f6] u_10_uc_emit_targets_a564a8 : <<include>>
+u_7_uc_compile_sync_659047 ..>[#3b82f6] u_11_uc_ingest_ir_5b7061 : <<include>>
+u_7_uc_compile_sync_659047 ..>[#3b82f6] u_14_uc_verify_gates_a83ee9 : <<include>>
+u_7_uc_compile_sync_659047 ..>[#3b82f6] u_14_uc_verify_gates_a83ee9 : <<include>>
+u_12_uc_propose_repai_524d26 ..>[#3b82f6] u_14_uc_verify_gates_a83ee9 : <<include>>
+u_12_uc_propose_repai_524d26 ..>[#3b82f6] u_14_uc_verify_gates_a83ee9 : <<include>>
+u_1_actor_mcp_agent_5a7a76 -->[#3b82f6] u_12_uc_propose_repai_524d26 : invokes
+u_0_actor_cli_user_37c740 -->[#3b82f6] u_12_uc_propose_repai_524d26 : invokes
+u_0_actor_cli_user_37c740 -->[#3b82f6] u_12_uc_propose_repai_524d26 : invokes
+u_1_actor_mcp_agent_5a7a76 -->[#3b82f6] u_12_uc_propose_repai_524d26 : invokes
+u_12_uc_propose_repai_524d26 ..>[#3b82f6] u_13_uc_reduce_compac_3a534b : <<include>>
+u_7_uc_compile_sync_659047 ..>[#3b82f6] u_13_uc_reduce_compac_3a534b : <<include>>
+u_7_uc_compile_sync_659047 ..>[#3b82f6] u_13_uc_reduce_compac_3a534b : <<include>>
+@enduml

@@ -37,12 +37,18 @@ class TargetRenderer(StrEnum):
 
 
 class DiagramVariant(StrEnum):
-    """Optional structural or trace sub-variant ('auto', 'architecture', 'class', 'steps')."""
+    """Structural or behavioral UML 2.5 projection sub-variant."""
 
     AUTO = "auto"
     ARCHITECTURE = "architecture"
     CLASS = "class"
+    PACKAGE = "package"
+    DEPLOYMENT = "deployment"
+    USE_CASE = "use_case"
     STEPS = "steps"
+    COMMUNICATION = "communication"
+    ACTIVITY = "activity"
+    STATE = "state"
 
 
 class PruneLeavesRule(BaseModel):

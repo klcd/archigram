@@ -345,6 +345,8 @@ def capture_self_hosted_pipeline_trace() -> InteractionTraceIR:
     """Capture and normalize a live sys.monitoring execution trace of ArchiGram's pipeline."""
     sample_ir = _build_sample_structural_ir()
     multi_view_spec = _build_multi_view_spec()
+    # Warm up lazy imports and module caches so cold CLI and warm pytest captures match 100%.
+    _execute_self_hosted_workload(sample_ir, multi_view_spec)
 
     raw_trace = capture_python_trace(
         lambda: _execute_self_hosted_workload(sample_ir, multi_view_spec),

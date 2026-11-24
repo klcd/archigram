@@ -22,48 +22,54 @@ flowchart TD
   subgraph n0["archigram"]
     subgraph n1["entrypoints"]
       subgraph n2["cli"]
-        n5["cli.app (Typer apply/lint/diff/propose)"]
-        n6["cli.diff_report (PR Regression Diff)"]
-        n7["cli.markdown_sync (--sync-md Inline Blocks)"]
-        n8["cli.pipeline (Zero-LLM Compile & Lint Orchestrator)"]
-        n9["cli.self_trace (Live Trace Snapshotter)"]
+        n3["curate_cli"]
+        n4["triage"]
+        n7["cli.app (Typer apply/lint/diff/propose)"]
+        n8["cli.diff_report (PR Regression Diff)"]
+        n9["cli.markdown_sync (--sync-md Inline Blocks)"]
+        n10["cli.pipeline (Zero-LLM Compile & Lint Orchestrator)"]
+        n11["cli.self_trace (Live Trace Snapshotter)"]
       end
-      subgraph n3["mcp"]
-        n15["mcp.propose_loop (Bounded 3-Turn Repair Loop)"]
-        n16["mcp.server (FastMCP Tools: digest, lint, preview)"]
+      subgraph n5["mcp"]
+        n17["mcp.propose_loop (Bounded 3-Turn Repair Loop)"]
+        n18["mcp.server (FastMCP Tools: digest, lint, preview)"]
       end
     end
-    subgraph n4["features"]
-      n10["features.digest (GraphDigestGenerator)"]
-      n11["Emitter Slices (Mermaid/D2/PUML/LikeC4)"]
-      n12["Ingestor Slices (DOT/SCIP/OTLP/Class/Python)"]
-      n13["5-Gate Linter Slices"]
-      n14["Reducer Slices (Structural & Trace)"]
+    subgraph n6["features"]
+      n12["features.digest (GraphDigestGenerator)"]
+      n13["Emitter Slices (Mermaid/D2/PUML/LikeC4)"]
+      n14["Ingestor Slices (DOT/SCIP/OTLP/Class/Python)"]
+      n15["5-Gate Linter Slices"]
+      n16["Reducer Slices (Structural & Trace)"]
     end
-    n17["Ports & Domain Core"]
+    n19["Ports & Domain Core"]
   end
   style n0 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   style n1 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   style n2 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
-  style n3 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
-  style n4 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
-  n2 -.->|"imports"| n5
-  n6 -.->|"imports"| n8
-  n5 -.->|"imports"| n6
-  n7 -.->|"imports"| n8
+  style n5 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  style n6 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  n7 -.->|"imports"| n3
+  n7 -.->|"imports"| n4
   n2 -.->|"imports"| n7
-  n9 -.->|"imports"| n8
-  n15 -.->|"imports"| n10
-  n15 -.->|"imports"| n11
-  n8 -.->|"imports"| n11
-  n8 -.->|"imports"| n12
-  n15 -.->|"imports"| n13
-  n8 -.->|"imports"| n13
-  n9 -.->|"imports"| n15
-  n16 -.->|"imports"| n15
-  n3 -.->|"imports"| n16
-  n10 -.->|"imports"| n17
-  n8 -.->|"imports"| n17
-  n15 -.->|"imports"| n14
-  n8 -.->|"imports"| n14
-  linkStyle 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  n8 -.->|"imports"| n10
+  n7 -.->|"imports"| n8
+  n9 -.->|"imports"| n10
+  n2 -.->|"imports"| n9
+  n4 -.->|"imports"| n10
+  n11 -.->|"imports"| n10
+  n17 -.->|"imports"| n12
+  n17 -.->|"imports"| n13
+  n10 -.->|"imports"| n13
+  n10 -.->|"imports"| n14
+  n17 -.->|"imports"| n15
+  n10 -.->|"imports"| n15
+  n11 -.->|"imports"| n17
+  n18 -.->|"imports"| n17
+  n5 -.->|"imports"| n18
+  n12 -.->|"imports"| n19
+  n3 -.->|"imports"| n19
+  n10 -.->|"imports"| n19
+  n17 -.->|"imports"| n16
+  n10 -.->|"imports"| n16
+  linkStyle 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5

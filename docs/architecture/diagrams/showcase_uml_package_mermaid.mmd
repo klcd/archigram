@@ -1,0 +1,62 @@
+---
+config:
+  layout: elk
+  elk:
+    mergeEdges: false
+    nodePlacementStrategy: BRANDES_KOEPF
+  flowchart:
+    defaultRenderer: elk
+    curve: linear
+  themeVariables:
+    primaryColor: transparent
+    secondaryColor: transparent
+    tertiaryColor: transparent
+    mainBkg: transparent
+    nodeBorder: '#64748b'
+    clusterBkg: transparent
+    clusterBorder: '#64748b'
+    lineColor: '#64748b'
+---
+flowchart TD
+  classDef default fill:transparent,stroke:#64748b,stroke-width:1.5px
+  subgraph n0["<<package>> archigram"]
+    subgraph n1["<<package>> entrypoints"]
+      n3["<<package>> CLI Data Plane (entrypoints.cli)"]
+      n10["<<package>> MCP Control Plane (entrypoints.mcp)"]
+    end
+    subgraph n2["<<package>> features"]
+      n5["<<package>> Digest Slice (Graph & Trace)"]
+      n6["<<package>> Emitter Slices (Mermaid, D2, PlantUML, LikeC4)"]
+      n7["<<package>> Ingestor Slices (5 Extractors)"]
+      n8["<<package>> 5-Gate Linter Slices"]
+      n9["<<package>> Reducer Slices (Graph & Trace)"]
+    end
+    n4["<<package>> Domain Core (Canonical IR, Spec, Style)"]
+    n11["<<package>> Ports & Contracts (archigram.ports)"]
+  end
+  style n0 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  style n1 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  style n2 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  n10 -.->|"<<import>>"| n5
+  n5 -.->|"<<import>>"| n4
+  n9 -.->|"<<import>>"| n4
+  n5 -.->|"<<import>>"| n4
+  n11 -.->|"<<import>>"| n4
+  n9 -.->|"<<import>>"| n4
+  n6 -.->|"<<import>>"| n4
+  n6 -.->|"<<import>>"| n4
+  n10 -.->|"<<import>>"| n6
+  n3 -.->|"<<import>>"| n7
+  n3 -.->|"<<import>>"| n7
+  n10 -.->|"<<import>>"| n8
+  n10 -.->|"<<import>>"| n8
+  n3 -.->|"<<import>>"| n10
+  n3 -.->|"<<import>>"| n10
+  n8 -.->|"<<import>>"| n11
+  n7 -.->|"<<import>>"| n11
+  n8 -.->|"<<import>>"| n11
+  n8 -.->|"<<import>>"| n11
+  n7 -.->|"<<import>>"| n11
+  n8 -.->|"<<import>>"| n11
+  n10 -.->|"<<import>>"| n9
+  linkStyle 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5

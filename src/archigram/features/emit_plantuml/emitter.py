@@ -731,6 +731,22 @@ def _emit_sequence_diagram(ir: InteractionTraceIR) -> str:
     return "\n".join(lines) + "\n"
 
 
+def _dispatch_plantuml_variant(ir: CanonicalIR, variant: str) -> str | None:
+    """Dispatch non-default UML 2.5 projection variants for PlantUmlEmitter."""
+    from archigram.features.emit_plantuml import uml_variants as uv
+
+    if variant in {"package", "deployment"}:
+        return uv.emit_plantuml_package_or_deployment(ir, variant)
+    dispatch = {
+        "state": uv.emit_plantuml_state,
+        "communication": uv.emit_plantuml_communication,
+        "activity": uv.emit_plantuml_activity,
+        "use_case": uv.emit_plantuml_use_case,
+    }
+    fn = dispatch.get(variant)
+    return fn(ir) if fn is not None else None
+
+
 class PlantUmlEmitter:
     """Deterministic PlantUML emitter implementing DiagramEmitterPort."""
 
@@ -741,8 +757,16 @@ class PlantUmlEmitter:
 
     def emit(self, ir: CanonicalIR) -> str:
         """Emit deterministic PlantUML syntax from StructuralGraphIR or InteractionTraceIR."""
+        variant = ir.metadata.get("diagram_variant", "auto")
+        dispatched = _dispatch_plantuml_variant(ir, variant)
+        if dispatched is not None:
+            return dispatched
         if isinstance(ir, StructuralGraphIR):
             if _is_class_diagram_mode(ir):
                 return _emit_class_diagram(ir)
             return _emit_component_diagram(ir)
         return _emit_sequence_diagram(ir)
+
+
+build_puml_children_map = _build_children_map
+order_puml_trace_events = _order_trace_events

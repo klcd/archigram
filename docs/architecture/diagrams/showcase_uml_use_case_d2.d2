@@ -1,0 +1,218 @@
+vars: {
+  d2-config: {
+    layout-engine: elk
+    theme-id: 0
+    dark-theme-id: 200
+  }
+}
+style.fill: transparent
+
+direction: right
+actor_cli_user: "CLI Developer / CI Hook" {
+  shape: person
+  style.fill: transparent
+  style.stroke: "#64748b"
+}
+actor_mcp_agent: "LLM Agent Client (MCP)" {
+  shape: person
+  style.fill: transparent
+  style.stroke: "#64748b"
+}
+"archigram.entrypoints": "entrypoints" {
+  shape: person
+  style.fill: transparent
+  style.stroke: "#64748b"
+}
+"archigram.entrypoints.cli": "cli" {
+  shape: person
+  style.fill: transparent
+  style.stroke: "#64748b"
+}
+"archigram.entrypoints.mcp": "mcp" {
+  shape: person
+  style.fill: transparent
+  style.stroke: "#64748b"
+}
+system_boundary: "System Subject Boundary" {
+  style.fill: transparent
+  style.stroke: "#64748b"
+  style.stroke-dash: 4
+  archigram: "archigram" {
+    shape: oval
+    style.fill: transparent
+    style.stroke: "#64748b"
+  }
+  "archigram.features": "features" {
+    shape: oval
+    style.fill: transparent
+    style.stroke: "#64748b"
+  }
+  uc_compile_sync: "Compile Views, Diff & Sync Markdown" {
+    shape: oval
+    style.fill: transparent
+    style.stroke: "#64748b"
+  }
+  uc_curate_triage: "Curate Specs & Render 3-Stage Triage" {
+    shape: oval
+    style.fill: transparent
+    style.stroke: "#64748b"
+  }
+  uc_domain_contracts: "Validate Canonical IR, Spec & Port Contracts" {
+    shape: oval
+    style.fill: transparent
+    style.stroke: "#64748b"
+  }
+  uc_emit_targets: "Emit Dual-Mode UML & Architecture Views" {
+    shape: oval
+    style.fill: transparent
+    style.stroke: "#64748b"
+  }
+  uc_ingest_ir: "Ingest Factual AST / SCIP / OTLP IR" {
+    shape: oval
+    style.fill: transparent
+    style.stroke: "#64748b"
+  }
+  uc_propose_repair: "Propose & Self-Heal Spec (3-Turn Loop)" {
+    shape: oval
+    style.fill: transparent
+    style.stroke: "#64748b"
+  }
+  uc_reduce_compact: "Reduce Topology & Compact R1-R6 Traces" {
+    shape: oval
+    style.fill: transparent
+    style.stroke: "#64748b"
+  }
+  uc_verify_gates: "Verify 5 Mathematical Linter Gates" {
+    shape: oval
+    style.fill: transparent
+    style.stroke: "#64748b"
+  }
+}
+"archigram.entrypoints.cli" -> actor_cli_user: "invokes" {
+  style.stroke: "#3b82f6"
+}
+"archigram.entrypoints.mcp" -> actor_mcp_agent: "invokes" {
+  style.stroke: "#3b82f6"
+}
+system_boundary.uc_curate_triage -> system_boundary.uc_compile_sync: "<<include>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+}
+system_boundary.uc_curate_triage -> system_boundary.uc_compile_sync: "<<include>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+}
+system_boundary.uc_curate_triage -> system_boundary.uc_compile_sync: "<<include>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+}
+actor_cli_user -> system_boundary.uc_curate_triage: "invokes" {
+  style.stroke: "#3b82f6"
+}
+actor_cli_user -> system_boundary.uc_curate_triage: "invokes" {
+  style.stroke: "#3b82f6"
+}
+system_boundary.uc_ingest_ir -> system_boundary.uc_domain_contracts: "<<include>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+}
+system_boundary.uc_verify_gates -> system_boundary.uc_domain_contracts: "<<include>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+}
+system_boundary.uc_emit_targets -> system_boundary.uc_domain_contracts: "<<include>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+}
+system_boundary.uc_ingest_ir -> system_boundary.uc_domain_contracts: "<<include>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+}
+system_boundary.uc_emit_targets -> system_boundary.uc_domain_contracts: "<<include>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+}
+system_boundary.uc_ingest_ir -> system_boundary.uc_domain_contracts: "<<include>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+}
+system_boundary.uc_verify_gates -> system_boundary.uc_domain_contracts: "<<include>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+}
+system_boundary.uc_verify_gates -> system_boundary.uc_domain_contracts: "<<include>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+}
+system_boundary.uc_ingest_ir -> system_boundary.uc_domain_contracts: "<<include>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+}
+system_boundary.uc_reduce_compact -> system_boundary.uc_domain_contracts: "<<include>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+}
+system_boundary.uc_reduce_compact -> system_boundary.uc_domain_contracts: "<<include>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+}
+system_boundary.uc_verify_gates -> system_boundary.uc_domain_contracts: "<<include>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+}
+system_boundary.uc_reduce_compact -> system_boundary.uc_domain_contracts: "<<include>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+}
+system_boundary.uc_propose_repair -> system_boundary.uc_emit_targets: "<<include>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+}
+system_boundary.uc_compile_sync -> system_boundary.uc_emit_targets: "<<include>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+}
+system_boundary.uc_compile_sync -> system_boundary.uc_ingest_ir: "<<include>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+}
+system_boundary.uc_compile_sync -> system_boundary.uc_verify_gates: "<<include>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+}
+system_boundary.uc_compile_sync -> system_boundary.uc_verify_gates: "<<include>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+}
+system_boundary.uc_propose_repair -> system_boundary.uc_verify_gates: "<<include>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+}
+system_boundary.uc_propose_repair -> system_boundary.uc_verify_gates: "<<include>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+}
+actor_cli_user -> system_boundary.uc_propose_repair: "invokes" {
+  style.stroke: "#3b82f6"
+}
+actor_mcp_agent -> system_boundary.uc_propose_repair: "invokes" {
+  style.stroke: "#3b82f6"
+}
+actor_cli_user -> system_boundary.uc_propose_repair: "invokes" {
+  style.stroke: "#3b82f6"
+}
+actor_mcp_agent -> system_boundary.uc_propose_repair: "invokes" {
+  style.stroke: "#3b82f6"
+}
+system_boundary.uc_compile_sync -> system_boundary.uc_reduce_compact: "<<include>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+}
+system_boundary.uc_compile_sync -> system_boundary.uc_reduce_compact: "<<include>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+}
+system_boundary.uc_propose_repair -> system_boundary.uc_reduce_compact: "<<include>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+}

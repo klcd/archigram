@@ -50,8 +50,8 @@
         "input_sha256": "80abbfcf22cdb0efeebc6e7147e5c0d4c4cb94f5513027262bf54c21e9651c0c",
         "file_path": "src/archigram/domain/spec.py",
         "line_span": [
-          251,
-          254
+          257,
+          260
         ],
         "rule_id": null,
         "backing_ids": []
@@ -140,8 +140,8 @@
         "input_sha256": "80abbfcf22cdb0efeebc6e7147e5c0d4c4cb94f5513027262bf54c21e9651c0c",
         "file_path": "src/archigram/features/emit_d2/emitter.py",
         "line_span": [
-          610,
-          614
+          626,
+          634
         ],
         "rule_id": null,
         "backing_ids": []
@@ -158,8 +158,8 @@
         "input_sha256": "80abbfcf22cdb0efeebc6e7147e5c0d4c4cb94f5513027262bf54c21e9651c0c",
         "file_path": "src/archigram/features/emit_mermaid/emitter.py",
         "line_span": [
-          537,
-          543
+          564,
+          574
         ],
         "rule_id": null,
         "backing_ids": []
@@ -176,8 +176,8 @@
         "input_sha256": "80abbfcf22cdb0efeebc6e7147e5c0d4c4cb94f5513027262bf54c21e9651c0c",
         "file_path": "src/archigram/features/emit_plantuml/emitter.py",
         "line_span": [
-          742,
-          748
+          758,
+          768
         ],
         "rule_id": null,
         "backing_ids": []
@@ -230,8 +230,8 @@
         "input_sha256": "80abbfcf22cdb0efeebc6e7147e5c0d4c4cb94f5513027262bf54c21e9651c0c",
         "file_path": "src/archigram/features/lint_syntax/validators.py",
         "line_span": [
-          954,
-          965
+          979,
+          990
         ],
         "rule_id": null,
         "backing_ids": []
@@ -1078,8 +1078,8 @@
         "input_sha256": "80abbfcf22cdb0efeebc6e7147e5c0d4c4cb94f5513027262bf54c21e9651c0c",
         "file_path": "src/archigram/features/emit_mermaid/emitter.py",
         "line_span": [
-          537,
-          543
+          564,
+          574
         ],
         "rule_id": null,
         "backing_ids": []
@@ -1948,8 +1948,8 @@
         "input_sha256": "80abbfcf22cdb0efeebc6e7147e5c0d4c4cb94f5513027262bf54c21e9651c0c",
         "file_path": "src/archigram/features/emit_d2/emitter.py",
         "line_span": [
-          610,
-          614
+          626,
+          634
         ],
         "rule_id": null,
         "backing_ids": []
@@ -2908,8 +2908,8 @@
         "input_sha256": "80abbfcf22cdb0efeebc6e7147e5c0d4c4cb94f5513027262bf54c21e9651c0c",
         "file_path": "src/archigram/features/emit_plantuml/emitter.py",
         "line_span": [
-          742,
-          748
+          758,
+          768
         ],
         "rule_id": null,
         "backing_ids": []
@@ -3268,8 +3268,8 @@
         "input_sha256": "80abbfcf22cdb0efeebc6e7147e5c0d4c4cb94f5513027262bf54c21e9651c0c",
         "file_path": "src/archigram/features/lint_syntax/validators.py",
         "line_span": [
-          954,
-          965
+          979,
+          990
         ],
         "rule_id": null,
         "backing_ids": []
@@ -3298,8 +3298,8 @@
         "input_sha256": "80abbfcf22cdb0efeebc6e7147e5c0d4c4cb94f5513027262bf54c21e9651c0c",
         "file_path": "src/archigram/features/lint_syntax/validators.py",
         "line_span": [
-          977,
-          982
+          1002,
+          1007
         ],
         "rule_id": null,
         "backing_ids": []
@@ -3328,8 +3328,8 @@
         "input_sha256": "80abbfcf22cdb0efeebc6e7147e5c0d4c4cb94f5513027262bf54c21e9651c0c",
         "file_path": "src/archigram/features/lint_syntax/validators.py",
         "line_span": [
-          995,
-          1003
+          1020,
+          1028
         ],
         "rule_id": null,
         "backing_ids": []
@@ -3358,8 +3358,8 @@
         "input_sha256": "80abbfcf22cdb0efeebc6e7147e5c0d4c4cb94f5513027262bf54c21e9651c0c",
         "file_path": "src/archigram/features/lint_syntax/validators.py",
         "line_span": [
-          995,
-          1003
+          1020,
+          1028
         ],
         "rule_id": null,
         "backing_ids": []
@@ -3388,8 +3388,8 @@
         "input_sha256": "80abbfcf22cdb0efeebc6e7147e5c0d4c4cb94f5513027262bf54c21e9651c0c",
         "file_path": "src/archigram/features/lint_syntax/validators.py",
         "line_span": [
-          995,
-          1003
+          1020,
+          1028
         ],
         "rule_id": null,
         "backing_ids": []
@@ -3508,8 +3508,8 @@
         "input_sha256": "80abbfcf22cdb0efeebc6e7147e5c0d4c4cb94f5513027262bf54c21e9651c0c",
         "file_path": "src/archigram/domain/spec.py",
         "line_span": [
-          251,
-          254
+          257,
+          260
         ],
         "rule_id": null,
         "backing_ids": []
@@ -4078,8 +4078,8 @@
         "input_sha256": "80abbfcf22cdb0efeebc6e7147e5c0d4c4cb94f5513027262bf54c21e9651c0c",
         "file_path": "src/archigram/domain/spec.py",
         "line_span": [
-          251,
-          254
+          257,
+          260
         ],
         "rule_id": null,
         "backing_ids": []
@@ -4138,8 +4138,8 @@
         "input_sha256": "80abbfcf22cdb0efeebc6e7147e5c0d4c4cb94f5513027262bf54c21e9651c0c",
         "file_path": "src/archigram/domain/spec.py",
         "line_span": [
-          215,
-          218
+          221,
+          224
         ],
         "rule_id": null,
         "backing_ids": []
@@ -4168,8 +4168,8 @@
         "input_sha256": "80abbfcf22cdb0efeebc6e7147e5c0d4c4cb94f5513027262bf54c21e9651c0c",
         "file_path": "src/archigram/domain/spec.py",
         "line_span": [
-          231,
-          248
+          237,
+          254
         ],
         "rule_id": null,
         "backing_ids": []
@@ -4678,8 +4678,8 @@
         "input_sha256": "80abbfcf22cdb0efeebc6e7147e5c0d4c4cb94f5513027262bf54c21e9651c0c",
         "file_path": "src/archigram/features/emit_mermaid/emitter.py",
         "line_span": [
-          537,
-          543
+          564,
+          574
         ],
         "rule_id": null,
         "backing_ids": []
@@ -4858,8 +4858,8 @@
         "input_sha256": "80abbfcf22cdb0efeebc6e7147e5c0d4c4cb94f5513027262bf54c21e9651c0c",
         "file_path": "src/archigram/features/lint_syntax/validators.py",
         "line_span": [
-          995,
-          1003
+          1020,
+          1028
         ],
         "rule_id": null,
         "backing_ids": []
@@ -4948,8 +4948,8 @@
         "input_sha256": "80abbfcf22cdb0efeebc6e7147e5c0d4c4cb94f5513027262bf54c21e9651c0c",
         "file_path": "src/archigram/domain/spec.py",
         "line_span": [
-          257,
-          260
+          263,
+          266
         ],
         "rule_id": null,
         "backing_ids": []
@@ -4978,8 +4978,8 @@
         "input_sha256": "80abbfcf22cdb0efeebc6e7147e5c0d4c4cb94f5513027262bf54c21e9651c0c",
         "file_path": "src/archigram/domain/spec.py",
         "line_span": [
-          251,
-          254
+          257,
+          260
         ],
         "rule_id": null,
         "backing_ids": []
@@ -5488,8 +5488,8 @@
         "input_sha256": "80abbfcf22cdb0efeebc6e7147e5c0d4c4cb94f5513027262bf54c21e9651c0c",
         "file_path": "src/archigram/features/emit_mermaid/emitter.py",
         "line_span": [
-          537,
-          543
+          564,
+          574
         ],
         "rule_id": null,
         "backing_ids": []
@@ -5668,8 +5668,8 @@
         "input_sha256": "80abbfcf22cdb0efeebc6e7147e5c0d4c4cb94f5513027262bf54c21e9651c0c",
         "file_path": "src/archigram/features/lint_syntax/validators.py",
         "line_span": [
-          995,
-          1003
+          1020,
+          1028
         ],
         "rule_id": null,
         "backing_ids": []
@@ -5758,8 +5758,8 @@
         "input_sha256": "80abbfcf22cdb0efeebc6e7147e5c0d4c4cb94f5513027262bf54c21e9651c0c",
         "file_path": "src/archigram/domain/spec.py",
         "line_span": [
-          257,
-          260
+          263,
+          266
         ],
         "rule_id": null,
         "backing_ids": []

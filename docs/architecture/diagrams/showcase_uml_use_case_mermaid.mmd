@@ -1,0 +1,74 @@
+---
+config:
+  layout: elk
+  elk:
+    mergeEdges: false
+    nodePlacementStrategy: BRANDES_KOEPF
+  flowchart:
+    defaultRenderer: elk
+    curve: linear
+  themeVariables:
+    primaryColor: transparent
+    secondaryColor: transparent
+    tertiaryColor: transparent
+    mainBkg: transparent
+    nodeBorder: '#64748b'
+    clusterBkg: transparent
+    clusterBorder: '#64748b'
+    lineColor: '#64748b'
+---
+flowchart LR
+  classDef default fill:transparent,stroke:#64748b,stroke-width:1.5px
+  u0["<<actor>> CLI Developer / CI Hook"]
+  u1["<<actor>> LLM Agent Client (MCP)"]
+  u3["<<actor>> entrypoints"]
+  u4["<<actor>> cli"]
+  u5["<<actor>> mcp"]
+  subgraph sys_boundary["System Subject Boundary"]
+    u2(["archigram"])
+    u6(["features"])
+    u7(["Compile Views, Diff & Sync Markdown"])
+    u8(["Curate Specs & Render 3-Stage Triage"])
+    u9(["Validate Canonical IR, Spec & Port Contracts"])
+    u10(["Emit Dual-Mode UML & Architecture Views"])
+    u11(["Ingest Factual AST / SCIP / OTLP IR"])
+    u12(["Propose & Self-Heal Spec (3-Turn Loop)"])
+    u13(["Reduce Topology & Compact R1-R6 Traces"])
+    u14(["Verify 5 Mathematical Linter Gates"])
+  end
+  style sys_boundary fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  u4 -->|"invokes"| u0
+  u5 -->|"invokes"| u1
+  u8 -.->|"<<include>>"| u7
+  u8 -.->|"<<include>>"| u7
+  u8 -.->|"<<include>>"| u7
+  u0 -->|"invokes"| u8
+  u0 -->|"invokes"| u8
+  u14 -.->|"<<include>>"| u9
+  u10 -.->|"<<include>>"| u9
+  u13 -.->|"<<include>>"| u9
+  u14 -.->|"<<include>>"| u9
+  u14 -.->|"<<include>>"| u9
+  u14 -.->|"<<include>>"| u9
+  u11 -.->|"<<include>>"| u9
+  u11 -.->|"<<include>>"| u9
+  u11 -.->|"<<include>>"| u9
+  u11 -.->|"<<include>>"| u9
+  u13 -.->|"<<include>>"| u9
+  u10 -.->|"<<include>>"| u9
+  u13 -.->|"<<include>>"| u9
+  u7 -.->|"<<include>>"| u10
+  u12 -.->|"<<include>>"| u10
+  u7 -.->|"<<include>>"| u11
+  u12 -.->|"<<include>>"| u14
+  u7 -.->|"<<include>>"| u14
+  u7 -.->|"<<include>>"| u14
+  u12 -.->|"<<include>>"| u14
+  u1 -->|"invokes"| u12
+  u1 -->|"invokes"| u12
+  u0 -->|"invokes"| u12
+  u0 -->|"invokes"| u12
+  u7 -.->|"<<include>>"| u13
+  u7 -.->|"<<include>>"| u13
+  u12 -.->|"<<include>>"| u13
+  linkStyle 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33 stroke:#3b82f6,stroke-width:1.75px

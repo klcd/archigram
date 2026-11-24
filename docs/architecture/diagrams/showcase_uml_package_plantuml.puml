@@ -1,0 +1,58 @@
+@startuml
+!pragma layout elk
+skinparam backgroundColor transparent
+skinparam linetype ortho
+skinparam shadowing false
+skinparam componentStyle uml2
+skinparam ArrowColor #64748b
+skinparam PackageBackgroundColor transparent
+skinparam PackageBorderColor #64748b
+skinparam ComponentBackgroundColor transparent
+skinparam ComponentBorderColor #64748b
+skinparam ClassBackgroundColor transparent
+skinparam ClassBorderColor #64748b
+skinparam ClassHeaderBackgroundColor transparent
+skinparam RectangleBackgroundColor transparent
+skinparam RectangleBorderColor #64748b
+skinparam DatabaseBackgroundColor transparent
+skinparam DatabaseBorderColor #64748b
+skinparam QueueBackgroundColor transparent
+skinparam QueueBorderColor #64748b
+package "archigram" as n_0_archigram_983b03 {
+  package "entrypoints" as n_1_archigram_entryp_6a8ce0 {
+    package "CLI Data Plane (entrypoints.cli)" as n_3_cli_dataplane_493a5b
+    package "MCP Control Plane (entrypoints.mcp)" as n_10_mcp_controlplane_ff4d3b
+  }
+  package "features" as n_2_archigram_featur_e6f01e {
+    package "Digest Slice (Graph & Trace)" as n_5_feature_digest_52876d
+    package "Emitter Slices (Mermaid, D2, PlantUML, LikeC4)" as n_6_feature_emitters_75a4c0
+    package "Ingestor Slices (5 Extractors)" as n_7_feature_ingestor_73234e
+    package "5-Gate Linter Slices" as n_8_feature_linters_57c819
+    package "Reducer Slices (Graph & Trace)" as n_9_feature_reducers_8a2858
+  }
+  package "Domain Core (Canonical IR, Spec, Style)" as n_4_domain_core_f195b2
+  package "Ports & Contracts (archigram.ports)" as n_11_ports_contracts_d0accd
+}
+n_10_mcp_controlplane_ff4d3b ..>[#64748b] n_5_feature_digest_52876d : <<import>>
+n_5_feature_digest_52876d ..>[#64748b] n_4_domain_core_f195b2 : <<import>>
+n_6_feature_emitters_75a4c0 ..>[#64748b] n_4_domain_core_f195b2 : <<import>>
+n_9_feature_reducers_8a2858 ..>[#64748b] n_4_domain_core_f195b2 : <<import>>
+n_9_feature_reducers_8a2858 ..>[#64748b] n_4_domain_core_f195b2 : <<import>>
+n_11_ports_contracts_d0accd ..>[#64748b] n_4_domain_core_f195b2 : <<import>>
+n_6_feature_emitters_75a4c0 ..>[#64748b] n_4_domain_core_f195b2 : <<import>>
+n_5_feature_digest_52876d ..>[#64748b] n_4_domain_core_f195b2 : <<import>>
+n_10_mcp_controlplane_ff4d3b ..>[#64748b] n_6_feature_emitters_75a4c0 : <<import>>
+n_3_cli_dataplane_493a5b ..>[#64748b] n_7_feature_ingestor_73234e : <<import>>
+n_3_cli_dataplane_493a5b ..>[#64748b] n_7_feature_ingestor_73234e : <<import>>
+n_10_mcp_controlplane_ff4d3b ..>[#64748b] n_8_feature_linters_57c819 : <<import>>
+n_10_mcp_controlplane_ff4d3b ..>[#64748b] n_8_feature_linters_57c819 : <<import>>
+n_3_cli_dataplane_493a5b ..>[#64748b] n_10_mcp_controlplane_ff4d3b : <<import>>
+n_3_cli_dataplane_493a5b ..>[#64748b] n_10_mcp_controlplane_ff4d3b : <<import>>
+n_8_feature_linters_57c819 ..>[#64748b] n_11_ports_contracts_d0accd : <<import>>
+n_8_feature_linters_57c819 ..>[#64748b] n_11_ports_contracts_d0accd : <<import>>
+n_8_feature_linters_57c819 ..>[#64748b] n_11_ports_contracts_d0accd : <<import>>
+n_7_feature_ingestor_73234e ..>[#64748b] n_11_ports_contracts_d0accd : <<import>>
+n_7_feature_ingestor_73234e ..>[#64748b] n_11_ports_contracts_d0accd : <<import>>
+n_8_feature_linters_57c819 ..>[#64748b] n_11_ports_contracts_d0accd : <<import>>
+n_10_mcp_controlplane_ff4d3b ..>[#64748b] n_9_feature_reducers_8a2858 : <<import>>
+@enduml

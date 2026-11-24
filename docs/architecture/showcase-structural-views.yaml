@@ -1,0 +1,1350 @@
+schema_version: '1.0'
+global_abstractions: []
+views:
+- id: showcase_cli_triage
+  title: 'Showcase: CLI-Curated Compilation Pipeline (d2)'
+  ir_mode: structural_graph
+  target_renderer: d2
+  diagram_variant: architecture
+  render_svg: true
+  animate_edges: null
+  rules:
+  - op: prune_leaves
+    id: prune_ns_stubs
+    node_id_globs:
+    - archigram
+    - archigram.entrypoints
+    - archigram.entrypoints.cli
+    - archigram.features
+    direction: both
+  - op: bypass_vertices
+    id: splice_reexport_barrels
+    node_id_globs:
+    - archigram.ports
+    - archigram.ports.contracts
+    - archigram.domain
+    - archigram.features.emit_mermaid
+    - archigram.features.emit_d2
+    - archigram.features.emit_plantuml
+    - archigram.features.emit_likec4
+    preserve_edge_relations: []
+    preserve_concurrency_kind: true
+    max_fanout_product: 250
+  - op: collapse_partition
+    id: fold_ingestors
+    target_node_id: ingestor_slices
+    label: Ingestor Slices (5 Extractors)
+    summary: ''
+    member_globs:
+    - archigram.features.ingest_*
+    exclude_ids: []
+  - op: collapse_partition
+    id: fold_reducers
+    target_node_id: reducer_slices
+    label: Reducer Slices (Graph & Trace)
+    summary: ''
+    member_globs:
+    - archigram.features.reduce_*
+    exclude_ids: []
+  - op: collapse_partition
+    id: fold_linters
+    target_node_id: linter_slices
+    label: 5-Gate Linter Slices
+    summary: ''
+    member_globs:
+    - archigram.features.lint_*
+    exclude_ids: []
+  - op: collapse_partition
+    id: fold_emitters
+    target_node_id: emitter_slices
+    label: Multi-Target Emitter Slices
+    summary: ''
+    member_globs:
+    - archigram.features.emit_*.emitter*
+    - archigram.features.emit_*.uml_variants*
+    exclude_ids: []
+  - op: collapse_partition
+    id: fold_domain_core
+    target_node_id: domain_core
+    label: Domain Core (Canonical IR, Spec, Diagnostics)
+    summary: ''
+    member_globs:
+    - archigram.domain.ir*
+    - archigram.domain.spec*
+    - archigram.domain.diagnostics*
+    exclude_ids: []
+  - op: collapse_partition
+    id: fold_cli_callers
+    target_node_id: cli_commands
+    label: CLI Commands (app, triage, diff, sync)
+    summary: ''
+    member_globs:
+    - archigram.entrypoints.cli.app*
+    - archigram.entrypoints.cli.triage*
+    - archigram.entrypoints.cli.diff*
+    - archigram.entrypoints.cli.markdown_sync*
+    - archigram.entrypoints.cli.self_trace*
+    - archigram.entrypoints.cli.curate_cli*
+    exclude_ids: []
+  - op: collapse_partition
+    id: fold_digest
+    target_node_id: digest_slice
+    label: Digest Slice (Graph & Trace)
+    summary: ''
+    member_globs:
+    - archigram.features.digest*
+    exclude_ids: []
+  - op: collapse_partition
+    id: fold_domain_style
+    target_node_id: domain_style
+    label: Canonical Dual-Mode Style Policy (domain.style)
+    summary: ''
+    member_globs:
+    - archigram.domain.style*
+    exclude_ids: []
+  scope:
+    mode: k_hop_neighborhood
+    focal_nodes:
+    - archigram.entrypoints.cli.pipeline
+    upstream_depth: 1
+    downstream_depth: 1
+  simplify:
+    condense_sccs: true
+    transitive_reduction: true
+  trace_compaction:
+    fold_loops: true
+    fold_loop_with_opt: true
+    cut_recursion: true
+    fold_parallel_siblings: true
+    parallel_epsilon_ns: 1000000
+    fold_parallel_map: true
+    max_par_branches: 6
+    decompose_series_parallel: true
+    max_call_depth: 8
+  invariants:
+    protected_nodes: []
+    preserve_reachability: []
+    preserve_partial_order: true
+    forbid_new_cycles: true
+    node_budget:
+      min_count: 5
+      max_count: 18
+    edge_budget_max: 40
+    overflow_strategy: fail
+- id: showcase_cli_triage_mermaid
+  title: 'Showcase: CLI-Curated Compilation Pipeline (mermaid)'
+  ir_mode: structural_graph
+  target_renderer: mermaid
+  diagram_variant: architecture
+  render_svg: false
+  animate_edges: null
+  rules:
+  - op: prune_leaves
+    id: prune_ns_stubs
+    node_id_globs:
+    - archigram
+    - archigram.entrypoints
+    - archigram.entrypoints.cli
+    - archigram.features
+    direction: both
+  - op: bypass_vertices
+    id: splice_reexport_barrels
+    node_id_globs:
+    - archigram.ports
+    - archigram.ports.contracts
+    - archigram.domain
+    - archigram.features.emit_mermaid
+    - archigram.features.emit_d2
+    - archigram.features.emit_plantuml
+    - archigram.features.emit_likec4
+    preserve_edge_relations: []
+    preserve_concurrency_kind: true
+    max_fanout_product: 250
+  - op: collapse_partition
+    id: fold_ingestors
+    target_node_id: ingestor_slices
+    label: Ingestor Slices (5 Extractors)
+    summary: ''
+    member_globs:
+    - archigram.features.ingest_*
+    exclude_ids: []
+  - op: collapse_partition
+    id: fold_reducers
+    target_node_id: reducer_slices
+    label: Reducer Slices (Graph & Trace)
+    summary: ''
+    member_globs:
+    - archigram.features.reduce_*
+    exclude_ids: []
+  - op: collapse_partition
+    id: fold_linters
+    target_node_id: linter_slices
+    label: 5-Gate Linter Slices
+    summary: ''
+    member_globs:
+    - archigram.features.lint_*
+    exclude_ids: []
+  - op: collapse_partition
+    id: fold_emitters
+    target_node_id: emitter_slices
+    label: Multi-Target Emitter Slices
+    summary: ''
+    member_globs:
+    - archigram.features.emit_*.emitter*
+    - archigram.features.emit_*.uml_variants*
+    exclude_ids: []
+  - op: collapse_partition
+    id: fold_domain_core
+    target_node_id: domain_core
+    label: Domain Core (Canonical IR, Spec, Diagnostics)
+    summary: ''
+    member_globs:
+    - archigram.domain.ir*
+    - archigram.domain.spec*
+    - archigram.domain.diagnostics*
+    exclude_ids: []
+  - op: collapse_partition
+    id: fold_cli_callers
+    target_node_id: cli_commands
+    label: CLI Commands (app, triage, diff, sync)
+    summary: ''
+    member_globs:
+    - archigram.entrypoints.cli.app*
+    - archigram.entrypoints.cli.triage*
+    - archigram.entrypoints.cli.diff*
+    - archigram.entrypoints.cli.markdown_sync*
+    - archigram.entrypoints.cli.self_trace*
+    - archigram.entrypoints.cli.curate_cli*
+    exclude_ids: []
+  - op: collapse_partition
+    id: fold_digest
+    target_node_id: digest_slice
+    label: Digest Slice (Graph & Trace)
+    summary: ''
+    member_globs:
+    - archigram.features.digest*
+    exclude_ids: []
+  - op: collapse_partition
+    id: fold_domain_style
+    target_node_id: domain_style
+    label: Canonical Dual-Mode Style Policy (domain.style)
+    summary: ''
+    member_globs:
+    - archigram.domain.style*
+    exclude_ids: []
+  scope:
+    mode: k_hop_neighborhood
+    focal_nodes:
+    - archigram.entrypoints.cli.pipeline
+    upstream_depth: 1
+    downstream_depth: 1
+  simplify:
+    condense_sccs: true
+    transitive_reduction: true
+  trace_compaction:
+    fold_loops: true
+    fold_loop_with_opt: true
+    cut_recursion: true
+    fold_parallel_siblings: true
+    parallel_epsilon_ns: 1000000
+    fold_parallel_map: true
+    max_par_branches: 6
+    decompose_series_parallel: true
+    max_call_depth: 8
+  invariants:
+    protected_nodes: []
+    preserve_reachability: []
+    preserve_partial_order: true
+    forbid_new_cycles: true
+    node_budget:
+      min_count: 5
+      max_count: 18
+    edge_budget_max: 40
+    overflow_strategy: fail
+- id: showcase_uml_package_mermaid
+  title: UML 2.5 Package Diagram (mermaid)
+  ir_mode: structural_graph
+  target_renderer: mermaid
+  diagram_variant: package
+  render_svg: false
+  animate_edges: null
+  rules:
+  - op: prune_leaves
+    id: showcase_uml_package_mermaid_prune_ns
+    node_id_globs:
+    - archigram
+    - archigram.entrypoints
+    - archigram.features
+    direction: both
+  - op: collapse_partition
+    id: showcase_uml_package_mermaid_cli
+    target_node_id: cli_dataplane
+    label: CLI Data Plane (entrypoints.cli)
+    summary: ''
+    member_globs:
+    - archigram.entrypoints.cli
+    - archigram.entrypoints.cli.*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_package_mermaid_mcp
+    target_node_id: mcp_controlplane
+    label: MCP Control Plane (entrypoints.mcp)
+    summary: ''
+    member_globs:
+    - archigram.entrypoints.mcp
+    - archigram.entrypoints.mcp.*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_package_mermaid_ing
+    target_node_id: feature_ingestors
+    label: Ingestor Slices (5 Extractors)
+    summary: ''
+    member_globs:
+    - archigram.features.ingest_*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_package_mermaid_red
+    target_node_id: feature_reducers
+    label: Reducer Slices (Graph & Trace)
+    summary: ''
+    member_globs:
+    - archigram.features.reduce_*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_package_mermaid_lnt
+    target_node_id: feature_linters
+    label: 5-Gate Linter Slices
+    summary: ''
+    member_globs:
+    - archigram.features.lint_*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_package_mermaid_emt
+    target_node_id: feature_emitters
+    label: Emitter Slices (Mermaid, D2, PlantUML, LikeC4)
+    summary: ''
+    member_globs:
+    - archigram.features.emit_*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_package_mermaid_dig
+    target_node_id: feature_digest
+    label: Digest Slice (Graph & Trace)
+    summary: ''
+    member_globs:
+    - archigram.features.digest
+    - archigram.features.digest.*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_package_mermaid_prt
+    target_node_id: ports_contracts
+    label: Ports & Contracts (archigram.ports)
+    summary: ''
+    member_globs:
+    - archigram.ports
+    - archigram.ports.*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_package_mermaid_dom
+    target_node_id: domain_core
+    label: Domain Core (Canonical IR, Spec, Style)
+    summary: ''
+    member_globs:
+    - archigram.domain
+    - archigram.domain.*
+    exclude_ids: []
+  scope:
+    mode: full
+  simplify:
+    condense_sccs: true
+    transitive_reduction: true
+  trace_compaction:
+    fold_loops: true
+    fold_loop_with_opt: true
+    cut_recursion: true
+    fold_parallel_siblings: true
+    parallel_epsilon_ns: 1000000
+    fold_parallel_map: true
+    max_par_branches: 6
+    decompose_series_parallel: true
+    max_call_depth: 8
+  invariants:
+    protected_nodes: []
+    preserve_reachability: []
+    preserve_partial_order: true
+    forbid_new_cycles: true
+    node_budget:
+      min_count: 6
+      max_count: 12
+    edge_budget_max: 40
+    overflow_strategy: fail
+- id: showcase_uml_package_d2
+  title: UML 2.5 Package Diagram (d2)
+  ir_mode: structural_graph
+  target_renderer: d2
+  diagram_variant: package
+  render_svg: true
+  animate_edges: null
+  rules:
+  - op: prune_leaves
+    id: showcase_uml_package_d2_prune_ns
+    node_id_globs:
+    - archigram
+    - archigram.entrypoints
+    - archigram.features
+    direction: both
+  - op: collapse_partition
+    id: showcase_uml_package_d2_cli
+    target_node_id: cli_dataplane
+    label: CLI Data Plane (entrypoints.cli)
+    summary: ''
+    member_globs:
+    - archigram.entrypoints.cli
+    - archigram.entrypoints.cli.*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_package_d2_mcp
+    target_node_id: mcp_controlplane
+    label: MCP Control Plane (entrypoints.mcp)
+    summary: ''
+    member_globs:
+    - archigram.entrypoints.mcp
+    - archigram.entrypoints.mcp.*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_package_d2_ing
+    target_node_id: feature_ingestors
+    label: Ingestor Slices (5 Extractors)
+    summary: ''
+    member_globs:
+    - archigram.features.ingest_*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_package_d2_red
+    target_node_id: feature_reducers
+    label: Reducer Slices (Graph & Trace)
+    summary: ''
+    member_globs:
+    - archigram.features.reduce_*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_package_d2_lnt
+    target_node_id: feature_linters
+    label: 5-Gate Linter Slices
+    summary: ''
+    member_globs:
+    - archigram.features.lint_*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_package_d2_emt
+    target_node_id: feature_emitters
+    label: Emitter Slices (Mermaid, D2, PlantUML, LikeC4)
+    summary: ''
+    member_globs:
+    - archigram.features.emit_*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_package_d2_dig
+    target_node_id: feature_digest
+    label: Digest Slice (Graph & Trace)
+    summary: ''
+    member_globs:
+    - archigram.features.digest
+    - archigram.features.digest.*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_package_d2_prt
+    target_node_id: ports_contracts
+    label: Ports & Contracts (archigram.ports)
+    summary: ''
+    member_globs:
+    - archigram.ports
+    - archigram.ports.*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_package_d2_dom
+    target_node_id: domain_core
+    label: Domain Core (Canonical IR, Spec, Style)
+    summary: ''
+    member_globs:
+    - archigram.domain
+    - archigram.domain.*
+    exclude_ids: []
+  scope:
+    mode: full
+  simplify:
+    condense_sccs: true
+    transitive_reduction: true
+  trace_compaction:
+    fold_loops: true
+    fold_loop_with_opt: true
+    cut_recursion: true
+    fold_parallel_siblings: true
+    parallel_epsilon_ns: 1000000
+    fold_parallel_map: true
+    max_par_branches: 6
+    decompose_series_parallel: true
+    max_call_depth: 8
+  invariants:
+    protected_nodes: []
+    preserve_reachability: []
+    preserve_partial_order: true
+    forbid_new_cycles: true
+    node_budget:
+      min_count: 6
+      max_count: 12
+    edge_budget_max: 40
+    overflow_strategy: fail
+- id: showcase_uml_package_plantuml
+  title: UML 2.5 Package Diagram (plantuml)
+  ir_mode: structural_graph
+  target_renderer: plantuml
+  diagram_variant: package
+  render_svg: false
+  animate_edges: null
+  rules:
+  - op: prune_leaves
+    id: showcase_uml_package_plantuml_prune_ns
+    node_id_globs:
+    - archigram
+    - archigram.entrypoints
+    - archigram.features
+    direction: both
+  - op: collapse_partition
+    id: showcase_uml_package_plantuml_cli
+    target_node_id: cli_dataplane
+    label: CLI Data Plane (entrypoints.cli)
+    summary: ''
+    member_globs:
+    - archigram.entrypoints.cli
+    - archigram.entrypoints.cli.*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_package_plantuml_mcp
+    target_node_id: mcp_controlplane
+    label: MCP Control Plane (entrypoints.mcp)
+    summary: ''
+    member_globs:
+    - archigram.entrypoints.mcp
+    - archigram.entrypoints.mcp.*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_package_plantuml_ing
+    target_node_id: feature_ingestors
+    label: Ingestor Slices (5 Extractors)
+    summary: ''
+    member_globs:
+    - archigram.features.ingest_*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_package_plantuml_red
+    target_node_id: feature_reducers
+    label: Reducer Slices (Graph & Trace)
+    summary: ''
+    member_globs:
+    - archigram.features.reduce_*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_package_plantuml_lnt
+    target_node_id: feature_linters
+    label: 5-Gate Linter Slices
+    summary: ''
+    member_globs:
+    - archigram.features.lint_*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_package_plantuml_emt
+    target_node_id: feature_emitters
+    label: Emitter Slices (Mermaid, D2, PlantUML, LikeC4)
+    summary: ''
+    member_globs:
+    - archigram.features.emit_*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_package_plantuml_dig
+    target_node_id: feature_digest
+    label: Digest Slice (Graph & Trace)
+    summary: ''
+    member_globs:
+    - archigram.features.digest
+    - archigram.features.digest.*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_package_plantuml_prt
+    target_node_id: ports_contracts
+    label: Ports & Contracts (archigram.ports)
+    summary: ''
+    member_globs:
+    - archigram.ports
+    - archigram.ports.*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_package_plantuml_dom
+    target_node_id: domain_core
+    label: Domain Core (Canonical IR, Spec, Style)
+    summary: ''
+    member_globs:
+    - archigram.domain
+    - archigram.domain.*
+    exclude_ids: []
+  scope:
+    mode: full
+  simplify:
+    condense_sccs: true
+    transitive_reduction: true
+  trace_compaction:
+    fold_loops: true
+    fold_loop_with_opt: true
+    cut_recursion: true
+    fold_parallel_siblings: true
+    parallel_epsilon_ns: 1000000
+    fold_parallel_map: true
+    max_par_branches: 6
+    decompose_series_parallel: true
+    max_call_depth: 8
+  invariants:
+    protected_nodes: []
+    preserve_reachability: []
+    preserve_partial_order: true
+    forbid_new_cycles: true
+    node_budget:
+      min_count: 6
+      max_count: 12
+    edge_budget_max: 40
+    overflow_strategy: fail
+- id: showcase_uml_deployment_mermaid
+  title: UML 2.5 Deployment Diagram (mermaid)
+  ir_mode: structural_graph
+  target_renderer: mermaid
+  diagram_variant: deployment
+  render_svg: false
+  animate_edges: null
+  rules:
+  - op: prune_leaves
+    id: showcase_uml_deployment_mermaid_prune_ns
+    node_id_globs:
+    - archigram
+    - archigram.entrypoints
+    - archigram.features
+    direction: both
+  - op: collapse_partition
+    id: showcase_uml_deployment_mermaid_cli
+    target_node_id: cli_dataplane
+    label: CLI Data Plane (entrypoints.cli)
+    summary: ''
+    member_globs:
+    - archigram.entrypoints.cli
+    - archigram.entrypoints.cli.*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_deployment_mermaid_mcp
+    target_node_id: mcp_controlplane
+    label: MCP Control Plane (entrypoints.mcp)
+    summary: ''
+    member_globs:
+    - archigram.entrypoints.mcp
+    - archigram.entrypoints.mcp.*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_deployment_mermaid_ing
+    target_node_id: feature_ingestors
+    label: Ingestor Slices (5 Extractors)
+    summary: ''
+    member_globs:
+    - archigram.features.ingest_*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_deployment_mermaid_red
+    target_node_id: feature_reducers
+    label: Reducer Slices (Graph & Trace)
+    summary: ''
+    member_globs:
+    - archigram.features.reduce_*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_deployment_mermaid_lnt
+    target_node_id: feature_linters
+    label: 5-Gate Linter Slices
+    summary: ''
+    member_globs:
+    - archigram.features.lint_*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_deployment_mermaid_emt
+    target_node_id: feature_emitters
+    label: Emitter Slices (Mermaid, D2, PlantUML, LikeC4)
+    summary: ''
+    member_globs:
+    - archigram.features.emit_*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_deployment_mermaid_dig
+    target_node_id: feature_digest
+    label: Digest Slice (Graph & Trace)
+    summary: ''
+    member_globs:
+    - archigram.features.digest
+    - archigram.features.digest.*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_deployment_mermaid_prt
+    target_node_id: ports_contracts
+    label: Ports & Contracts (archigram.ports)
+    summary: ''
+    member_globs:
+    - archigram.ports
+    - archigram.ports.*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_deployment_mermaid_dom
+    target_node_id: domain_core
+    label: Domain Core (Canonical IR, Spec, Style)
+    summary: ''
+    member_globs:
+    - archigram.domain
+    - archigram.domain.*
+    exclude_ids: []
+  scope:
+    mode: full
+  simplify:
+    condense_sccs: true
+    transitive_reduction: true
+  trace_compaction:
+    fold_loops: true
+    fold_loop_with_opt: true
+    cut_recursion: true
+    fold_parallel_siblings: true
+    parallel_epsilon_ns: 1000000
+    fold_parallel_map: true
+    max_par_branches: 6
+    decompose_series_parallel: true
+    max_call_depth: 8
+  invariants:
+    protected_nodes: []
+    preserve_reachability: []
+    preserve_partial_order: true
+    forbid_new_cycles: true
+    node_budget:
+      min_count: 6
+      max_count: 12
+    edge_budget_max: 40
+    overflow_strategy: fail
+- id: showcase_uml_deployment_d2
+  title: UML 2.5 Deployment Diagram (d2)
+  ir_mode: structural_graph
+  target_renderer: d2
+  diagram_variant: deployment
+  render_svg: true
+  animate_edges: null
+  rules:
+  - op: prune_leaves
+    id: showcase_uml_deployment_d2_prune_ns
+    node_id_globs:
+    - archigram
+    - archigram.entrypoints
+    - archigram.features
+    direction: both
+  - op: collapse_partition
+    id: showcase_uml_deployment_d2_cli
+    target_node_id: cli_dataplane
+    label: CLI Data Plane (entrypoints.cli)
+    summary: ''
+    member_globs:
+    - archigram.entrypoints.cli
+    - archigram.entrypoints.cli.*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_deployment_d2_mcp
+    target_node_id: mcp_controlplane
+    label: MCP Control Plane (entrypoints.mcp)
+    summary: ''
+    member_globs:
+    - archigram.entrypoints.mcp
+    - archigram.entrypoints.mcp.*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_deployment_d2_ing
+    target_node_id: feature_ingestors
+    label: Ingestor Slices (5 Extractors)
+    summary: ''
+    member_globs:
+    - archigram.features.ingest_*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_deployment_d2_red
+    target_node_id: feature_reducers
+    label: Reducer Slices (Graph & Trace)
+    summary: ''
+    member_globs:
+    - archigram.features.reduce_*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_deployment_d2_lnt
+    target_node_id: feature_linters
+    label: 5-Gate Linter Slices
+    summary: ''
+    member_globs:
+    - archigram.features.lint_*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_deployment_d2_emt
+    target_node_id: feature_emitters
+    label: Emitter Slices (Mermaid, D2, PlantUML, LikeC4)
+    summary: ''
+    member_globs:
+    - archigram.features.emit_*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_deployment_d2_dig
+    target_node_id: feature_digest
+    label: Digest Slice (Graph & Trace)
+    summary: ''
+    member_globs:
+    - archigram.features.digest
+    - archigram.features.digest.*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_deployment_d2_prt
+    target_node_id: ports_contracts
+    label: Ports & Contracts (archigram.ports)
+    summary: ''
+    member_globs:
+    - archigram.ports
+    - archigram.ports.*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_deployment_d2_dom
+    target_node_id: domain_core
+    label: Domain Core (Canonical IR, Spec, Style)
+    summary: ''
+    member_globs:
+    - archigram.domain
+    - archigram.domain.*
+    exclude_ids: []
+  scope:
+    mode: full
+  simplify:
+    condense_sccs: true
+    transitive_reduction: true
+  trace_compaction:
+    fold_loops: true
+    fold_loop_with_opt: true
+    cut_recursion: true
+    fold_parallel_siblings: true
+    parallel_epsilon_ns: 1000000
+    fold_parallel_map: true
+    max_par_branches: 6
+    decompose_series_parallel: true
+    max_call_depth: 8
+  invariants:
+    protected_nodes: []
+    preserve_reachability: []
+    preserve_partial_order: true
+    forbid_new_cycles: true
+    node_budget:
+      min_count: 6
+      max_count: 12
+    edge_budget_max: 40
+    overflow_strategy: fail
+- id: showcase_uml_deployment_plantuml
+  title: UML 2.5 Deployment Diagram (plantuml)
+  ir_mode: structural_graph
+  target_renderer: plantuml
+  diagram_variant: deployment
+  render_svg: false
+  animate_edges: null
+  rules:
+  - op: prune_leaves
+    id: showcase_uml_deployment_plantuml_prune_ns
+    node_id_globs:
+    - archigram
+    - archigram.entrypoints
+    - archigram.features
+    direction: both
+  - op: collapse_partition
+    id: showcase_uml_deployment_plantuml_cli
+    target_node_id: cli_dataplane
+    label: CLI Data Plane (entrypoints.cli)
+    summary: ''
+    member_globs:
+    - archigram.entrypoints.cli
+    - archigram.entrypoints.cli.*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_deployment_plantuml_mcp
+    target_node_id: mcp_controlplane
+    label: MCP Control Plane (entrypoints.mcp)
+    summary: ''
+    member_globs:
+    - archigram.entrypoints.mcp
+    - archigram.entrypoints.mcp.*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_deployment_plantuml_ing
+    target_node_id: feature_ingestors
+    label: Ingestor Slices (5 Extractors)
+    summary: ''
+    member_globs:
+    - archigram.features.ingest_*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_deployment_plantuml_red
+    target_node_id: feature_reducers
+    label: Reducer Slices (Graph & Trace)
+    summary: ''
+    member_globs:
+    - archigram.features.reduce_*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_deployment_plantuml_lnt
+    target_node_id: feature_linters
+    label: 5-Gate Linter Slices
+    summary: ''
+    member_globs:
+    - archigram.features.lint_*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_deployment_plantuml_emt
+    target_node_id: feature_emitters
+    label: Emitter Slices (Mermaid, D2, PlantUML, LikeC4)
+    summary: ''
+    member_globs:
+    - archigram.features.emit_*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_deployment_plantuml_dig
+    target_node_id: feature_digest
+    label: Digest Slice (Graph & Trace)
+    summary: ''
+    member_globs:
+    - archigram.features.digest
+    - archigram.features.digest.*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_deployment_plantuml_prt
+    target_node_id: ports_contracts
+    label: Ports & Contracts (archigram.ports)
+    summary: ''
+    member_globs:
+    - archigram.ports
+    - archigram.ports.*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_deployment_plantuml_dom
+    target_node_id: domain_core
+    label: Domain Core (Canonical IR, Spec, Style)
+    summary: ''
+    member_globs:
+    - archigram.domain
+    - archigram.domain.*
+    exclude_ids: []
+  scope:
+    mode: full
+  simplify:
+    condense_sccs: true
+    transitive_reduction: true
+  trace_compaction:
+    fold_loops: true
+    fold_loop_with_opt: true
+    cut_recursion: true
+    fold_parallel_siblings: true
+    parallel_epsilon_ns: 1000000
+    fold_parallel_map: true
+    max_par_branches: 6
+    decompose_series_parallel: true
+    max_call_depth: 8
+  invariants:
+    protected_nodes: []
+    preserve_reachability: []
+    preserve_partial_order: true
+    forbid_new_cycles: true
+    node_budget:
+      min_count: 6
+      max_count: 12
+    edge_budget_max: 40
+    overflow_strategy: fail
+- id: showcase_uml_use_case_mermaid
+  title: UML 2.5 Use Case Diagram (mermaid)
+  ir_mode: structural_graph
+  target_renderer: mermaid
+  diagram_variant: use_case
+  render_svg: false
+  animate_edges: null
+  rules:
+  - op: prune_leaves
+    id: showcase_uml_use_case_mermaid_prune_ns
+    node_id_globs:
+    - archigram
+    - archigram.entrypoints
+    - archigram.entrypoints.cli
+    - archigram.entrypoints.mcp
+    - archigram.features
+    direction: both
+  - op: collapse_partition
+    id: showcase_uml_use_case_mermaid_actor_cli
+    target_node_id: actor_cli_user
+    label: CLI Developer / CI Hook
+    summary: ''
+    member_globs:
+    - archigram.entrypoints.cli.app*
+    - archigram.entrypoints.cli.self_trace*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_use_case_mermaid_actor_mcp
+    target_node_id: actor_mcp_agent
+    label: LLM Agent Client (MCP)
+    summary: ''
+    member_globs:
+    - archigram.entrypoints.mcp.server*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_use_case_mermaid_uc_curate
+    target_node_id: uc_curate_triage
+    label: Curate Specs & Render 3-Stage Triage
+    summary: ''
+    member_globs:
+    - archigram.entrypoints.cli.curate_cli*
+    - archigram.entrypoints.cli.triage*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_use_case_mermaid_uc_compile
+    target_node_id: uc_compile_sync
+    label: Compile Views, Diff & Sync Markdown
+    summary: ''
+    member_globs:
+    - archigram.entrypoints.cli.pipeline*
+    - archigram.entrypoints.cli.diff*
+    - archigram.entrypoints.cli.markdown_sync*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_use_case_mermaid_uc_propose
+    target_node_id: uc_propose_repair
+    label: Propose & Self-Heal Spec (3-Turn Loop)
+    summary: ''
+    member_globs:
+    - archigram.entrypoints.mcp.propose_loop*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_use_case_mermaid_uc_ingest
+    target_node_id: uc_ingest_ir
+    label: Ingest Factual AST / SCIP / OTLP IR
+    summary: ''
+    member_globs:
+    - archigram.features.ingest_*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_use_case_mermaid_uc_reduce
+    target_node_id: uc_reduce_compact
+    label: Reduce Topology & Compact R1-R6 Traces
+    summary: ''
+    member_globs:
+    - archigram.features.reduce_*
+    - archigram.features.digest*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_use_case_mermaid_uc_lint
+    target_node_id: uc_verify_gates
+    label: Verify 5 Mathematical Linter Gates
+    summary: ''
+    member_globs:
+    - archigram.features.lint_*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_use_case_mermaid_uc_emit
+    target_node_id: uc_emit_targets
+    label: Emit Dual-Mode UML & Architecture Views
+    summary: ''
+    member_globs:
+    - archigram.features.emit_*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_use_case_mermaid_uc_domain
+    target_node_id: uc_domain_contracts
+    label: Validate Canonical IR, Spec & Port Contracts
+    summary: ''
+    member_globs:
+    - archigram.ports*
+    - archigram.domain*
+    exclude_ids: []
+  scope:
+    mode: full
+  simplify:
+    condense_sccs: true
+    transitive_reduction: true
+  trace_compaction:
+    fold_loops: true
+    fold_loop_with_opt: true
+    cut_recursion: true
+    fold_parallel_siblings: true
+    parallel_epsilon_ns: 1000000
+    fold_parallel_map: true
+    max_par_branches: 6
+    decompose_series_parallel: true
+    max_call_depth: 8
+  invariants:
+    protected_nodes: []
+    preserve_reachability: []
+    preserve_partial_order: true
+    forbid_new_cycles: true
+    node_budget:
+      min_count: 6
+      max_count: 16
+    edge_budget_max: 40
+    overflow_strategy: fail
+- id: showcase_uml_use_case_d2
+  title: UML 2.5 Use Case Diagram (d2)
+  ir_mode: structural_graph
+  target_renderer: d2
+  diagram_variant: use_case
+  render_svg: true
+  animate_edges: null
+  rules:
+  - op: prune_leaves
+    id: showcase_uml_use_case_d2_prune_ns
+    node_id_globs:
+    - archigram
+    - archigram.entrypoints
+    - archigram.entrypoints.cli
+    - archigram.entrypoints.mcp
+    - archigram.features
+    direction: both
+  - op: collapse_partition
+    id: showcase_uml_use_case_d2_actor_cli
+    target_node_id: actor_cli_user
+    label: CLI Developer / CI Hook
+    summary: ''
+    member_globs:
+    - archigram.entrypoints.cli.app*
+    - archigram.entrypoints.cli.self_trace*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_use_case_d2_actor_mcp
+    target_node_id: actor_mcp_agent
+    label: LLM Agent Client (MCP)
+    summary: ''
+    member_globs:
+    - archigram.entrypoints.mcp.server*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_use_case_d2_uc_curate
+    target_node_id: uc_curate_triage
+    label: Curate Specs & Render 3-Stage Triage
+    summary: ''
+    member_globs:
+    - archigram.entrypoints.cli.curate_cli*
+    - archigram.entrypoints.cli.triage*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_use_case_d2_uc_compile
+    target_node_id: uc_compile_sync
+    label: Compile Views, Diff & Sync Markdown
+    summary: ''
+    member_globs:
+    - archigram.entrypoints.cli.pipeline*
+    - archigram.entrypoints.cli.diff*
+    - archigram.entrypoints.cli.markdown_sync*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_use_case_d2_uc_propose
+    target_node_id: uc_propose_repair
+    label: Propose & Self-Heal Spec (3-Turn Loop)
+    summary: ''
+    member_globs:
+    - archigram.entrypoints.mcp.propose_loop*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_use_case_d2_uc_ingest
+    target_node_id: uc_ingest_ir
+    label: Ingest Factual AST / SCIP / OTLP IR
+    summary: ''
+    member_globs:
+    - archigram.features.ingest_*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_use_case_d2_uc_reduce
+    target_node_id: uc_reduce_compact
+    label: Reduce Topology & Compact R1-R6 Traces
+    summary: ''
+    member_globs:
+    - archigram.features.reduce_*
+    - archigram.features.digest*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_use_case_d2_uc_lint
+    target_node_id: uc_verify_gates
+    label: Verify 5 Mathematical Linter Gates
+    summary: ''
+    member_globs:
+    - archigram.features.lint_*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_use_case_d2_uc_emit
+    target_node_id: uc_emit_targets
+    label: Emit Dual-Mode UML & Architecture Views
+    summary: ''
+    member_globs:
+    - archigram.features.emit_*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_use_case_d2_uc_domain
+    target_node_id: uc_domain_contracts
+    label: Validate Canonical IR, Spec & Port Contracts
+    summary: ''
+    member_globs:
+    - archigram.ports*
+    - archigram.domain*
+    exclude_ids: []
+  scope:
+    mode: full
+  simplify:
+    condense_sccs: true
+    transitive_reduction: true
+  trace_compaction:
+    fold_loops: true
+    fold_loop_with_opt: true
+    cut_recursion: true
+    fold_parallel_siblings: true
+    parallel_epsilon_ns: 1000000
+    fold_parallel_map: true
+    max_par_branches: 6
+    decompose_series_parallel: true
+    max_call_depth: 8
+  invariants:
+    protected_nodes: []
+    preserve_reachability: []
+    preserve_partial_order: true
+    forbid_new_cycles: true
+    node_budget:
+      min_count: 6
+      max_count: 16
+    edge_budget_max: 40
+    overflow_strategy: fail
+- id: showcase_uml_use_case_plantuml
+  title: UML 2.5 Use Case Diagram (plantuml)
+  ir_mode: structural_graph
+  target_renderer: plantuml
+  diagram_variant: use_case
+  render_svg: false
+  animate_edges: null
+  rules:
+  - op: prune_leaves
+    id: showcase_uml_use_case_plantuml_prune_ns
+    node_id_globs:
+    - archigram
+    - archigram.entrypoints
+    - archigram.entrypoints.cli
+    - archigram.entrypoints.mcp
+    - archigram.features
+    direction: both
+  - op: collapse_partition
+    id: showcase_uml_use_case_plantuml_actor_cli
+    target_node_id: actor_cli_user
+    label: CLI Developer / CI Hook
+    summary: ''
+    member_globs:
+    - archigram.entrypoints.cli.app*
+    - archigram.entrypoints.cli.self_trace*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_use_case_plantuml_actor_mcp
+    target_node_id: actor_mcp_agent
+    label: LLM Agent Client (MCP)
+    summary: ''
+    member_globs:
+    - archigram.entrypoints.mcp.server*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_use_case_plantuml_uc_curate
+    target_node_id: uc_curate_triage
+    label: Curate Specs & Render 3-Stage Triage
+    summary: ''
+    member_globs:
+    - archigram.entrypoints.cli.curate_cli*
+    - archigram.entrypoints.cli.triage*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_use_case_plantuml_uc_compile
+    target_node_id: uc_compile_sync
+    label: Compile Views, Diff & Sync Markdown
+    summary: ''
+    member_globs:
+    - archigram.entrypoints.cli.pipeline*
+    - archigram.entrypoints.cli.diff*
+    - archigram.entrypoints.cli.markdown_sync*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_use_case_plantuml_uc_propose
+    target_node_id: uc_propose_repair
+    label: Propose & Self-Heal Spec (3-Turn Loop)
+    summary: ''
+    member_globs:
+    - archigram.entrypoints.mcp.propose_loop*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_use_case_plantuml_uc_ingest
+    target_node_id: uc_ingest_ir
+    label: Ingest Factual AST / SCIP / OTLP IR
+    summary: ''
+    member_globs:
+    - archigram.features.ingest_*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_use_case_plantuml_uc_reduce
+    target_node_id: uc_reduce_compact
+    label: Reduce Topology & Compact R1-R6 Traces
+    summary: ''
+    member_globs:
+    - archigram.features.reduce_*
+    - archigram.features.digest*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_use_case_plantuml_uc_lint
+    target_node_id: uc_verify_gates
+    label: Verify 5 Mathematical Linter Gates
+    summary: ''
+    member_globs:
+    - archigram.features.lint_*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_use_case_plantuml_uc_emit
+    target_node_id: uc_emit_targets
+    label: Emit Dual-Mode UML & Architecture Views
+    summary: ''
+    member_globs:
+    - archigram.features.emit_*
+    exclude_ids: []
+  - op: collapse_partition
+    id: showcase_uml_use_case_plantuml_uc_domain
+    target_node_id: uc_domain_contracts
+    label: Validate Canonical IR, Spec & Port Contracts
+    summary: ''
+    member_globs:
+    - archigram.ports*
+    - archigram.domain*
+    exclude_ids: []
+  scope:
+    mode: full
+  simplify:
+    condense_sccs: true
+    transitive_reduction: true
+  trace_compaction:
+    fold_loops: true
+    fold_loop_with_opt: true
+    cut_recursion: true
+    fold_parallel_siblings: true
+    parallel_epsilon_ns: 1000000
+    fold_parallel_map: true
+    max_par_branches: 6
+    decompose_series_parallel: true
+    max_call_depth: 8
+  invariants:
+    protected_nodes: []
+    preserve_reachability: []
+    preserve_partial_order: true
+    forbid_new_cycles: true
+    node_budget:
+      min_count: 6
+      max_count: 16
+    edge_budget_max: 40
+    overflow_strategy: fail
+metadata: {}

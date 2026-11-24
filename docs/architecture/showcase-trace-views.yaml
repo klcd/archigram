@@ -1,0 +1,367 @@
+schema_version: '1.0'
+global_abstractions: []
+views:
+- id: showcase_trace_triage
+  title: UML 2.5 Behavioral Auto (d2)
+  ir_mode: interaction_trace
+  target_renderer: d2
+  diagram_variant: auto
+  render_svg: true
+  animate_edges: null
+  rules: []
+  scope:
+    mode: full
+  simplify:
+    condense_sccs: true
+    transitive_reduction: true
+  trace_compaction:
+    fold_loops: true
+    fold_loop_with_opt: true
+    cut_recursion: true
+    fold_parallel_siblings: true
+    parallel_epsilon_ns: 1000000
+    fold_parallel_map: true
+    max_par_branches: 6
+    decompose_series_parallel: true
+    max_call_depth: 2
+  invariants:
+    protected_nodes: []
+    preserve_reachability: []
+    preserve_partial_order: true
+    forbid_new_cycles: true
+    node_budget:
+      min_count: 4
+      max_count: 25
+    edge_budget_max: 60
+    overflow_strategy: fail
+- id: showcase_trace_triage_mermaid
+  title: UML 2.5 Behavioral Auto (mermaid)
+  ir_mode: interaction_trace
+  target_renderer: mermaid
+  diagram_variant: auto
+  render_svg: false
+  animate_edges: null
+  rules: []
+  scope:
+    mode: full
+  simplify:
+    condense_sccs: true
+    transitive_reduction: true
+  trace_compaction:
+    fold_loops: true
+    fold_loop_with_opt: true
+    cut_recursion: true
+    fold_parallel_siblings: true
+    parallel_epsilon_ns: 1000000
+    fold_parallel_map: true
+    max_par_branches: 6
+    decompose_series_parallel: true
+    max_call_depth: 2
+  invariants:
+    protected_nodes: []
+    preserve_reachability: []
+    preserve_partial_order: true
+    forbid_new_cycles: true
+    node_budget:
+      min_count: 4
+      max_count: 25
+    edge_budget_max: 60
+    overflow_strategy: fail
+- id: showcase_uml_communication_mermaid
+  title: UML 2.5 Behavioral Communication (mermaid)
+  ir_mode: interaction_trace
+  target_renderer: mermaid
+  diagram_variant: communication
+  render_svg: false
+  animate_edges: null
+  rules: []
+  scope:
+    mode: full
+  simplify:
+    condense_sccs: true
+    transitive_reduction: true
+  trace_compaction:
+    fold_loops: true
+    fold_loop_with_opt: true
+    cut_recursion: true
+    fold_parallel_siblings: true
+    parallel_epsilon_ns: 1000000
+    fold_parallel_map: true
+    max_par_branches: 6
+    decompose_series_parallel: true
+    max_call_depth: 2
+  invariants:
+    protected_nodes: []
+    preserve_reachability: []
+    preserve_partial_order: true
+    forbid_new_cycles: true
+    node_budget:
+      min_count: 4
+      max_count: 25
+    edge_budget_max: 60
+    overflow_strategy: fail
+- id: showcase_uml_communication_d2
+  title: UML 2.5 Behavioral Communication (d2)
+  ir_mode: interaction_trace
+  target_renderer: d2
+  diagram_variant: communication
+  render_svg: true
+  animate_edges: null
+  rules: []
+  scope:
+    mode: full
+  simplify:
+    condense_sccs: true
+    transitive_reduction: true
+  trace_compaction:
+    fold_loops: true
+    fold_loop_with_opt: true
+    cut_recursion: true
+    fold_parallel_siblings: true
+    parallel_epsilon_ns: 1000000
+    fold_parallel_map: true
+    max_par_branches: 6
+    decompose_series_parallel: true
+    max_call_depth: 2
+  invariants:
+    protected_nodes: []
+    preserve_reachability: []
+    preserve_partial_order: true
+    forbid_new_cycles: true
+    node_budget:
+      min_count: 4
+      max_count: 25
+    edge_budget_max: 60
+    overflow_strategy: fail
+- id: showcase_uml_communication_puml
+  title: UML 2.5 Behavioral Communication (plantuml)
+  ir_mode: interaction_trace
+  target_renderer: plantuml
+  diagram_variant: communication
+  render_svg: false
+  animate_edges: null
+  rules: []
+  scope:
+    mode: full
+  simplify:
+    condense_sccs: true
+    transitive_reduction: true
+  trace_compaction:
+    fold_loops: true
+    fold_loop_with_opt: true
+    cut_recursion: true
+    fold_parallel_siblings: true
+    parallel_epsilon_ns: 1000000
+    fold_parallel_map: true
+    max_par_branches: 6
+    decompose_series_parallel: true
+    max_call_depth: 2
+  invariants:
+    protected_nodes: []
+    preserve_reachability: []
+    preserve_partial_order: true
+    forbid_new_cycles: true
+    node_budget:
+      min_count: 4
+      max_count: 25
+    edge_budget_max: 60
+    overflow_strategy: fail
+- id: showcase_uml_activity_mermaid
+  title: UML 2.5 Behavioral Activity (mermaid)
+  ir_mode: interaction_trace
+  target_renderer: mermaid
+  diagram_variant: activity
+  render_svg: false
+  animate_edges: null
+  rules: []
+  scope:
+    mode: full
+  simplify:
+    condense_sccs: true
+    transitive_reduction: true
+  trace_compaction:
+    fold_loops: true
+    fold_loop_with_opt: true
+    cut_recursion: true
+    fold_parallel_siblings: true
+    parallel_epsilon_ns: 1000000
+    fold_parallel_map: true
+    max_par_branches: 6
+    decompose_series_parallel: true
+    max_call_depth: 2
+  invariants:
+    protected_nodes: []
+    preserve_reachability: []
+    preserve_partial_order: true
+    forbid_new_cycles: true
+    node_budget:
+      min_count: 4
+      max_count: 25
+    edge_budget_max: 60
+    overflow_strategy: fail
+- id: showcase_uml_activity_d2
+  title: UML 2.5 Behavioral Activity (d2)
+  ir_mode: interaction_trace
+  target_renderer: d2
+  diagram_variant: activity
+  render_svg: true
+  animate_edges: null
+  rules: []
+  scope:
+    mode: full
+  simplify:
+    condense_sccs: true
+    transitive_reduction: true
+  trace_compaction:
+    fold_loops: true
+    fold_loop_with_opt: true
+    cut_recursion: true
+    fold_parallel_siblings: true
+    parallel_epsilon_ns: 1000000
+    fold_parallel_map: true
+    max_par_branches: 6
+    decompose_series_parallel: true
+    max_call_depth: 2
+  invariants:
+    protected_nodes: []
+    preserve_reachability: []
+    preserve_partial_order: true
+    forbid_new_cycles: true
+    node_budget:
+      min_count: 4
+      max_count: 25
+    edge_budget_max: 60
+    overflow_strategy: fail
+- id: showcase_uml_activity_puml
+  title: UML 2.5 Behavioral Activity (plantuml)
+  ir_mode: interaction_trace
+  target_renderer: plantuml
+  diagram_variant: activity
+  render_svg: false
+  animate_edges: null
+  rules: []
+  scope:
+    mode: full
+  simplify:
+    condense_sccs: true
+    transitive_reduction: true
+  trace_compaction:
+    fold_loops: true
+    fold_loop_with_opt: true
+    cut_recursion: true
+    fold_parallel_siblings: true
+    parallel_epsilon_ns: 1000000
+    fold_parallel_map: true
+    max_par_branches: 6
+    decompose_series_parallel: true
+    max_call_depth: 2
+  invariants:
+    protected_nodes: []
+    preserve_reachability: []
+    preserve_partial_order: true
+    forbid_new_cycles: true
+    node_budget:
+      min_count: 4
+      max_count: 25
+    edge_budget_max: 60
+    overflow_strategy: fail
+- id: showcase_uml_state_mermaid
+  title: UML 2.5 Behavioral State (mermaid)
+  ir_mode: interaction_trace
+  target_renderer: mermaid
+  diagram_variant: state
+  render_svg: false
+  animate_edges: null
+  rules: []
+  scope:
+    mode: full
+  simplify:
+    condense_sccs: true
+    transitive_reduction: true
+  trace_compaction:
+    fold_loops: true
+    fold_loop_with_opt: true
+    cut_recursion: true
+    fold_parallel_siblings: true
+    parallel_epsilon_ns: 1000000
+    fold_parallel_map: true
+    max_par_branches: 6
+    decompose_series_parallel: true
+    max_call_depth: 2
+  invariants:
+    protected_nodes: []
+    preserve_reachability: []
+    preserve_partial_order: true
+    forbid_new_cycles: true
+    node_budget:
+      min_count: 4
+      max_count: 25
+    edge_budget_max: 60
+    overflow_strategy: fail
+- id: showcase_uml_state_d2
+  title: UML 2.5 Behavioral State (d2)
+  ir_mode: interaction_trace
+  target_renderer: d2
+  diagram_variant: state
+  render_svg: true
+  animate_edges: null
+  rules: []
+  scope:
+    mode: full
+  simplify:
+    condense_sccs: true
+    transitive_reduction: true
+  trace_compaction:
+    fold_loops: true
+    fold_loop_with_opt: true
+    cut_recursion: true
+    fold_parallel_siblings: true
+    parallel_epsilon_ns: 1000000
+    fold_parallel_map: true
+    max_par_branches: 6
+    decompose_series_parallel: true
+    max_call_depth: 2
+  invariants:
+    protected_nodes: []
+    preserve_reachability: []
+    preserve_partial_order: true
+    forbid_new_cycles: true
+    node_budget:
+      min_count: 4
+      max_count: 25
+    edge_budget_max: 60
+    overflow_strategy: fail
+- id: showcase_uml_state_puml
+  title: UML 2.5 Behavioral State (plantuml)
+  ir_mode: interaction_trace
+  target_renderer: plantuml
+  diagram_variant: state
+  render_svg: false
+  animate_edges: null
+  rules: []
+  scope:
+    mode: full
+  simplify:
+    condense_sccs: true
+    transitive_reduction: true
+  trace_compaction:
+    fold_loops: true
+    fold_loop_with_opt: true
+    cut_recursion: true
+    fold_parallel_siblings: true
+    parallel_epsilon_ns: 1000000
+    fold_parallel_map: true
+    max_par_branches: 6
+    decompose_series_parallel: true
+    max_call_depth: 2
+  invariants:
+    protected_nodes: []
+    preserve_reachability: []
+    preserve_partial_order: true
+    forbid_new_cycles: true
+    node_budget:
+      min_count: 4
+      max_count: 25
+    edge_budget_max: 60
+    overflow_strategy: fail
+metadata: {}

@@ -1,0 +1,59 @@
+@startuml
+!pragma layout elk
+skinparam backgroundColor transparent
+skinparam shadowing false
+skinparam ArrowColor #3b82f6
+skinparam StateBackgroundColor transparent
+skinparam StateBorderColor #64748b
+skinparam ActivityBackgroundColor transparent
+skinparam ActivityBorderColor #64748b
+skinparam ActivityDiamondBackgroundColor transparent
+skinparam ActivityDiamondBorderColor #64748b
+skinparam UsecaseBackgroundColor transparent
+skinparam UsecaseBorderColor #64748b
+skinparam ActorBackgroundColor transparent
+skinparam ActorBorderColor #64748b
+skinparam RectangleBackgroundColor transparent
+skinparam RectangleBorderColor #64748b
+skinparam NodeBackgroundColor transparent
+skinparam NodeBorderColor #64748b
+skinparam ArtifactBackgroundColor transparent
+skinparam ArtifactBorderColor #64748b
+node "archigram" as n_0_archigram_983b03 {
+  node "entrypoints" as n_1_archigram_entryp_6a8ce0 {
+    artifact "CLI Data Plane (entrypoints.cli)" as n_3_cli_dataplane_493a5b
+    artifact "MCP Control Plane (entrypoints.mcp)" as n_10_mcp_controlplane_ff4d3b
+  }
+  node "features" as n_2_archigram_featur_e6f01e {
+    artifact "Digest Slice (Graph & Trace)" as n_5_feature_digest_52876d
+    artifact "Emitter Slices (Mermaid, D2, PlantUML, LikeC4)" as n_6_feature_emitters_75a4c0
+    artifact "Ingestor Slices (5 Extractors)" as n_7_feature_ingestor_73234e
+    artifact "5-Gate Linter Slices" as n_8_feature_linters_57c819
+    artifact "Reducer Slices (Graph & Trace)" as n_9_feature_reducers_8a2858
+  }
+  artifact "Domain Core (Canonical IR, Spec, Style)" as n_4_domain_core_f195b2
+  artifact "Ports & Contracts (archigram.ports)" as n_11_ports_contracts_d0accd
+}
+n_10_mcp_controlplane_ff4d3b ..>[#3b82f6] n_5_feature_digest_52876d : <<deploy>>
+n_5_feature_digest_52876d ..>[#3b82f6] n_4_domain_core_f195b2 : <<deploy>>
+n_11_ports_contracts_d0accd ..>[#3b82f6] n_4_domain_core_f195b2 : <<deploy>>
+n_6_feature_emitters_75a4c0 ..>[#3b82f6] n_4_domain_core_f195b2 : <<deploy>>
+n_5_feature_digest_52876d ..>[#3b82f6] n_4_domain_core_f195b2 : <<deploy>>
+n_6_feature_emitters_75a4c0 ..>[#3b82f6] n_4_domain_core_f195b2 : <<deploy>>
+n_9_feature_reducers_8a2858 ..>[#3b82f6] n_4_domain_core_f195b2 : <<deploy>>
+n_9_feature_reducers_8a2858 ..>[#3b82f6] n_4_domain_core_f195b2 : <<deploy>>
+n_10_mcp_controlplane_ff4d3b ..>[#3b82f6] n_6_feature_emitters_75a4c0 : <<deploy>>
+n_3_cli_dataplane_493a5b ..>[#3b82f6] n_7_feature_ingestor_73234e : <<deploy>>
+n_3_cli_dataplane_493a5b ..>[#3b82f6] n_7_feature_ingestor_73234e : <<deploy>>
+n_10_mcp_controlplane_ff4d3b ..>[#3b82f6] n_8_feature_linters_57c819 : <<deploy>>
+n_10_mcp_controlplane_ff4d3b ..>[#3b82f6] n_8_feature_linters_57c819 : <<deploy>>
+n_3_cli_dataplane_493a5b ..>[#3b82f6] n_10_mcp_controlplane_ff4d3b : <<deploy>>
+n_3_cli_dataplane_493a5b ..>[#3b82f6] n_10_mcp_controlplane_ff4d3b : <<deploy>>
+n_8_feature_linters_57c819 ..>[#3b82f6] n_11_ports_contracts_d0accd : <<deploy>>
+n_8_feature_linters_57c819 ..>[#3b82f6] n_11_ports_contracts_d0accd : <<deploy>>
+n_8_feature_linters_57c819 ..>[#3b82f6] n_11_ports_contracts_d0accd : <<deploy>>
+n_7_feature_ingestor_73234e ..>[#3b82f6] n_11_ports_contracts_d0accd : <<deploy>>
+n_7_feature_ingestor_73234e ..>[#3b82f6] n_11_ports_contracts_d0accd : <<deploy>>
+n_8_feature_linters_57c819 ..>[#3b82f6] n_11_ports_contracts_d0accd : <<deploy>>
+n_10_mcp_controlplane_ff4d3b ..>[#3b82f6] n_9_feature_reducers_8a2858 : <<deploy>>
+@enduml

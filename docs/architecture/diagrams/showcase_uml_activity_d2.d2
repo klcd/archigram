@@ -1,0 +1,204 @@
+vars: {
+  d2-config: {
+    layout-engine: elk
+    theme-id: 0
+    dark-theme-id: 200
+  }
+}
+style.fill: transparent
+
+direction: down
+act_start: "●" {
+  shape: circle
+  style.fill: transparent
+  style.stroke: "#64748b"
+}
+act_0: "pipeline: compile_and_lint_pipeline" {
+  style.border-radius: 999
+  style.fill: transparent
+  style.stroke: "#64748b"
+}
+act_start -> act_0: "next" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+act_1: "reducer: StructuralTopologicalReducer.reduce" {
+  style.border-radius: 999
+  style.fill: transparent
+  style.stroke: "#64748b"
+}
+act_0 -> act_1: "next" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+act_2: "emit_mermaid.emitter: MermaidEmitter.emit" {
+  style.border-radius: 999
+  style.fill: transparent
+  style.stroke: "#64748b"
+}
+act_1 -> act_2: "next" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+act_3: "reducer: StructuralTopologicalReducer.reduce" {
+  style.border-radius: 999
+  style.fill: transparent
+  style.stroke: "#64748b"
+}
+act_2 -> act_3: "next" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+act_4: "emit_d2.emitter: D2Emitter.emit" {
+  style.border-radius: 999
+  style.fill: transparent
+  style.stroke: "#64748b"
+}
+act_3 -> act_4: "next" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+act_5: "reducer: StructuralTopologicalReducer.reduce" {
+  style.border-radius: 999
+  style.fill: transparent
+  style.stroke: "#64748b"
+}
+act_4 -> act_5: "next" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+act_6: "emit_plantuml.emitter: PlantUmlEmitter.emit" {
+  style.border-radius: 999
+  style.fill: transparent
+  style.stroke: "#64748b"
+}
+act_5 -> act_6: "next" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+act_7: "gates: GroundingAndBoundaryGate.__init__" {
+  style.border-radius: 999
+  style.fill: transparent
+  style.stroke: "#64748b"
+}
+act_6 -> act_7: "next" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+act_8: "gates: GroundingAndBoundaryGate.check" {
+  style.border-radius: 999
+  style.fill: transparent
+  style.stroke: "#64748b"
+}
+act_7 -> act_8: "next" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+act_9: "lint_topology.gate: TopologicalInvariantGate.__init__" {
+  style.border-radius: 999
+  style.fill: transparent
+  style.stroke: "#64748b"
+}
+act_8 -> act_9: "next" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+act_10: "lint_topology.gate: TopologicalInvariantGate.check" {
+  style.border-radius: 999
+  style.fill: transparent
+  style.stroke: "#64748b"
+}
+act_9 -> act_10: "next" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+act_11: "lint_budget.gate: CognitiveBudgetAndOrphanGate.check" {
+  style.border-radius: 999
+  style.fill: transparent
+  style.stroke: "#64748b"
+}
+act_10 -> act_11: "next" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+act_12: "validators: build_default_validators" {
+  style.border-radius: 999
+  style.fill: transparent
+  style.stroke: "#64748b"
+}
+act_11 -> act_12: "next" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+act_13: "validators: Gate5SyntaxHarness.__init__" {
+  style.border-radius: 999
+  style.fill: transparent
+  style.stroke: "#64748b"
+}
+act_12 -> act_13: "next" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+guard_14: "loop x3" {
+  shape: diamond
+  style.fill: transparent
+  style.stroke: "#64748b"
+}
+act_13 -> guard_14: "guard" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+act_14: "validators: Gate5SyntaxHarness.validate [loop x3" {
+  style.border-radius: 999
+  style.fill: transparent
+  style.stroke: "#64748b"
+}
+guard_14 -> act_14: "next" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+act_15: "diagnostics: LintReport.from_diagnostics" {
+  style.border-radius: 999
+  style.fill: transparent
+  style.stroke: "#64748b"
+}
+act_14 -> act_15: "next" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+act_16: "propose_loop: run_propose_loop" {
+  style.border-radius: 999
+  style.fill: transparent
+  style.stroke: "#64748b"
+}
+act_15 -> act_16: "next" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+act_17: "generator: GraphDigestGenerator.to_compact_mark" {
+  style.border-radius: 999
+  style.fill: transparent
+  style.stroke: "#64748b"
+}
+act_16 -> act_17: "next" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+act_more: "+30 compacted actions" {
+  style.border-radius: 999
+  style.fill: transparent
+  style.stroke: "#64748b"
+}
+act_17 -> act_more: "next" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+act_stop: "◉" {
+  shape: circle
+  style.fill: transparent
+  style.stroke: "#64748b"
+}
+act_more -> act_stop: "done" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}

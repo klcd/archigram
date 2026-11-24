@@ -320,3 +320,43 @@ PLANTUML_SEQUENCE_SKINPARAMS: tuple[str, ...] = (
     f"skinparam SequenceGroupBodyBackgroundColor {TRANSPARENT_FILL}",
     f"skinparam SequenceGroupBorderColor {NEUTRAL_BORDER_HEX}",
 )
+
+MERMAID_STATE_FRONTMATTER = (
+    "---\n"
+    "config:\n"
+    "  themeVariables:\n"
+    "    primaryColor: transparent\n"
+    "    secondaryColor: transparent\n"
+    "    tertiaryColor: transparent\n"
+    "    mainBkg: transparent\n"
+    f"    nodeBorder: '{NEUTRAL_BORDER_HEX}'\n"
+    f"    lineColor: '{CANONICAL_EDGE_STYLES[EdgeRelation.CALLS].stroke_hex}'\n"
+    "---"
+)
+
+PLANTUML_BEHAVIORAL_SKINPARAMS: tuple[str, ...] = (
+    f"skinparam backgroundColor {TRANSPARENT_FILL}",
+    "skinparam shadowing false",
+    f"skinparam ArrowColor {CANONICAL_EDGE_STYLES[EdgeRelation.CALLS].stroke_hex}",
+    f"skinparam StateBackgroundColor {TRANSPARENT_FILL}",
+    f"skinparam StateBorderColor {NEUTRAL_BORDER_HEX}",
+    f"skinparam ActivityBackgroundColor {TRANSPARENT_FILL}",
+    f"skinparam ActivityBorderColor {NEUTRAL_BORDER_HEX}",
+    f"skinparam ActivityDiamondBackgroundColor {TRANSPARENT_FILL}",
+    f"skinparam ActivityDiamondBorderColor {NEUTRAL_BORDER_HEX}",
+    f"skinparam UsecaseBackgroundColor {TRANSPARENT_FILL}",
+    f"skinparam UsecaseBorderColor {NEUTRAL_BORDER_HEX}",
+    f"skinparam ActorBackgroundColor {TRANSPARENT_FILL}",
+    f"skinparam ActorBorderColor {NEUTRAL_BORDER_HEX}",
+    f"skinparam RectangleBackgroundColor {TRANSPARENT_FILL}",
+    f"skinparam RectangleBorderColor {NEUTRAL_BORDER_HEX}",
+    f"skinparam NodeBackgroundColor {TRANSPARENT_FILL}",
+    f"skinparam NodeBorderColor {NEUTRAL_BORDER_HEX}",
+    f"skinparam ArtifactBackgroundColor {TRANSPARENT_FILL}",
+    f"skinparam ArtifactBorderColor {NEUTRAL_BORDER_HEX}",
+)
+
+TRIAGE_KEEP_HEX = "#10b981"
+TRIAGE_REMOVE_HEX = "#ef4444"
+TRIAGE_BYPASS_HEX = "#f59e0b"
+TRIAGE_COLLAPSE_HEX = "#8b5cf6"

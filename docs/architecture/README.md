@@ -23,7 +23,8 @@ Pick the exact zoom level you need for your current task—each guide isolates i
 | Add or tune a validation rule, witness path, or repair hint across Gates 1–5 | **[L2c: 5-Gate Linter](L2-subsystem-guides.md#l2c-5-gate-semantic-topological-budget--syntax-linter)** | Focused `k_hop` zoom (`13` nodes) |
 | Work on Typer CLI commands, PR diffing, Markdown sync, FastMCP tools, or the 3-turn repair loop | **[L2d: CLI & MCP Driving Adapters](L2-subsystem-guides.md#l2d-cli-data-plane--mcp-control-plane-adapters)** | Focused `k_hop` zoom (`18` nodes) |
 | Trace how `compile_and_lint_pipeline` and `run_propose_loop` execute end-to-end at runtime | **[L3: Runtime Execution & Self-Healing Traces](L3-runtime-traces.md)** | Compacted live sequence (`15` participants, `48` events) |
-| Inspect default dual-mode light/dark coloring (`style.py`), UML arrows, orthogonal routing & all 12 target/variant diagrams | **[Styling Policy & Full Multi-Target Gallery](diagram-styling-and-gallery.md)** | All 5 renderers × structural, OOP class & sequence modes |
+| Inspect default dual-mode light/dark coloring (`style.py`), UML arrows, orthogonal routing & multi-target diagrams | **[Styling Policy & Full Multi-Target Gallery](diagram-styling-and-gallery.md)** | All 5 renderers × structural, OOP class & sequence modes |
+| See program-first AST/trace extraction (`50,186` chars) distilled strictly via CLI (`curate` + `triage` 3-stage SVGs) & all 14 UML 2.5 diagram types | **[UML 2.5 & 3-Stage CLI Curation Showcase](uml-and-curation-showcase.md)** | `1_original` -> `2_triage` -> `3_curated` SVGs + `package`, `deployment`, `use_case`, `communication`, `activity`, `state` |
 
 ---
 
@@ -32,8 +33,8 @@ Pick the exact zoom level you need for your current task—each guide isolates i
 All views are defined declaratively and rendered across **all five supported target languages** (Mermaid, D2 + `.d2.svg`, PlantUML, LikeC4, Graphviz DOT + `.dot.svg`):
 
 - **Canonical Styling Policy:** [`src/archigram/domain/style.py`](../../src/archigram/domain/style.py) (transparent element fills, `#64748b` borders, edge-only semantic strokes, 90-degree orthogonal routing, UML arrowheads)
-- **Structural Curation Spec:** [`diagram-views.yaml`](diagram-views.yaml) (compiled against `src/archigram`)
-- **Runtime Trace Curation Spec:** [`trace-views.yaml`](trace-views.yaml) (compiled against [`traces/pipeline-and-repair.ir.json`](traces/pipeline-and-repair.ir.json))
+- **Structural Curation Spec:** [`diagram-views.yaml`](diagram-views.yaml) & CLI-authored [`showcase-structural-views.yaml`](showcase-structural-views.yaml) (compiled against `src/archigram`)
+- **Runtime Trace Curation Spec:** [`trace-views.yaml`](trace-views.yaml) & CLI-authored [`showcase-trace-views.yaml`](showcase-trace-views.yaml) (compiled against [`traces/pipeline-and-repair.ir.json`](traces/pipeline-and-repair.ir.json))
 - **Live Trace Snapshot:** [`traces/pipeline-and-repair.ir.json`](traces/pipeline-and-repair.ir.json) (captured via `src/archigram/entrypoints/cli/self_trace.py`)
 
 | Level | View ID | Renderer & Mode | Companion Artifacts |

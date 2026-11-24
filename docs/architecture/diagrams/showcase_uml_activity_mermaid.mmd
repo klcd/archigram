@@ -1,0 +1,65 @@
+---
+config:
+  layout: elk
+  elk:
+    mergeEdges: false
+    nodePlacementStrategy: BRANDES_KOEPF
+  flowchart:
+    defaultRenderer: elk
+    curve: linear
+  themeVariables:
+    primaryColor: transparent
+    secondaryColor: transparent
+    tertiaryColor: transparent
+    mainBkg: transparent
+    nodeBorder: '#64748b'
+    clusterBkg: transparent
+    clusterBorder: '#64748b'
+    lineColor: '#64748b'
+---
+flowchart TD
+  classDef default fill:transparent,stroke:#64748b,stroke-width:1.5px
+  act_start((" "))
+  a0("pipeline: compile_and_lint_pipeline")
+  a1("reducer: StructuralTopologicalReducer.reduce")
+  a2("emit_mermaid.emitter: MermaidEmitter.emit")
+  a3("reducer: StructuralTopologicalReducer.reduce")
+  a4("emit_d2.emitter: D2Emitter.emit")
+  a5("reducer: StructuralTopologicalReducer.reduce")
+  a6("emit_plantuml.emitter: PlantUmlEmitter.emit")
+  a7("gates: GroundingAndBoundaryGate.__init__")
+  a8("gates: GroundingAndBoundaryGate.check")
+  a9("lint_topology.gate: TopologicalInvariantGate.__init__")
+  a10("lint_topology.gate: TopologicalInvariantGate.check")
+  a11("lint_budget.gate: CognitiveBudgetAndOrphanGate.check")
+  a12("validators: build_default_validators")
+  a13("validators: Gate5SyntaxHarness.__init__")
+  g14{"loop x3"}
+  a14("validators: Gate5SyntaxHarness.validate (loop x3")
+  a15("diagnostics: LintReport.from_diagnostics")
+  a16("propose_loop: run_propose_loop")
+  a17("generator: GraphDigestGenerator.to_compact_mark")
+  a_more("+30 compacted actions")
+  act_stop(((" ")))
+  act_start --> a0
+  a0 --> a1
+  a1 --> a2
+  a2 --> a3
+  a3 --> a4
+  a4 --> a5
+  a5 --> a6
+  a6 --> a7
+  a7 --> a8
+  a8 --> a9
+  a9 --> a10
+  a10 --> a11
+  a11 --> a12
+  a12 --> a13
+  a13 --> g14
+  g14 --> a14
+  a14 --> a15
+  a15 --> a16
+  a16 --> a17
+  a17 --> a_more
+  a_more --> act_stop
+  linkStyle 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20 stroke:#3b82f6,stroke-width:1.75px

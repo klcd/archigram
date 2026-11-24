@@ -319,6 +319,8 @@ def _parse_mermaid_header(header_line: str) -> tuple[str | None, list[str]]:
         result = ("classDiagram", [])
     elif parts[0] == "sequenceDiagram" and len(parts) == 1:
         result = ("sequenceDiagram", [])
+    elif parts[0] in {"stateDiagram", "stateDiagram-v2"} and len(parts) == 1:
+        result = ("stateDiagram", [])
     return result
 
 
@@ -518,6 +520,8 @@ def _validate_mermaid_body(
             errors.extend(cls_errs)
         elif kind == "sequenceDiagram":
             errors.extend(_check_mermaid_sequence_line(stripped, line_no, stack))
+        elif kind == "stateDiagram" and ";" in stripped:
+            errors.append(f"Line {line_no}: raw ';' is invalid in Mermaid stateDiagram")
     if stack:
         errors.append(f"Unclosed Mermaid block(s): {', '.join(stack)}")
     return errors
@@ -561,7 +565,7 @@ class MermaidSyntaxValidator:
         masked, scan_errors = _mask_source(diagram_source, _MaskOptions(percent_comments=True))
         delim_pairs = (
             (("[", "]"), ("{", "}"))
-            if kind == "sequenceDiagram"
+            if kind in {"sequenceDiagram", "stateDiagram"}
             else (
                 ("(", ")"),
                 ("[", "]"),
@@ -701,11 +705,32 @@ def _consume_puml_block_skip(lowered: str, stripped: str, state: _PumlState) -> 
     return skip
 
 
+def _check_puml_fork_line(lowered: str, line_no: int, state: _PumlState) -> tuple[bool, list[str]]:
+    handled = True
+    errors: list[str] = []
+    if lowered == "fork":
+        state.stack().append("fork")
+    elif lowered == "fork again":
+        if not state.stack() or state.stack()[-1] != "fork":
+            errors.append(f"Line {line_no}: PlantUML 'fork again' outside 'fork'")
+    elif lowered == "end fork":
+        if not state.stack() or state.stack()[-1] != "fork":
+            errors.append(f"Line {line_no}: PlantUML 'end fork' without open 'fork'")
+        else:
+            state.stack().pop()
+    else:
+        handled = False
+    return handled, errors
+
+
 def _check_puml_fragment_line(
     stripped: str, lowered: str, line_no: int, state: _PumlState
 ) -> list[str]:
     if stripped.endswith("{") or stripped.startswith("}"):
         return []
+    handled_fork, fork_errs = _check_puml_fork_line(lowered, line_no, state)
+    if handled_fork:
+        return fork_errs
     errors: list[str] = []
     frag_match = _PUML_FRAG_OPEN_RE.match(stripped)
     if frag_match:
@@ -714,7 +739,7 @@ def _check_puml_fragment_line(
         if not state.stack() or state.stack()[-1] not in {"alt", "par", "critical"}:
             errors.append(f"Line {line_no}: PlantUML 'else' outside 'alt'/'par'/'critical'")
     elif lowered == "end":
-        if not state.stack():
+        if not state.stack() or state.stack()[-1] == "fork":
             errors.append(f"Line {line_no}: unexpected 'end' with no open fragment")
         else:
             state.stack().pop()
