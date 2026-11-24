@@ -395,6 +395,30 @@ def _check_bypass_rule(
     return diagnostics
 
 
+def _count_partition_components(ctx: _StructuralContext, members: tuple[str, ...]) -> int:
+    """Count undirected components across edge WCCs and in-partition parent_id containment."""
+    parent_map: dict[int, int] = {ctx.obs_wcc_by_id[m]: ctx.obs_wcc_by_id[m] for m in members}
+    if len(parent_map) < 2:
+        return len(parent_map)
+
+    def _find(comp: int) -> int:
+        while parent_map[comp] != comp:
+            parent_map[comp] = parent_map[parent_map[comp]]
+            comp = parent_map[comp]
+        return comp
+
+    member_set = frozenset(members)
+    for member in members:
+        lexical_parent = ctx.observed_ir.nodes[member].parent_id
+        if lexical_parent is not None and lexical_parent in member_set:
+            ra = _find(ctx.obs_wcc_by_id[member])
+            rb = _find(ctx.obs_wcc_by_id[lexical_parent])
+            if ra != rb:
+                parent_map[ra] = rb
+
+    return len({_find(comp) for comp in parent_map})
+
+
 def _check_collapse_rule(
     ctx: _StructuralContext,
     rule: CollapsePartitionRule,
@@ -406,8 +430,8 @@ def _check_collapse_rule(
     if len(members) < 2:
         return None
 
-    component_ids = {ctx.obs_wcc_by_id[member] for member in members}
-    if len(component_ids) < 2:
+    component_count = _count_partition_components(ctx, members)
+    if component_count < 2:
         return None
 
     severity = DiagnosticSeverity.ERROR if strict_cohesion else DiagnosticSeverity.WARNING
@@ -420,7 +444,7 @@ def _check_collapse_rule(
         offending_symbols=members,
         message=(
             f"Collapse rule '{rule.id}' merges {len(members)} observed symbols spanning "
-            f"{len(component_ids)} disconnected undirected components (zero cohesion)."
+            f"{component_count} disconnected undirected components (zero cohesion)."
         ),
         repair_hint=(
             f"Split rule '{rule.id}' member_globs into separate cohesive collapse_partition "

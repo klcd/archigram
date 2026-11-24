@@ -693,3 +693,42 @@ def test_pairwise_intersecting_three_scc_triangle_induces_cycle_witness(tag: str
     cur_edge_pairs = {(e.source, e.target) for e in cur_edges}
     for u, v in pairwise(witness):
         assert (u, v) in cur_edge_pairs
+
+
+@settings(max_examples=40, deadline=None)
+@given(
+    child_count=st.integers(min_value=2, max_value=6),
+    include_parent_in_partition=st.booleans(),
+)
+def test_semref_cohesion_respects_in_partition_parent_containment(
+    child_count: int,
+    include_parent_in_partition: bool,
+) -> None:
+    parent_id = "pkg.slice"
+    nodes: dict[str, IRNode] = {parent_id: _obs_node(parent_id, NodeKind.PACKAGE)}
+    for idx in range(child_count):
+        cid = f"{parent_id}.cls_{idx}"
+        nodes[cid] = IRNode(
+            symbol_id=cid,
+            label=cid,
+            kind=NodeKind.CLASS,
+            parent_id=parent_id,
+            provenance=_OBS_PROVENANCE,
+        )
+    observed = StructuralGraphIR(nodes=nodes, edges=())
+    globs = ("pkg.slice", "pkg.slice.*") if include_parent_in_partition else ("pkg.slice.*",)
+    rule = CollapsePartitionRule(
+        id="collapse-lexical",
+        target_node_id="SliceSupernode",
+        label="Slice Supernode",
+        member_globs=globs,
+    )
+    spec = _structural_spec(rules=(rule,))
+    report = TopologicalInvariantGate(strict_cohesion=True).check(observed, spec, None)
+    cohesion_diags = [d for d in report.diagnostics if d.code == "DISCONNECTED_PARTITION_MERGE"]
+    if include_parent_in_partition:
+        assert cohesion_diags == []
+        assert report.passed
+    else:
+        assert len(cohesion_diags) == 1
+        assert not report.passed

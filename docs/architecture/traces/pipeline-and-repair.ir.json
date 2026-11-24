@@ -230,8 +230,8 @@
         "input_sha256": "fb2fa5b5c09173e61658a4b029c97eebd4b8c7bf59cb59610effe7c82d2f4d1a",
         "file_path": "src/archigram/features/lint_topology/gate.py",
         "line_span": [
-          845,
-          846
+          869,
+          870
         ],
         "rule_id": null,
         "backing_ids": []
@@ -2740,8 +2740,8 @@
         "input_sha256": "fb2fa5b5c09173e61658a4b029c97eebd4b8c7bf59cb59610effe7c82d2f4d1a",
         "file_path": "src/archigram/features/lint_topology/gate.py",
         "line_span": [
-          845,
-          846
+          869,
+          870
         ],
         "rule_id": null,
         "backing_ids": []
@@ -2770,8 +2770,8 @@
         "input_sha256": "fb2fa5b5c09173e61658a4b029c97eebd4b8c7bf59cb59610effe7c82d2f4d1a",
         "file_path": "src/archigram/features/lint_topology/gate.py",
         "line_span": [
-          907,
-          918
+          931,
+          942
         ],
         "rule_id": null,
         "backing_ids": []
@@ -3580,8 +3580,8 @@
         "input_sha256": "fb2fa5b5c09173e61658a4b029c97eebd4b8c7bf59cb59610effe7c82d2f4d1a",
         "file_path": "src/archigram/features/lint_topology/gate.py",
         "line_span": [
-          907,
-          918
+          931,
+          942
         ],
         "rule_id": null,
         "backing_ids": []
@@ -4180,8 +4180,8 @@
         "input_sha256": "fb2fa5b5c09173e61658a4b029c97eebd4b8c7bf59cb59610effe7c82d2f4d1a",
         "file_path": "src/archigram/features/lint_topology/gate.py",
         "line_span": [
-          907,
-          918
+          931,
+          942
         ],
         "rule_id": null,
         "backing_ids": []
@@ -4840,8 +4840,8 @@
         "input_sha256": "fb2fa5b5c09173e61658a4b029c97eebd4b8c7bf59cb59610effe7c82d2f4d1a",
         "file_path": "src/archigram/features/lint_topology/gate.py",
         "line_span": [
-          907,
-          918
+          931,
+          942
         ],
         "rule_id": null,
         "backing_ids": []
