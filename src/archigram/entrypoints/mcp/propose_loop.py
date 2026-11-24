@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal, Protocol, runtime_checkable
@@ -1047,6 +1046,25 @@ def run_propose_loop(
     )
 
 
+def _load_propose_input_ir(input_path: str) -> CanonicalIR | None:
+    """Load CanonicalIR from a directory, .py file, IR JSON, or supported topology format."""
+    from archigram.entrypoints.cli.pipeline import load_canonical_ir
+
+    in_path = Path(input_path)
+    if not in_path.exists():
+        return None
+    try:
+        return load_canonical_ir(in_path)
+    except Exception:
+        if not in_path.is_file():
+            return None
+    try:
+        raw_text = in_path.read_text(encoding="utf-8")
+        return parse_canonical_ir_json(raw_text)
+    except Exception:
+        return None
+
+
 def run_propose_cli(
     input_path: str,
     out_spec_path: str,
@@ -1054,19 +1072,10 @@ def run_propose_cli(
     *,
     proposer: RuleProposerProtocol | None = None,
 ) -> int:
-    """CLI helper reading CanonicalIR JSON, running the 3-turn repair loop, and writing YAML."""
-    in_file = Path(input_path)
-    if not in_file.is_file():
+    """CLI helper reading CanonicalIR or Python directory, running repair loop, and writing YAML."""
+    ir = _load_propose_input_ir(input_path)
+    if ir is None:
         return 1
-    try:
-        raw_text = in_file.read_text(encoding="utf-8")
-        ir = parse_canonical_ir_json(raw_text)
-    except Exception:
-        try:
-            payload = json.loads(in_file.read_text(encoding="utf-8"))
-            ir = _CANONICAL_IR_ADAPTER.validate_python(payload)
-        except Exception:
-            return 1
 
     result = run_propose_loop(ir, proposer=proposer, max_turns=max_turns)
     if not result.succeeded or result.spec is None:
