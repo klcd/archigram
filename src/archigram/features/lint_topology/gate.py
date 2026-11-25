@@ -152,6 +152,31 @@ def _collapse_members(
     )
 
 
+def _apply_rule_bindings(
+    resolver: dict[str, str],
+    observed_ir: StructuralGraphIR,
+    curated_ir: StructuralGraphIR,
+    rules: tuple[GlobalAbstractionRule, ...],
+) -> None:
+    """Bind collapse members in rule order, never rebinding symbols an earlier bypass dropped."""
+    bypassed: set[str] = set()
+    for rule in rules:
+        if isinstance(rule, BypassVerticesRule):
+            bypassed.update(
+                symbol_id
+                for symbol_id in observed_ir.nodes
+                if symbol_id not in resolver and _matches_globs(symbol_id, rule.node_id_globs)
+            )
+            continue
+        if not isinstance(rule, CollapsePartitionRule):
+            continue
+        if rule.target_node_id not in curated_ir.nodes:
+            continue
+        for member in _collapse_members(observed_ir, rule):
+            if member not in bypassed:
+                resolver.setdefault(member, rule.target_node_id)
+
+
 def _build_curated_resolver(
     observed_ir: StructuralGraphIR,
     curated_ir: StructuralGraphIR,
@@ -173,13 +198,7 @@ def _build_curated_resolver(
             if backing_id in observed_ir.nodes and backing_id not in resolver:
                 resolver[backing_id] = node.symbol_id
 
-    for rule in rules:
-        if not isinstance(rule, CollapsePartitionRule):
-            continue
-        if rule.target_node_id not in curated_ir.nodes:
-            continue
-        for member in _collapse_members(observed_ir, rule):
-            resolver.setdefault(member, rule.target_node_id)
+    _apply_rule_bindings(resolver, observed_ir, curated_ir, rules)
 
     return resolver
 

@@ -36,6 +36,9 @@ from archigram.domain.spec import (
     ViewScope,
 )
 from archigram.features.lint_topology import TopologicalInvariantGate
+from archigram.features.lint_topology.gate import (
+    _build_curated_resolver,  # pyright: ignore[reportPrivateUsage]
+)
 from archigram.ports.contracts import LintGatePort
 
 _OBS_PROVENANCE = ProvenanceStamp(
@@ -1165,3 +1168,35 @@ def test_severed_hop_attributes_collapse_partition_rule(chain_len: int, via_filt
     assert node_ids[-1] in diag.offending_symbols
     assert ("via relations ['calls']" in diag.message) is via_filter
     assert ("over any relation" in diag.message) is (not via_filter)
+
+
+@settings(max_examples=30, deadline=None)
+@given(tag=_IDENT, bypass_first=st.booleans())
+def test_resolver_keeps_bypass_drop_over_later_collapse_glob(tag: str, bypass_first: bool) -> None:
+    src, mid, dst, sup = f"{tag}/src", f"{tag}/mid", f"{tag}/dst", f"{tag}/sup"
+    observed = StructuralGraphIR(
+        nodes={nid: _obs_node(nid) for nid in (src, mid, dst)},
+        edges=(_obs_edge("e0", src, mid), _obs_edge("e1", mid, dst)),
+    )
+    curated = StructuralGraphIR(
+        nodes={
+            src: _obs_node(src),
+            dst: _obs_node(dst),
+            sup: _derived_supernode(sup, "collapse-mid", (src,)),
+        },
+        edges=(),
+    )
+    bypass = BypassVerticesRule(id="bypass-mid", node_id_globs=(mid,))
+    collapse = CollapsePartitionRule(
+        id="collapse-mid", label="mid", target_node_id=sup, member_globs=(f"{tag}/m*",)
+    )
+    rules = (bypass, collapse) if bypass_first else (collapse, bypass)
+
+    resolver = _build_curated_resolver(observed, curated, rules)
+
+    assert resolver[src] == src
+    assert resolver[dst] == dst
+    if bypass_first:
+        assert mid not in resolver
+    else:
+        assert resolver[mid] == sup

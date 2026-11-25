@@ -27,6 +27,9 @@ from archigram.domain.spec import (
     ViewInvariants,
 )
 from archigram.features.lint_topology import TopologicalInvariantGate
+from archigram.features.lint_topology.gate import (
+    _build_curated_resolver,  # pyright: ignore[reportPrivateUsage]
+)
 
 _OBS_PROV = ProvenanceStamp(
     grade=ProvenanceGrade.OBSERVED,
@@ -321,3 +324,42 @@ def test_gate3_400_node_require_reachability_unobserved_benchmark(benchmark: Any
     missing = [d for d in report.diagnostics if d.code == "REACHABILITY_NOT_OBSERVED"]
     assert len(missing) == 4
     assert all(d.witness_path == () for d in missing)
+
+
+def _build_resolver_fixture() -> tuple[
+    StructuralGraphIR, StructuralGraphIR, tuple[BypassVerticesRule | CollapsePartitionRule, ...]
+]:
+    ids = [f"res/n_{idx:04d}" for idx in range(2000)]
+    observed = StructuralGraphIR(
+        nodes={
+            sid: IRNode(symbol_id=sid, label=sid, kind=NodeKind.MODULE, provenance=_OBS_PROV)
+            for sid in ids
+        },
+        edges=(),
+    )
+    sup = IRNode(
+        symbol_id="res/sup",
+        label="sup",
+        kind=NodeKind.SUPERNODE,
+        provenance=ProvenanceStamp(
+            grade=ProvenanceGrade.DERIVED_DETERMINISTIC,
+            rule_id="collapse-all",
+            backing_ids=("res/n_1999",),
+        ),
+    )
+    rules = (
+        BypassVerticesRule(id="bypass-half", node_id_globs=("res/n_0*",)),
+        CollapsePartitionRule(
+            id="collapse-all", label="all", target_node_id="res/sup", member_globs=("res/n_*",)
+        ),
+    )
+    return observed, StructuralGraphIR(nodes={"res/sup": sup}, edges=()), rules
+
+
+_RES_OBS, _RES_CUR, _RES_RULES = _build_resolver_fixture()
+
+
+def test_gate3_resolver_bypass_attribution_benchmark(benchmark: Any) -> None:
+    resolver = benchmark(_build_curated_resolver, _RES_OBS, _RES_CUR, _RES_RULES)
+    assert "res/n_0001" not in resolver
+    assert resolver["res/n_1500"] == "res/sup"
