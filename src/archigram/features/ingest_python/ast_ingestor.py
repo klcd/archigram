@@ -705,6 +705,65 @@ def _build_module_index(
     )
 
 
+def _dunder_all_value(stmt: ast.stmt) -> ast.expr | None:
+    """Return the assigned value if stmt assigns to __all__, else None."""
+    if isinstance(stmt, ast.Assign):
+        targets: list[ast.expr] = list(stmt.targets)
+    elif isinstance(stmt, (ast.AugAssign, ast.AnnAssign)):
+        targets = [stmt.target]
+    else:
+        return None
+    if any(isinstance(t, ast.Name) and t.id == "__all__" for t in targets):
+        return stmt.value
+    return None
+
+
+def _literal_dunder_all(tree: ast.Module) -> list[str] | None:
+    """Return names from a literal module-level __all__ list/tuple, else None."""
+    names: list[str] | None = None
+    for stmt in tree.body:
+        value = _dunder_all_value(stmt)
+        if not isinstance(value, (ast.List, ast.Tuple)):
+            continue
+        items = [e.value for e in value.elts if isinstance(e, ast.Constant)]
+        if len(items) != len(value.elts) or not all(isinstance(i, str) for i in items):
+            continue
+        names = (names or []) + [i for i in items if isinstance(i, str)]
+    return names
+
+
+def _wildcard_public_names(target: _ModuleIndex) -> list[str]:
+    """Names a wildcard import of target brings in (__all__ if literal, else non-underscore)."""
+    known = {*target.local_defs, *target.import_bindings}
+    exported = _literal_dunder_all(target.source_file.tree)
+    if exported is not None:
+        return [n for n in exported if n in known]
+    return [n for n in known if not n.startswith("_")]
+
+
+def _apply_wildcard_bindings(mod_indices: dict[str, _ModuleIndex]) -> None:
+    """Bind names brought in by statically resolvable `from mod import *` statements."""
+    for _ in range(_MAX_REEXPORT_HOPS):
+        changed = False
+        for idx in mod_indices.values():
+            sf = idx.source_file
+            for stmt in _iter_module_imports(sf.tree.body):
+                if not isinstance(stmt, ast.ImportFrom):
+                    continue
+                if not any(alias.name == "*" for alias in stmt.names):
+                    continue
+                target_mod = _resolve_relative_module(sf, stmt.level, stmt.module)
+                target = mod_indices.get(target_mod) if target_mod else None
+                if target is None or target is idx:
+                    continue
+                for name in _wildcard_public_names(target):
+                    if name not in idx.import_bindings:
+                        idx.import_bindings[name] = f"{target_mod}.{name}"
+                        changed = True
+        if not changed:
+            return
+
+
 def _resolve_symbol_with_reexports(
     candidate: str,
     mod_indices: dict[str, _ModuleIndex],
@@ -1117,6 +1176,7 @@ class PythonAstStructuralIngestor(StructuralIngestorPort):
             sf.module_id: _build_module_index(sf, local_defs_by_mod[sf.module_id], module_ids)
             for sf in sources
         }
+        _apply_wildcard_bindings(mod_indices)
 
         all_candidates: list[_EdgeCandidate] = []
         for mod_id in sorted(mod_indices):
