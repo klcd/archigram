@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import shlex
 import shutil
 import subprocess
 import tempfile
@@ -12,7 +13,7 @@ from enum import StrEnum
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from pydantic import TypeAdapter
+from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 from archigram.domain.diagnostics import (
     DiagnosticSeverity,
@@ -69,7 +70,7 @@ from archigram.features.reduce_structural import (
 from archigram.features.reduce_trace import TraceCompactionEngine
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Mapping, Sequence
 
     from archigram.ports.contracts import DiagramEmitterPort
 
@@ -887,6 +888,24 @@ def sync_compiled_artifacts(
     )
 
 
+def _diagnostic_detail_lines(diag: LintDiagnostic) -> list[str]:
+    """Render endpoint / symbol / witness / hint lines for one diagnostic (no fabricated paths)."""
+    lines: list[str] = []
+    symbols_label: str | None = "Symbols"
+    if diag.code == "REACHABILITY_SEVERED" and diag.witness_path:
+        lines.append(f"    Endpoints: {diag.witness_path[0]} -> {diag.witness_path[-1]}")
+        symbols_label = "Bottlenecks"
+    elif diag.code == "REACHABILITY_NOT_OBSERVED" and len(diag.offending_symbols) == 2:
+        lines.append(f"    Endpoints: {diag.offending_symbols[0]} -> {diag.offending_symbols[1]}")
+        symbols_label = None
+    if diag.witness_path:
+        lines.append(f"    Witness: {' -> '.join(diag.witness_path)}")
+    if diag.offending_symbols and symbols_label is not None:
+        lines.append(f"    {symbols_label}: {', '.join(diag.offending_symbols)}")
+    lines.append(f"    Hint: {diag.repair_hint}")
+    return lines
+
+
 def format_lint_report_text(report: LintReport) -> str:
     """Format a LintReport into a deterministic human-readable CLI summary."""
     status = "PASSED" if report.passed else "FAILED"
@@ -902,5 +921,44 @@ def format_lint_report_text(report: LintReport) -> str:
             scope_parts.append(f"rule={diag.rule_id}")
         scope_str = ", ".join(scope_parts)
         lines.append(f"  [{diag.severity.value.upper()}] {diag.code} ({scope_str}): {diag.message}")
-        lines.append(f"    Hint: {diag.repair_hint}")
+        lines.extend(_diagnostic_detail_lines(diag))
     return "\n".join(lines)
+
+
+def format_regeneration_command(
+    subcommand: str,
+    input_path: Path,
+    flags: Sequence[tuple[str, str]],
+) -> str:
+    """Return the exact shell command that regenerates stale committed artifacts."""
+    parts: list[str] = ["archigram", subcommand, shlex.quote(str(input_path))]
+    for flag, value in flags:
+        parts.extend((flag, shlex.quote(value)))
+    return " ".join(parts)
+
+
+class ApplyCheckReport(BaseModel):
+    """Structured `apply` outcome for CI consumers (lint diagnostics + stale artifacts)."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    passed: bool
+    is_clean: bool
+    lint_report: LintReport
+    missing_files: tuple[str, ...] = ()
+    drifted_files: tuple[str, ...] = ()
+    written_files: tuple[str, ...] = ()
+    regeneration_command: str
+
+
+def build_apply_report(outcome: ApplySyncOutcome, *, regeneration_command: str) -> ApplyCheckReport:
+    """Project an ApplySyncOutcome into its structured, JSON-serializable CI report."""
+    return ApplyCheckReport(
+        passed=outcome.compilation.lint_report.passed,
+        is_clean=outcome.is_clean,
+        lint_report=outcome.compilation.lint_report,
+        missing_files=tuple(str(p) for p in outcome.missing_files),
+        drifted_files=tuple(str(p) for p in outcome.drifted_files),
+        written_files=tuple(str(p) for p in outcome.written_files),
+        regeneration_command=regeneration_command,
+    )

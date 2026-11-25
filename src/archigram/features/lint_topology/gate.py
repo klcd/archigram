@@ -39,7 +39,9 @@ from archigram.domain.spec import (
     CurationSpecV1,
     DiagramViewSpec,
     GlobalAbstractionRule,
+    KHopNeighborhoodScope,
     ReachabilityAssertion,
+    ViewScope,
 )
 
 if TYPE_CHECKING:
@@ -278,12 +280,141 @@ def _find_bottlenecks(
     return (witness_path[0], witness_path[-1])
 
 
+@dataclass(frozen=True, slots=True)
+class _SeverContext:
+    """View identity, scope, and effective rules used to attribute a severed path."""
+
+    view_id: str
+    scope: ViewScope
+    rules: tuple[GlobalAbstractionRule, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class _Attribution:
+    """Evidence-based cause of a severed curated path (rules and/or scope exclusions)."""
+
+    rule_ids: tuple[str, ...] = ()
+    rule_notes: tuple[str, ...] = ()
+    scope_excluded: tuple[str, ...] = ()
+    scope_note: str = ""
+
+    @property
+    def rule_id(self) -> str | None:
+        """Return the rule id only when exactly one rule is attributable."""
+        return self.rule_ids[0] if len(self.rule_ids) == 1 else None
+
+
+def _rule_removal_note(rule: GlobalAbstractionRule) -> str:
+    note = f"{rule.op} '{rule.id}'"
+    if isinstance(rule, BypassVerticesRule) and rule.preserve_edge_relations:
+        note += f" (splices only relations {list(rule.preserve_edge_relations)})"
+    return note
+
+
+def _rules_removing_symbol(
+    symbol_id: str,
+    rules: tuple[GlobalAbstractionRule, ...],
+) -> dict[str, str]:
+    """Map rule id -> note for rules whose globs match a symbol absent from the curated view."""
+    hits: dict[str, str] = {}
+    for rule in rules:
+        if isinstance(rule, CollapsePartitionRule):
+            matched = symbol_id not in rule.exclude_ids and _matches_globs(
+                symbol_id, rule.member_globs
+            )
+        else:
+            matched = _matches_globs(symbol_id, rule.node_id_globs)
+        if matched:
+            hits[rule.id] = _rule_removal_note(rule)
+    return hits
+
+
+def _rules_collapsing_hop(
+    bottlenecks: tuple[str, ...],
+    rules: tuple[GlobalAbstractionRule, ...],
+) -> dict[str, str]:
+    """Map rule id -> note for collapse_partition rules contracting a severed hop endpoint."""
+    hits: dict[str, str] = {}
+    for rule in rules:
+        if not isinstance(rule, CollapsePartitionRule):
+            continue
+        for symbol_id in bottlenecks:
+            if symbol_id not in rule.exclude_ids and _matches_globs(symbol_id, rule.member_globs):
+                hits[rule.id] = _rule_removal_note(rule)
+    return hits
+
+
+def _scope_note(scope: ViewScope) -> str:
+    if not isinstance(scope, KHopNeighborhoodScope):
+        return ""
+    return (
+        f"k_hop_neighborhood(focal_nodes={list(scope.focal_nodes)}, "
+        f"upstream_depth={scope.upstream_depth}, downstream_depth={scope.downstream_depth})"
+    )
+
+
+def _attribute_severance(
+    bottlenecks: tuple[str, ...],
+    resolver: dict[str, str],
+    sever: _SeverContext,
+) -> _Attribution:
+    """Attribute a severed path to rules (glob match) or k-hop scope exclusion when evidenced."""
+    missing = tuple(sym for sym in bottlenecks if sym not in resolver)
+    hits: dict[str, str] = {}
+    scope_excluded: list[str] = []
+    for symbol_id in missing:
+        symbol_hits = _rules_removing_symbol(symbol_id, sever.rules)
+        hits.update(symbol_hits)
+        if not symbol_hits and _scope_note(sever.scope):
+            scope_excluded.append(symbol_id)
+    if not missing:
+        hits.update(_rules_collapsing_hop(bottlenecks, sever.rules))
+    return _Attribution(
+        rule_ids=tuple(hits),
+        rule_notes=tuple(hits.values()),
+        scope_excluded=tuple(scope_excluded),
+        scope_note=_scope_note(sever.scope) if scope_excluded else "",
+    )
+
+
+def _attribution_message(attribution: _Attribution) -> str:
+    parts: list[str] = []
+    if attribution.rule_notes:
+        label = "rule" if len(attribution.rule_notes) == 1 else "rules (multiple attributable)"
+        parts.append(f"attributable {label}: {', '.join(attribution.rule_notes)}")
+    if attribution.scope_excluded:
+        parts.append(
+            f"excluded node(s) {', '.join(attribution.scope_excluded)} fall outside view scope "
+            f"{attribution.scope_note}"
+        )
+    return f" Cause: {'; '.join(parts)}." if parts else ""
+
+
+def _severed_repair_hint(bottlenecks: tuple[str, ...], attribution: _Attribution) -> str:
+    joined = ", ".join(bottlenecks)
+    hint = (
+        "Preserve path connectivity by adding a bypass_vertices rule across intermediate "
+        f"bottleneck(s) ({joined}) or widening the view k_hop_neighborhood."
+    )
+    if attribution.rule_ids:
+        hint += (
+            f" Narrow or remove rule(s) {', '.join(attribution.rule_ids)} so they no longer "
+            "remove symbols on the observed witness path."
+        )
+    if attribution.scope_excluded:
+        hint += (
+            f" Add the excluded node(s) {', '.join(attribution.scope_excluded)} to the "
+            "k_hop_neighborhood focal_nodes or increase upstream_depth/downstream_depth."
+        )
+    return hint
+
+
 def _severed_diagnostic(
     assertion: ReachabilityAssertion,
     witness_path: tuple[str, ...],
     cur_indexed: _IndexedDiGraph,
     resolver: dict[str, str],
-    view_id: str,
+    sever: _SeverContext,
 ) -> LintDiagnostic | None:
     """Return REACHABILITY_SEVERED when curation loses an observed path, else None."""
     cur_src = resolver.get(assertion.from_node)
@@ -292,22 +423,27 @@ def _severed_diagnostic(
         return None
 
     bottlenecks = _find_bottlenecks(witness_path, resolver, cur_indexed)
-    rel_note = f" via relations {assertion.via_relations}" if assertion.via_relations else ""
+    attribution = _attribute_severance(bottlenecks, resolver, sever)
+    rel_note = (
+        f" via relations {list(assertion.via_relations)}"
+        if assertion.via_relations
+        else " over any relation"
+    )
     return LintDiagnostic(
         gate=GateId.GATE_3_TOPOLOGY_POSET,
         severity=DiagnosticSeverity.ERROR,
         code="REACHABILITY_SEVERED",
-        view_id=view_id,
+        view_id=sever.view_id,
+        rule_id=attribution.rule_id,
         offending_symbols=bottlenecks,
         witness_path=witness_path,
         message=(
             f"Reachability from '{assertion.from_node}' to '{assertion.to_node}'{rel_note} "
-            f"was severed in view '{view_id}'; bottleneck symbol(s): {', '.join(bottlenecks)}."
+            f"was severed in view '{sever.view_id}'; observed witness: "
+            f"{' -> '.join(witness_path)}; bottleneck symbol(s): {', '.join(bottlenecks)}."
+            f"{_attribution_message(attribution)}"
         ),
-        repair_hint=(
-            "Preserve path connectivity by adding a bypass_vertices rule across intermediate "
-            f"bottleneck(s) ({', '.join(bottlenecks)}) or widening the view k_hop_neighborhood."
-        ),
+        repair_hint=_severed_repair_hint(bottlenecks, attribution),
     )
 
 
@@ -316,13 +452,13 @@ def _check_single_reachability(
     obs_indexed: _IndexedDiGraph,
     cur_indexed: _IndexedDiGraph,
     resolver: dict[str, str],
-    view_id: str,
+    sever: _SeverContext,
 ) -> LintDiagnostic | None:
     """preserve_reachability: preserve the observed path if one exists (vacuous otherwise)."""
     witness_path = _shortest_path_ids(obs_indexed, assertion.from_node, assertion.to_node)
     if witness_path is None:
         return None
-    return _severed_diagnostic(assertion, witness_path, cur_indexed, resolver, view_id)
+    return _severed_diagnostic(assertion, witness_path, cur_indexed, resolver, sever)
 
 
 def _check_required_reachability(
@@ -330,7 +466,7 @@ def _check_required_reachability(
     obs_indexed: _IndexedDiGraph,
     cur_indexed: _IndexedDiGraph,
     resolver: dict[str, str],
-    view_id: str,
+    sever: _SeverContext,
 ) -> LintDiagnostic | None:
     """require_reachability: observed path MUST exist AND curation must preserve it."""
     if assertion.from_node not in obs_indexed.id_to_idx:
@@ -340,7 +476,7 @@ def _check_required_reachability(
 
     witness_path = _shortest_path_ids(obs_indexed, assertion.from_node, assertion.to_node)
     if witness_path is not None:
-        return _severed_diagnostic(assertion, witness_path, cur_indexed, resolver, view_id)
+        return _severed_diagnostic(assertion, witness_path, cur_indexed, resolver, sever)
 
     rel_note = (
         f" restricted to relations {list(assertion.via_relations)}"
@@ -351,11 +487,12 @@ def _check_required_reachability(
         gate=GateId.GATE_3_TOPOLOGY_POSET,
         severity=DiagnosticSeverity.ERROR,
         code="REACHABILITY_NOT_OBSERVED",
-        view_id=view_id,
+        view_id=sever.view_id,
         offending_symbols=(assertion.from_node, assertion.to_node),
         message=(
             f"Required reachability from '{assertion.from_node}' to '{assertion.to_node}'"
-            f"{rel_note} has no directed path in the observed input for view '{view_id}'."
+            f"{rel_note} has no directed path in the observed input for view "
+            f"'{sever.view_id}'; no witness path exists."
         ),
         repair_hint=(
             "Fix the endpoints or relation filter in require_reachability, or move the "
@@ -369,6 +506,7 @@ def _check_view_reachability(
     curated_ir: StructuralGraphIR,
     view: DiagramViewSpec,
     resolver: dict[str, str],
+    rules: tuple[GlobalAbstractionRule, ...] = (),
 ) -> list[LintDiagnostic]:
     inv = view.invariants
     if not inv.preserve_reachability and not inv.require_reachability:
@@ -376,6 +514,7 @@ def _check_view_reachability(
 
     cur_cache: dict[frozenset[str], _IndexedDiGraph] = {}
     diagnostics: list[LintDiagnostic] = []
+    sever = _SeverContext(view_id=view.id, scope=view.scope, rules=rules)
     checks = (
         *((a, _check_single_reachability) for a in inv.preserve_reachability),
         *((a, _check_required_reachability) for a in inv.require_reachability),
@@ -384,7 +523,7 @@ def _check_view_reachability(
         allowed = frozenset(assertion.via_relations)
         obs_indexed = _get_filtered_digraph(ctx.observed_ir, allowed, ctx.filtered_cache)
         cur_indexed = _get_filtered_digraph(curated_ir, allowed, cur_cache)
-        diag = check(assertion, obs_indexed, cur_indexed, resolver, view.id)
+        diag = check(assertion, obs_indexed, cur_indexed, resolver, sever)
         if diag is not None:
             diagnostics.append(diag)
     return diagnostics
@@ -951,7 +1090,9 @@ class TopologicalInvariantGate:
                 continue
             combined_rules = (*spec.global_abstractions, *view.rules)
             resolver = _build_curated_resolver(observed_ir, curated, combined_rules)
-            diagnostics.extend(_check_view_reachability(ctx, curated, view, resolver))
+            diagnostics.extend(
+                _check_view_reachability(ctx, curated, view, resolver, combined_rules)
+            )
             diagnostics.extend(_check_induced_cycles(ctx, curated, view, combined_rules))
             diagnostics.extend(_check_structural_async_upgrade(ctx, curated, view))
 

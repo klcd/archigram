@@ -416,6 +416,7 @@ archigram: "archigram" {
         shape: class
         "+protected_nodes": "tuple[NonBlankStr, ...]"
         "+preserve_reachability": "tuple[ReachabilityAssertion, ...]"
+        "+require_reachability": "tuple[ReachabilityAssertion, ...]"
         "+preserve_partial_order": "bool"
         "+forbid_new_cycles": "bool"
         "+node_budget": "BudgetRange"
@@ -565,6 +566,14 @@ archigram: "archigram" {
           style.fill: transparent
           style.stroke: "#64748b"
         }
+        "archigram.entrypoints.cli.app.apply_regeneration_command": "apply_regeneration_command" {
+          style.fill: transparent
+          style.stroke: "#64748b"
+        }
+        "archigram.entrypoints.cli.app.build_apply_check_report": "build_apply_check_report" {
+          style.fill: transparent
+          style.stroke: "#64748b"
+        }
         "archigram.entrypoints.cli.app.diff_cmd": "diff_cmd" {
           style.fill: transparent
           style.stroke: "#64748b"
@@ -594,6 +603,10 @@ archigram: "archigram" {
           style.stroke: "#64748b"
         }
         "archigram.entrypoints.cli.app.triage_cmd": "triage_cmd" {
+          style.fill: transparent
+          style.stroke: "#64748b"
+        }
+        "archigram.entrypoints.cli.app.triage_regeneration_command": "triage_regeneration_command" {
           style.fill: transparent
           style.stroke: "#64748b"
         }
@@ -757,6 +770,16 @@ archigram: "archigram" {
       "archigram.entrypoints.cli.pipeline": "pipeline" {
         style.fill: transparent
         style.stroke: "#64748b"
+        "archigram.entrypoints.cli.pipeline.ApplyCheckReport": "ApplyCheckReport" {
+          shape: class
+          "+passed": "bool"
+          "+is_clean": "bool"
+          "+lint_report": "LintReport"
+          "+missing_files": "tuple[str, ...]"
+          "+drifted_files": "tuple[str, ...]"
+          "+written_files": "tuple[str, ...]"
+          "+regeneration_command": "str"
+        }
         "archigram.entrypoints.cli.pipeline.ApplySyncOutcome": "ApplySyncOutcome" {
           shape: class
           "+compilation": "PipelineCompilationResult"
@@ -789,6 +812,10 @@ archigram: "archigram" {
           "+lint_report": "LintReport"
           "+extra_diagnostics": "tuple[LintDiagnostic, ...]"
         }
+        "archigram.entrypoints.cli.pipeline.build_apply_report": "build_apply_report" {
+          style.fill: transparent
+          style.stroke: "#64748b"
+        }
         "archigram.entrypoints.cli.pipeline.compile_and_lint_pipeline": "compile_and_lint_pipeline" {
           style.fill: transparent
           style.stroke: "#64748b"
@@ -806,6 +833,10 @@ archigram: "archigram" {
           style.stroke: "#64748b"
         }
         "archigram.entrypoints.cli.pipeline.format_lint_report_text": "format_lint_report_text" {
+          style.fill: transparent
+          style.stroke: "#64748b"
+        }
+        "archigram.entrypoints.cli.pipeline.format_regeneration_command": "format_regeneration_command" {
           style.fill: transparent
           style.stroke: "#64748b"
         }
@@ -1868,11 +1899,25 @@ archigram: "archigram" {
           "-_check_trace(observed_ir: InteractionTraceIR, spec: CurationSpecV1, curated_views: Mapping[str, CanonicalIR] | None)": "list[Lint..."
           "+check(observed_ir: CanonicalIR, spec: CurationSpecV1, curated_views: Mapping[str, CanonicalIR] | None)": "LintReport"
         }
+        "archigram.features.lint_topology.gate._Attribution": "_Attribution" {
+          shape: class
+          "+rule_ids": "tuple[str, ...]"
+          "+rule_notes": "tuple[str, ...]"
+          "+scope_excluded": "tuple[str, ...]"
+          "+scope_note": "str"
+          "+property rule_id()": "str | None"
+        }
         "archigram.features.lint_topology.gate._IndexedDiGraph": "_IndexedDiGraph" {
           shape: class
           "+graph": "rx.PyDiGraph[str, float]"
           "+id_to_idx": "dict[str, int]"
           "+idx_to_id": "tuple[str, ...]"
+        }
+        "archigram.features.lint_topology.gate._SeverContext": "_SeverContext" {
+          shape: class
+          "+view_id": "str"
+          "+scope": "ViewScope"
+          "+rules": "tuple[GlobalAbstractionRule, ...]"
         }
         "archigram.features.lint_topology.gate._StructuralContext": "_StructuralContext" {
           shape: class
@@ -2393,6 +2438,18 @@ archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypo
   style.stroke: "#3b82f6"
   style.animated: true
 }
+archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.app"."archigram.entrypoints.cli.app.apply_regeneration_command" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.format_regeneration_command": "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.app"."archigram.entrypoints.cli.app.build_apply_check_report" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.app"."archigram.entrypoints.cli.app.apply_regeneration_command": "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.app"."archigram.entrypoints.cli.app.build_apply_check_report" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.build_apply_report": "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
 archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.app"."archigram.entrypoints.cli.app.diff_cmd" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.app"."archigram.entrypoints.cli.app.DiffOptions": "calls" {
   style.stroke: "#3b82f6"
   style.animated: true
@@ -2466,6 +2523,10 @@ archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypo
   style.animated: true
 }
 archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.app"."archigram.entrypoints.cli.app.triage_cmd" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.execute_triage": "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.app"."archigram.entrypoints.cli.app.triage_regeneration_command" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.format_regeneration_command": "calls" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
@@ -2687,6 +2748,13 @@ archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypo
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }
+archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.ApplyCheckReport" -> archigram."archigram.domain"."archigram.domain.diagnostics"."archigram.domain.diagnostics.LintReport": "composes" {
+  style.stroke: "#14b8a6"
+  source-arrowhead: {
+    shape: diamond
+    style.filled: true
+  }
+}
 archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.ApplySyncOutcome" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.PipelineCompilationResult": "composes" {
   style.stroke: "#14b8a6"
   source-arrowhead: {
@@ -2728,6 +2796,10 @@ archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypo
     shape: diamond
     style.filled: true
   }
+}
+archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.build_apply_report" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.ApplyCheckReport": "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
 }
 archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.compile_and_lint_pipeline" -> archigram."archigram.domain"."archigram.domain.diagnostics"."archigram.domain.diagnostics.LintReport": "calls" {
   style.stroke: "#3b82f6"

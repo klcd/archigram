@@ -8,7 +8,7 @@ from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from archigram.domain import ProvenanceGrade, ProvenanceStamp
-from archigram.domain.diagnostics import DiagnosticSeverity, GateId, LintReport
+from archigram.domain.diagnostics import DiagnosticSeverity, GateId, LintDiagnostic, LintReport
 from archigram.domain.ir import (
     EdgeRelation,
     InteractionTraceIR,
@@ -25,10 +25,15 @@ from archigram.domain.spec import (
     CollapsePartitionRule,
     CurationSpecV1,
     DiagramViewSpec,
+    FullScope,
+    GlobalAbstractionRule,
     IRMode,
+    KHopNeighborhoodScope,
+    PruneLeavesRule,
     ReachabilityAssertion,
     TargetRenderer,
     ViewInvariants,
+    ViewScope,
 )
 from archigram.features.lint_topology import TopologicalInvariantGate
 from archigram.ports.contracts import LintGatePort
@@ -998,3 +1003,165 @@ def test_require_reachability_grouped_endpoints_need_observed_path(
     )
     wide_report = gate.check(observed, wide_spec, {"arch-view": curated})
     assert not [d for d in wide_report.diagnostics if d.code.startswith("REACHABILITY")]
+
+
+# ---------------------------------------------------------------------------
+# AG-02: severed-path rule / excluded-node attribution (view, endpoints, witness, cause)
+# ---------------------------------------------------------------------------
+
+
+def _attribution_spec(
+    assertion: ReachabilityAssertion,
+    *,
+    rules: tuple[GlobalAbstractionRule, ...] = (),
+    scope: ViewScope | None = None,
+) -> CurationSpecV1:
+    view = DiagramViewSpec(
+        id="arch-view",
+        title="Architecture View",
+        ir_mode=IRMode.STRUCTURAL_GRAPH,
+        target_renderer=TargetRenderer.MERMAID,
+        rules=rules,
+        scope=scope or FullScope(),
+        invariants=ViewInvariants(preserve_reachability=(assertion,)),
+    )
+    return CurationSpecV1(views=(view,))
+
+
+def _severed_only(report: LintReport) -> LintDiagnostic:
+    sev = [d for d in report.diagnostics if d.code == "REACHABILITY_SEVERED"]
+    assert len(sev) == 1
+    return sev[0]
+
+
+def _assert_severed_core(diag: LintDiagnostic, node_ids: list[str], cut_node: str) -> None:
+    assert diag.view_id == "arch-view"
+    assert diag.witness_path == tuple(node_ids)
+    assert cut_node in diag.offending_symbols
+    assert "arch-view" in diag.message
+    assert node_ids[0] in diag.message
+    assert node_ids[-1] in diag.message
+    assert " -> ".join(node_ids) in diag.message
+    assert cut_node in diag.message
+
+
+@settings(max_examples=80, deadline=None)
+@given(
+    chain_len=st.integers(min_value=3, max_value=9),
+    cut_offset=st.integers(min_value=0, max_value=100),
+    first_is_bypass=st.booleans(),
+    second_rule=st.booleans(),
+    preserve_rel=st.booleans(),
+)
+def test_severed_path_attributes_removing_rule_ids(
+    chain_len: int,
+    cut_offset: int,
+    first_is_bypass: bool,
+    second_rule: bool,
+    preserve_rel: bool,
+) -> None:
+    """A single matching rule sets rule_id; several are all named without picking one."""
+    cut_idx = 1 + (cut_offset % (chain_len - 2))
+    node_ids = [f"svc/n{idx}" for idx in range(chain_len)]
+    cut_node = node_ids[cut_idx]
+    observed = _chain_ir(node_ids, EdgeRelation.CALLS)
+    curated = _without_node(observed, cut_node)
+
+    bypass = BypassVerticesRule(
+        id="rule-bypass",
+        node_id_globs=(cut_node,),
+        preserve_edge_relations=("imports",) if preserve_rel else (),
+    )
+    prune = PruneLeavesRule(id="rule-prune", node_id_globs=(cut_node,))
+    first: GlobalAbstractionRule = bypass if first_is_bypass else prune
+    rules: tuple[GlobalAbstractionRule, ...] = (first,)
+    if second_rule:
+        rules = (*rules, prune if first_is_bypass else bypass)
+
+    assertion = ReachabilityAssertion(from_node=node_ids[0], to_node=node_ids[-1])
+    spec = _attribution_spec(assertion, rules=rules)
+    report = TopologicalInvariantGate().check(observed, spec, {"arch-view": curated})
+    diag = _severed_only(report)
+
+    _assert_severed_core(diag, node_ids, cut_node)
+    if second_rule:
+        assert diag.rule_id is None  # ambiguous: never attribute to an arbitrary rule
+        assert "multiple attributable" in diag.message
+    else:
+        assert diag.rule_id == first.id
+    for rule in rules:
+        assert f"'{rule.id}'" in diag.message
+        assert rule.id in diag.repair_hint
+    if preserve_rel and first_is_bypass:
+        assert "splices only relations ['imports']" in diag.message
+    assert not [d for d in report.diagnostics if d.code == "REACHABILITY_NOT_OBSERVED"]
+
+
+@settings(max_examples=60, deadline=None)
+@given(
+    chain_len=st.integers(min_value=3, max_value=9),
+    cut_offset=st.integers(min_value=0, max_value=100),
+    use_khop_scope=st.booleans(),
+)
+def test_severed_path_attributes_scope_exclusion_or_none(
+    chain_len: int,
+    cut_offset: int,
+    use_khop_scope: bool,
+) -> None:
+    """k-hop scope exclusion names the excluded node; no evidence means no fabricated cause."""
+    cut_idx = 1 + (cut_offset % (chain_len - 2))
+    node_ids = [f"svc/n{idx}" for idx in range(chain_len)]
+    cut_node = node_ids[cut_idx]
+    observed = _chain_ir(node_ids, EdgeRelation.CALLS)
+    curated = _without_node(observed, cut_node)
+    scope: ViewScope = (
+        KHopNeighborhoodScope(focal_nodes=(node_ids[0],), upstream_depth=0, downstream_depth=1)
+        if use_khop_scope
+        else FullScope()
+    )
+    assertion = ReachabilityAssertion(from_node=node_ids[0], to_node=node_ids[-1])
+    spec = _attribution_spec(assertion, scope=scope)
+    report = TopologicalInvariantGate().check(observed, spec, {"arch-view": curated})
+    diag = _severed_only(report)
+
+    _assert_severed_core(diag, node_ids, cut_node)
+    assert diag.rule_id is None
+    if use_khop_scope:
+        assert "k_hop_neighborhood" in diag.message
+        assert "excluded node(s)" in diag.message
+        assert "focal_nodes" in diag.repair_hint
+    else:
+        assert "Cause:" not in diag.message
+
+
+@settings(max_examples=60, deadline=None)
+@given(chain_len=st.integers(min_value=4, max_value=9), via_filter=st.booleans())
+def test_severed_hop_attributes_collapse_partition_rule(chain_len: int, via_filter: bool) -> None:
+    """A collapse_partition whose supernode lost its outgoing hop is attributable by id."""
+    node_ids = [f"svc/n{idx}" for idx in range(chain_len)]
+    members = tuple(node_ids[1:-1])
+    super_id = "svc/Core"
+    observed = _chain_ir(node_ids, EdgeRelation.CALLS)
+    cur_nodes = {node_ids[0]: _obs_node(node_ids[0]), node_ids[-1]: _obs_node(node_ids[-1])}
+    cur_nodes[super_id] = _derived_supernode(super_id, "collapse-core", members)
+    curated = StructuralGraphIR(
+        nodes=cur_nodes,
+        edges=(_derived_edge("d0", node_ids[0], super_id, "collapse-core", ("e0",)),),
+    )
+    rule = CollapsePartitionRule(
+        id="collapse-core", target_node_id=super_id, label="Core", member_globs=members
+    )
+    via = ("calls",) if via_filter else ()
+    assertion = ReachabilityAssertion(
+        from_node=node_ids[0], to_node=node_ids[-1], via_relations=via
+    )
+    spec = _attribution_spec(assertion, rules=(rule,))
+    diag = _severed_only(TopologicalInvariantGate().check(observed, spec, {"arch-view": curated}))
+
+    assert diag.view_id == "arch-view"
+    assert diag.witness_path == tuple(node_ids)
+    assert diag.rule_id == "collapse-core"
+    assert "collapse_partition 'collapse-core'" in diag.message
+    assert node_ids[-1] in diag.offending_symbols
+    assert ("via relations ['calls']" in diag.message) is via_filter
+    assert ("over any relation" in diag.message) is (not via_filter)
