@@ -37,6 +37,7 @@ digraph "archigram" {
     "domain_core" [label="Domain Core", kind="supernode", _kind="supernode"];
     "ports_contracts" [label="Ports & Contracts", kind="supernode", _kind="supernode"];
   }
+  "cli_dataplane" -> "archigram" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
   "cli_dataplane" -> "feature_ingestors" [xlabel="calls", _rel_kind="calls", _sync_kind="sync", style="solid", color="#3b82f6", arrowhead="vee"];
   "cli_dataplane" -> "feature_ingestors" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
   "cli_dataplane" -> "mcp_controlplane" [xlabel="calls", _rel_kind="calls", _sync_kind="sync", style="solid", color="#3b82f6", arrowhead="vee"];

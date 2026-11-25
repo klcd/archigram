@@ -65,6 +65,10 @@ archigram: "archigram" {
   }
 }
 
+archigram."archigram.entrypoints".cli_dataplane -> archigram: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
 archigram."archigram.entrypoints".cli_dataplane -> archigram."archigram.features".feature_ingestors: "calls" {
   style.stroke: "#3b82f6"
   style.animated: true

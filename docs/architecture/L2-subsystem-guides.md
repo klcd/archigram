@@ -367,6 +367,7 @@ flowchart TD
   n7 -.->|"imports"| n3
   n7 -.->|"imports"| n4
   n2 -.->|"imports"| n7
+  n7 -.->|"imports"| n0
   n8 -.->|"imports"| n10
   n7 -.->|"imports"| n8
   n9 -.->|"imports"| n10
@@ -387,6 +388,6 @@ flowchart TD
   n10 -.->|"imports"| n19
   n17 -.->|"imports"| n16
   n10 -.->|"imports"| n16
-  linkStyle 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
 ```
 <!-- archigram:end l2d_cli_and_mcp_adapters_mermaid -->

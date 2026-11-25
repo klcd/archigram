@@ -488,3 +488,58 @@ def test_fuzz_python_trace_ingestor_declarative_spec_json(
     _assert_trace_invariants(ir_a, "python_trace_v1")
     if has_error:
         assert ir_a.events[f"ev_{call_count - 1:03d}"].status is EventStatus.ERROR
+
+
+@settings(max_examples=25, deadline=None)
+@given(
+    pkg_name=_LOWER_IDENT,
+    mod_a=_LOWER_IDENT,
+    mod_b=_LOWER_IDENT,
+    is_async=st.booleans(),
+    in_method=st.booleans(),
+    nested_in_block=st.booleans(),
+)
+def test_fuzz_ast_ingestor_function_local_imports_yield_edges(
+    pkg_name: str,
+    mod_a: str,
+    mod_b: str,
+    is_async: bool,
+    in_method: bool,
+    nested_in_block: bool,
+) -> None:
+    """Lazy imports in (async) functions and methods produce the same edges as module-level."""
+    if mod_a == mod_b:
+        mod_b = mod_b + "x"
+    stmt = f"from {pkg_name} import {mod_b}"
+    body = [stmt]
+    if nested_in_block:
+        body = ["try:", f"    {stmt}", "except ImportError:", "    pass"]
+    kw = "async def" if is_async else "def"
+    lines = [f"{kw} lazy({'self' if in_method else ''}) -> None:", *(f"    {b}" for b in body)]
+    if in_method:
+        lines = ["class K:", *(f"    {ln}" for ln in lines)]
+    source = "\n".join(lines) + "\n"
+    lazy_files = [
+        (f"{pkg_name}/__init__.py", ""),
+        (f"{pkg_name}/{mod_a}.py", source),
+        (f"{pkg_name}/{mod_b}.py", "X = 1\n"),
+    ]
+    eager_files = [
+        (f"{pkg_name}/__init__.py", ""),
+        (f"{pkg_name}/{mod_a}.py", f"{stmt}\n"),
+        (f"{pkg_name}/{mod_b}.py", "X = 1\n"),
+    ]
+    ingestor = PythonAstStructuralIngestor()
+    results: list[set[tuple[str, str, EdgeRelation]]] = []
+    for files in (lazy_files, eager_files):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            _write_tree(Path(tmp_dir), files, add_ignored_noise=False)
+            ir = ingestor.ingest(Path(tmp_dir))
+        results.append({(e.source, e.target, e.relation) for e in ir.edges})
+    lazy_edges, eager_edges = results
+    assert (
+        f"{pkg_name}.{mod_a}",
+        f"{pkg_name}.{mod_b}",
+        EdgeRelation.IMPORTS,
+    ) in eager_edges
+    assert lazy_edges == eager_edges

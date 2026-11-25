@@ -28,6 +28,7 @@ flowchart LR
     u14(["Verify 5 Mathematical Linter Gates"])
   end
   style sys_boundary fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  u0 -->|"invokes"| u2
   u4 -->|"invokes"| u0
   u5 -->|"invokes"| u1
   u8 -.->|"<<include>>"| u7
@@ -63,4 +64,4 @@ flowchart LR
   u7 -.->|"<<include>>"| u13
   u7 -.->|"<<include>>"| u13
   u12 -.->|"<<include>>"| u13
-  linkStyle 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34 stroke:#3b82f6,stroke-width:1.75px
+  linkStyle 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35 stroke:#3b82f6,stroke-width:1.75px

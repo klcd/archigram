@@ -566,7 +566,7 @@ def _extract_file_nodes(
 
 
 def _iter_module_imports(stmts: list[ast.stmt]) -> list[ast.Import | ast.ImportFrom]:
-    """Collect module-level imports including inside TYPE_CHECKING / conditional blocks."""
+    """Collect imports, incl. conditional blocks and function-local (lazy) ones."""
     found: list[ast.Import | ast.ImportFrom] = []
     for stmt in stmts:
         if isinstance(stmt, (ast.Import, ast.ImportFrom)):
@@ -580,6 +580,8 @@ def _iter_module_imports(stmts: list[ast.stmt]) -> list[ast.Import | ast.ImportF
                 found.extend(_iter_module_imports(handler.body))
             found.extend(_iter_module_imports(stmt.orelse))
             found.extend(_iter_module_imports(stmt.finalbody))
+        elif isinstance(stmt, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            found.extend(_iter_module_imports(stmt.body))
     return found
 
 

@@ -34,6 +34,7 @@ node "archigram" as n_0_archigram_983b03 {
   artifact "Domain Core (Canonical IR, Spec, Style)" as n_4_domain_core_f195b2
   artifact "Ports & Contracts (archigram.ports)" as n_11_ports_contracts_d0accd
 }
+n_3_cli_dataplane_493a5b ..>[#3b82f6] n_0_archigram_983b03 : <<deploy>>
 n_10_mcp_controlplane_ff4d3b ..>[#3b82f6] n_5_feature_digest_52876d : <<deploy>>
 n_5_feature_digest_52876d ..>[#3b82f6] n_4_domain_core_f195b2 : <<deploy>>
 n_11_ports_contracts_d0accd ..>[#3b82f6] n_4_domain_core_f195b2 : <<deploy>>

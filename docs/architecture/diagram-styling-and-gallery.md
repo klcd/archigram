@@ -94,6 +94,7 @@ flowchart TD
   style n0 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   style n1 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   style n2 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  n3 -.->|"imports"| n0
   n5 -.->|"imports"| n4
   n5 -->|"composes"| n4
   n9 -.->|"imports"| n4
@@ -117,10 +118,10 @@ flowchart TD
   n7 -.->|"imports"| n11
   n8 -->|"composes"| n11
   n8 -->|"calls"| n11
-  linkStyle 0,2,4,6,8,9,11,12,14,16,18,20 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 1,5,7,21 stroke:#14b8a6,stroke-width:1.75px
-  linkStyle 3,10,13,15,22 stroke:#3b82f6,stroke-width:1.75px
-  linkStyle 17,19 stroke:#a855f7,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 0,1,3,5,7,9,10,12,13,15,17,19,21 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 2,6,8,22 stroke:#14b8a6,stroke-width:1.75px
+  linkStyle 4,11,14,16,23 stroke:#3b82f6,stroke-width:1.75px
+  linkStyle 18,20 stroke:#a855f7,stroke-width:1.75px,stroke-dasharray:5 5
 ```
 <!-- archigram:end l0_hexagonal_rings_mermaid -->
 
@@ -203,6 +204,10 @@ archigram: "archigram" {
   }
 }
 
+archigram."archigram.entrypoints".cli_dataplane -> archigram: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
 archigram."archigram.entrypoints".cli_dataplane -> archigram."archigram.features".feature_ingestors: "calls" {
   style.stroke: "#3b82f6"
   style.animated: true
@@ -360,6 +365,7 @@ package "archigram" as n_0_archigram_983b03 {
   component "Domain Core" as n_4_domain_core_f195b2
   component "Ports & Contracts" as n_11_ports_contracts_d0accd
 }
+n_3_cli_dataplane_493a5b ..>[#64748b] n_0_archigram_983b03 : imports
 n_3_cli_dataplane_493a5b -->[#3b82f6] n_7_feature_ingestor_73234e : calls
 n_3_cli_dataplane_493a5b ..>[#64748b] n_7_feature_ingestor_73234e : imports
 n_3_cli_dataplane_493a5b -->[#3b82f6] n_10_mcp_controlplane_ff4d3b : calls
@@ -610,6 +616,7 @@ digraph "archigram" {
     "domain_core" [label="Domain Core", kind="supernode", _kind="supernode"];
     "ports_contracts" [label="Ports & Contracts", kind="supernode", _kind="supernode"];
   }
+  "cli_dataplane" -> "archigram" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
   "cli_dataplane" -> "feature_ingestors" [xlabel="calls", _rel_kind="calls", _sync_kind="sync", style="solid", color="#3b82f6", arrowhead="vee"];
   "cli_dataplane" -> "feature_ingestors" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
   "cli_dataplane" -> "mcp_controlplane" [xlabel="calls", _rel_kind="calls", _sync_kind="sync", style="solid", color="#3b82f6", arrowhead="vee"];

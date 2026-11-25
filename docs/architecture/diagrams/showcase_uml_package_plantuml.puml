@@ -33,6 +33,7 @@ package "archigram" as n_0_archigram_983b03 {
   package "Domain Core (Canonical IR, Spec, Style)" as n_4_domain_core_f195b2
   package "Ports & Contracts (archigram.ports)" as n_11_ports_contracts_d0accd
 }
+n_3_cli_dataplane_493a5b ..>[#64748b] n_0_archigram_983b03 : <<import>>
 n_10_mcp_controlplane_ff4d3b ..>[#64748b] n_5_feature_digest_52876d : <<import>>
 n_5_feature_digest_52876d ..>[#64748b] n_4_domain_core_f195b2 : <<import>>
 n_6_feature_emitters_75a4c0 ..>[#64748b] n_4_domain_core_f195b2 : <<import>>

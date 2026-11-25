@@ -65,6 +65,10 @@ archigram: "<<package>> archigram" {
     style.stroke: "#64748b"
   }
 }
+archigram."archigram.entrypoints".cli_dataplane -> archigram: "<<import>>" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
 archigram."archigram.entrypoints".mcp_controlplane -> archigram."archigram.features".feature_digest: "<<import>>" {
   style.stroke: "#64748b"
   style.stroke-dash: 5

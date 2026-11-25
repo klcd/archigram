@@ -91,6 +91,9 @@ system_boundary: "System Subject Boundary" {
 "archigram.entrypoints.cli" -> actor_cli_user: "invokes" {
   style.stroke: "#3b82f6"
 }
+actor_cli_user -> system_boundary.archigram: "invokes" {
+  style.stroke: "#3b82f6"
+}
 "archigram.entrypoints.mcp" -> actor_mcp_agent: "invokes" {
   style.stroke: "#3b82f6"
 }

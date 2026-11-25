@@ -33,6 +33,7 @@ package "archigram" as n_0_archigram_983b03 {
   component "Domain Core" as n_4_domain_core_f195b2
   component "Ports & Contracts" as n_11_ports_contracts_d0accd
 }
+n_3_cli_dataplane_493a5b ..>[#64748b] n_0_archigram_983b03 : imports
 n_3_cli_dataplane_493a5b -->[#3b82f6] n_7_feature_ingestor_73234e : calls
 n_3_cli_dataplane_493a5b ..>[#64748b] n_7_feature_ingestor_73234e : imports
 n_3_cli_dataplane_493a5b -->[#3b82f6] n_10_mcp_controlplane_ff4d3b : calls

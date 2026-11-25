@@ -37,6 +37,7 @@ rectangle "System Subject Boundary" as sys_boundary {
   usecase "Verify 5 Mathematical Linter Gates" as u_14_uc_verify_gates_a83ee9
 }
 u_4_archigram_entryp_f9dc23 -->[#3b82f6] u_0_actor_cli_user_37c740 : invokes
+u_0_actor_cli_user_37c740 -->[#3b82f6] u_2_archigram_983b03 : invokes
 u_5_archigram_entryp_d739e6 -->[#3b82f6] u_1_actor_mcp_agent_5a7a76 : invokes
 u_8_uc_curate_triage_e2d844 ..>[#3b82f6] u_7_uc_compile_sync_659047 : <<include>>
 u_8_uc_curate_triage_e2d844 ..>[#3b82f6] u_7_uc_compile_sync_659047 : <<include>>

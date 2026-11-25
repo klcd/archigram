@@ -65,6 +65,11 @@ archigram: "<<executionEnv>> archigram" {
     style.stroke: "#64748b"
   }
 }
+archigram."archigram.entrypoints".cli_dataplane -> archigram: "<<deploy>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+  style.animated: true
+}
 archigram."archigram.entrypoints".mcp_controlplane -> archigram."archigram.features".feature_digest: "<<deploy>>" {
   style.stroke: "#3b82f6"
   style.stroke-dash: 5
