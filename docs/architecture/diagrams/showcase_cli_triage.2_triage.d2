@@ -1633,6 +1633,11 @@ archigram: "[KEEP] archigram" {
           style.stroke: "#ef4444"
           style.stroke-dash: 5
         }
+        "archigram.features.lint_topology.gate._TraceOrderContext": "[REMOVE] _TraceOrderContext" {
+          style.fill: transparent
+          style.stroke: "#ef4444"
+          style.stroke-dash: 5
+        }
         "archigram.features.lint_topology.gate._TracePoset": "[REMOVE] _TracePoset" {
           style.fill: transparent
           style.stroke: "#ef4444"
@@ -3686,6 +3691,14 @@ archigram."archigram.features"."archigram.features.lint_topology"."archigram.fea
   style.stroke-dash: 5
 }
 archigram."archigram.features"."archigram.features.lint_topology"."archigram.features.lint_topology.gate"."archigram.features.lint_topology.gate._StructuralContext" -> archigram."archigram.features"."archigram.features.lint_topology"."archigram.features.lint_topology.gate"."archigram.features.lint_topology.gate._IndexedDiGraph": "[remove] composes" {
+  style.stroke: "#ef4444"
+  style.stroke-dash: 5
+}
+archigram."archigram.features"."archigram.features.lint_topology"."archigram.features.lint_topology.gate"."archigram.features.lint_topology.gate._TraceOrderContext" -> archigram."archigram.domain"."archigram.domain.ir"."archigram.domain.ir.TraceEvent": "[remove] composes" {
+  style.stroke: "#ef4444"
+  style.stroke-dash: 5
+}
+archigram."archigram.features"."archigram.features.lint_topology"."archigram.features.lint_topology.gate"."archigram.features.lint_topology.gate._TraceOrderContext" -> archigram."archigram.features"."archigram.features.lint_topology"."archigram.features.lint_topology.gate"."archigram.features.lint_topology.gate._TracePoset": "[remove] composes" {
   style.stroke: "#ef4444"
   style.stroke-dash: 5
 }

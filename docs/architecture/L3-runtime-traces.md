@@ -41,6 +41,46 @@ Raw execution captures **180 observed events** across **15 participants**. Apply
 
 ---
 
+## Compaction Ordering Contract (Gate 3, `preserve_partial_order: true`)
+
+Let `P_obs` be the transitive closure of `parent_event_id` + `causal_links` in the observed `InteractionTraceIR`, and `P_cur` the same closure in the curated (compacted) trace. For a curated event `u`, let `β(u)` be its backing observed event IDs (its own `event_id` if observed, plus `provenance.backing_ids` for `DERIVED_DETERMINISTIC` representatives). Gate 3 (`TopologicalInvariantGate`) enforces, for every pair of **distinct** surviving curated events `u ≠ v` whose backing sets are non-empty and disjoint:
+
+| Relation | Rule | Diagnostic |
+|---|---|---|
+| `u <cur v` and some `b_v ∈ β(v)`, `b_u ∈ β(u)` with `b_v <obs b_u` | **Forbidden** — order reversed | `PARTIAL_ORDER_VIOLATED` |
+| Direct curated edge `u → v` (`parent_event_id` / `causal_links`) with **no** `b_u <obs b_v` | **Forbidden** — invented order (false barrier between concurrent/independent events) | `PARTIAL_ORDER_FALSE_BARRIER` |
+| Some `b_u <obs b_v` but `u ≮cur v` | **Forbidden** — dropped order (reported once per minimal missing pair, not per transitive pair) | `PARTIAL_ORDER_LOST_EDGE` |
+| Curated `SYNC` event backed by an `ASYNC_FIRE_FORGET` event | **Forbidden** — async upgraded to sync | `ASYNC_UPGRADED_TO_SYNC` |
+
+Every rejection lists the curated event IDs **and** the backing observed event IDs in `offending_symbols`, so the failure can be traced to raw spans.
+
+**What may be abstracted away.** Order *internal to one contracted representative* — i.e. pairs whose backing sets overlap because the events were folded into the same node by `R1–R3` loop folding, `R4` recursion cuts, `max_call_depth` truncation, or `R6` parallel-map folding — is deliberately dropped. Transitive middle nodes may be bypassed (`a → mid → b` contracted to `rep(a, mid) → b`) as long as every ordering **between** distinct survivors is retained. Compaction carries `causal_links` of folded events onto their surviving representative so valid compaction satisfies the contract by construction.
+
+### Canonical validation outcomes
+
+| # | Case | Observed | Curated | Result |
+|---|---|---|---|---|
+| 1 | Reversed order | `a → b` | `b → a` | Rejected: `PARTIAL_ORDER_VIOLATED` |
+| 2 | Invented order | `a ∥ b` | `a → b` | Rejected: `PARTIAL_ORDER_FALSE_BARRIER` |
+| 3 | Dropped order | `a → b` (or `a → mid → b`) | `a`, `b` survive unordered | Rejected: `PARTIAL_ORDER_LOST_EDGE` |
+| 4 | Legitimate contraction | loops, recursion, depth cuts, parallel maps, bypassed middle node | `TraceCompactionEngine` output | Accepted |
+| 5 | Async fire-and-forget | `caller → async_child`, `async_child ∥ caller_next` | same shape | Accepted; upgrading `async_child` to `SYNC` → `ASYNC_UPGRADED_TO_SYNC`; inventing `async_child → caller_next` → `PARTIAL_ORDER_FALSE_BARRIER` |
+
+These cases are exercised by `tests/fuzz/fuzz_trace_compaction_guarantees.py` and benchmarked by `tests/perf/perf_trace_compaction_guarantees.py`.
+
+### Guarantees on the recorded trace vs. instrumentation coverage
+
+**Enforced on the recorded trace (deterministic, checked by Gate 3).** Modulo the contractions above, the compacted trace preserves, reverses, invents or drops nothing relative to whatever `parent_event_id`, `causal_links`, `clock_domain_id` and `sync_kind` edges are present in the observed `InteractionTraceIR`; and `ASYNC_FIRE_FORGET` is never upgraded to `SYNC`. Events in different `clock_domain_id`s are never ordered by timestamp alone.
+
+**Dependent on instrumentation coverage (not provable from the trace).** The checker can only reason about edges that were recorded. Therefore:
+
+- Work in untraced code (C extensions, native threads, subprocesses outside the `sys.monitoring` / OTLP scope) has no events, so ordering through it is invisible.
+- Omitted OTLP `SpanLinks` / `causal_links` make genuinely ordered spans look concurrent; compaction may then fold or parallelise them (`par` / parallel-map) without a violation being detectable.
+- A missing or inconsistent `clock_domain_id` degrades to conservative singleton domains: fewer overlaps are inferred, so fewer `par` folds, never extra ordering.
+- Async idioms the tracer/extractor does not emit as `ASYNC_FIRE_FORGET` (e.g. un-awaited tasks, queue hand-offs, static call-graph imports) are treated as `SYNC` backing and cannot be protected by the non-upgrade rule.
+
+---
+
 ## Curated View — Mermaid Sequence Diagram (`l3_runtime_pipeline_mermaid`)
 
 <!-- archigram:start l3_runtime_pipeline_mermaid -->

@@ -1987,6 +1987,15 @@ archigram: "archigram" {
           "+obs_edges_by_id": "dict[str, IREdge]"
           "+filtered_cache": "dict[frozenset[str], _IndexedDiGraph]"
         }
+        "archigram.features.lint_topology.gate._TraceOrderContext": "_TraceOrderContext" {
+          shape: class
+          "+obs_poset": "_TracePoset"
+          "+cur_poset": "_TracePoset"
+          "+cur_events": "Mapping[str, TraceEvent]"
+          "+backing_ids": "tuple[tuple[str, ...], ...]"
+          "+backing_mask": "tuple[int, ...]"
+          "+obs_desc_union": "tuple[int, ...]"
+        }
         "archigram.features.lint_topology.gate._TracePoset": "_TracePoset" {
           shape: class
           "+event_ids": "tuple[str, ...]"
@@ -4434,6 +4443,20 @@ archigram."archigram.features"."archigram.features.lint_topology"."archigram.fea
   }
 }
 archigram."archigram.features"."archigram.features.lint_topology"."archigram.features.lint_topology.gate"."archigram.features.lint_topology.gate._StructuralContext" -> archigram."archigram.features"."archigram.features.lint_topology"."archigram.features.lint_topology.gate"."archigram.features.lint_topology.gate._IndexedDiGraph": "composes" {
+  style.stroke: "#14b8a6"
+  source-arrowhead: {
+    shape: diamond
+    style.filled: true
+  }
+}
+archigram."archigram.features"."archigram.features.lint_topology"."archigram.features.lint_topology.gate"."archigram.features.lint_topology.gate._TraceOrderContext" -> archigram."archigram.domain"."archigram.domain.ir"."archigram.domain.ir.TraceEvent": "composes" {
+  style.stroke: "#14b8a6"
+  source-arrowhead: {
+    shape: diamond
+    style.filled: true
+  }
+}
+archigram."archigram.features"."archigram.features.lint_topology"."archigram.features.lint_topology.gate"."archigram.features.lint_topology.gate._TraceOrderContext" -> archigram."archigram.features"."archigram.features.lint_topology"."archigram.features.lint_topology.gate"."archigram.features.lint_topology.gate._TracePoset": "composes" {
   style.stroke: "#14b8a6"
   source-arrowhead: {
     shape: diamond

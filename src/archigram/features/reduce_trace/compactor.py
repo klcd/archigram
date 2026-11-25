@@ -660,6 +660,20 @@ def _pair_loop_subtrees(
     return opt_cand
 
 
+def _merge_group_causal_links(
+    surv: TraceEvent,
+    group: Sequence[TraceEvent],
+) -> tuple[str, ...]:
+    """Union the causal_links of every member folded into ``surv`` (self/group links dropped)."""
+    group_ids = {ev.event_id for ev in group}
+    merged: list[str] = list(surv.causal_links)
+    for ev in group:
+        for link in ev.causal_links:
+            if link not in group_ids and link not in merged:
+                merged.append(link)
+    return tuple(merged)
+
+
 def _apply_matched_loop_provenance(
     rep_id: str,
     rule_id: str,
@@ -672,14 +686,18 @@ def _apply_matched_loop_provenance(
             if ev.event_id != surv_id:
                 folded_to_rep[ev.event_id] = surv_id
                 working.pop(ev.event_id, None)
-        if surv_id != rep_id and len(group) > 1 and surv_id in working:
-            surv = working[surv_id]
-            working[surv_id] = surv.model_copy(
-                update={
-                    "status": _merge_status(group),
-                    "provenance": _derive_provenance(rule_id, group),
-                }
-            )
+        if surv_id not in working:
+            continue
+        surv = working[surv_id]
+        updates: dict[str, object] = {}
+        links = _merge_group_causal_links(surv, group)
+        if links != surv.causal_links:
+            updates["causal_links"] = links
+        if surv_id != rep_id and len(group) > 1:
+            updates["status"] = _merge_status(group)
+            updates["provenance"] = _derive_provenance(rule_id, group)
+        if updates:
+            working[surv_id] = surv.model_copy(update=updates)
 
 
 def _fold_loop_run(

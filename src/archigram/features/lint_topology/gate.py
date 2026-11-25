@@ -45,7 +45,7 @@ from archigram.domain.spec import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping, Sequence
+    from collections.abc import Iterator, Mapping, Sequence
 
 
 @dataclass(frozen=True, slots=True)
@@ -970,62 +970,89 @@ def _check_trace_async_upgrade(
     return diagnostics
 
 
-def _find_reversed_observed_pair(
-    earlier_backing_mask: int,
-    later_backing_ids: tuple[str, ...],
+@dataclass(frozen=True, slots=True)
+class _TraceOrderContext:
+    """Observed vs curated poset plus per-curated-event backing observed event sets."""
+
+    obs_poset: _TracePoset
+    cur_poset: _TracePoset
+    cur_events: Mapping[str, TraceEvent]
+    backing_ids: tuple[tuple[str, ...], ...]
+    backing_mask: tuple[int, ...]
+    obs_desc_union: tuple[int, ...]
+
+
+def _build_trace_order_context(
+    observed: InteractionTraceIR,
+    curated: InteractionTraceIR,
+) -> _TraceOrderContext:
+    obs_poset = _build_trace_poset(observed)
+    cur_poset = _build_trace_poset(curated)
+    backing_ids: list[tuple[str, ...]] = []
+    backing_mask: list[int] = []
+    desc_union: list[int] = []
+    for cur_eid in cur_poset.event_ids:
+        backing = _trace_event_backing_ids(curated.events[cur_eid], observed.events)
+        mask = 0
+        union = 0
+        for obs_eid in backing:
+            o_idx = obs_poset.id_to_idx[obs_eid]
+            mask |= 1 << o_idx
+            union |= obs_poset.desc_mask[o_idx]
+        backing_ids.append(backing)
+        backing_mask.append(mask)
+        desc_union.append(union)
+    return _TraceOrderContext(
+        obs_poset=obs_poset,
+        cur_poset=cur_poset,
+        cur_events=curated.events,
+        backing_ids=tuple(backing_ids),
+        backing_mask=tuple(backing_mask),
+        obs_desc_union=tuple(desc_union),
+    )
+
+
+def _iter_bits(mask: int) -> Iterator[int]:
+    while mask:
+        bit = mask & -mask
+        mask ^= bit
+        yield bit.bit_length() - 1
+
+
+def _find_ordered_backing_pair(
+    src_backing_ids: tuple[str, ...],
+    dst_backing_mask: int,
     obs_poset: _TracePoset,
 ) -> tuple[str, str]:
-    for obs_a in later_backing_ids:
-        a_idx = obs_poset.id_to_idx[obs_a]
-        overlap = obs_poset.desc_mask[a_idx] & earlier_backing_mask
+    """Return the first observed pair ``(b_src, b_dst)`` with ``b_src`` before ``b_dst``."""
+    for obs_src in src_backing_ids:
+        overlap = obs_poset.desc_mask[obs_poset.id_to_idx[obs_src]] & dst_backing_mask
         if overlap:
-            b_idx = (overlap & -overlap).bit_length() - 1
-            return (obs_a, obs_poset.event_ids[b_idx])
+            return (obs_src, obs_poset.event_ids[(overlap & -overlap).bit_length() - 1])
     return ("<unknown>", "<unknown>")
 
 
-def _check_trace_partial_order(
-    observed: InteractionTraceIR,
-    curated: InteractionTraceIR,
+def _check_reversed_order(
+    ctx: _TraceOrderContext,
     view_id: str,
-) -> list[LintDiagnostic]:
-    obs_poset = _build_trace_poset(observed)
-    cur_poset = _build_trace_poset(curated)
-
-    cur_count = len(cur_poset.event_ids)
-    backing_ids_by_cur: list[tuple[str, ...]] = []
-    backing_mask_by_cur = [0] * cur_count
-    obs_desc_union_by_cur = [0] * cur_count
-
-    for idx, cur_eid in enumerate(cur_poset.event_ids):
-        backing = _trace_event_backing_ids(curated.events[cur_eid], observed.events)
-        backing_ids_by_cur.append(backing)
-        b_mask = 0
-        d_union = 0
-        for obs_eid in backing:
-            o_idx = obs_poset.id_to_idx[obs_eid]
-            b_mask |= 1 << o_idx
-            d_union |= obs_poset.desc_mask[o_idx]
-        backing_mask_by_cur[idx] = b_mask
-        obs_desc_union_by_cur[idx] = d_union
-
+) -> tuple[list[LintDiagnostic], frozenset[tuple[int, int]]]:
+    """Check 1: curated ``u`` precedes ``v`` while observed backing of ``v`` precedes ``u``."""
     diagnostics: list[LintDiagnostic] = []
-    for earlier_idx, earlier_id in enumerate(cur_poset.event_ids):
-        earlier_mask = backing_mask_by_cur[earlier_idx]
+    reversed_pairs: set[tuple[int, int]] = set()
+    event_ids = ctx.cur_poset.event_ids
+    for earlier_idx, earlier_id in enumerate(event_ids):
+        earlier_mask = ctx.backing_mask[earlier_idx]
         if not earlier_mask:
             continue
-        rem = cur_poset.desc_mask[earlier_idx]
-        while rem:
-            bit = rem & -rem
-            rem ^= bit
-            later_idx = bit.bit_length() - 1
-            if not (obs_desc_union_by_cur[later_idx] & earlier_mask):
+        for later_idx in _iter_bits(ctx.cur_poset.desc_mask[earlier_idx]):
+            if not ctx.obs_desc_union[later_idx] & earlier_mask:
                 continue
-            later_id = cur_poset.event_ids[later_idx]
-            obs_a, obs_b = _find_reversed_observed_pair(
-                earlier_mask, backing_ids_by_cur[later_idx], obs_poset
+            reversed_pairs.add((earlier_idx, later_idx))
+            later_id = event_ids[later_idx]
+            obs_a, obs_b = _find_ordered_backing_pair(
+                ctx.backing_ids[later_idx], earlier_mask, ctx.obs_poset
             )
-            witness = _shortest_path_ids(cur_poset.indexed_graph, earlier_id, later_id) or (
+            witness = _shortest_path_ids(ctx.cur_poset.indexed_graph, earlier_id, later_id) or (
                 earlier_id,
                 later_id,
             )
@@ -1035,7 +1062,7 @@ def _check_trace_partial_order(
                     severity=DiagnosticSeverity.ERROR,
                     code="PARTIAL_ORDER_VIOLATED",
                     view_id=view_id,
-                    offending_symbols=(earlier_id, later_id),
+                    offending_symbols=tuple(dict.fromkeys((earlier_id, later_id, obs_a, obs_b))),
                     witness_path=witness,
                     message=(
                         f"Curated trace reverses observed happens-before order: '{earlier_id}' "
@@ -1048,6 +1075,141 @@ def _check_trace_partial_order(
                     ),
                 )
             )
+    return diagnostics, frozenset(reversed_pairs)
+
+
+def _direct_curated_edges(ctx: _TraceOrderContext) -> Iterator[tuple[int, int]]:
+    """Yield deduplicated direct curated causal edges ``(u_idx, v_idx)`` with ``u != v``."""
+    id_to_idx = ctx.cur_poset.id_to_idx
+    for v_idx, v_id in enumerate(ctx.cur_poset.event_ids):
+        preds = dict.fromkeys(_event_predecessors(ctx.cur_events[v_id]))
+        for pred_id in preds:
+            u_idx = id_to_idx.get(pred_id)
+            if u_idx is not None and u_idx != v_idx:
+                yield (u_idx, v_idx)
+
+
+def _check_invented_order(
+    ctx: _TraceOrderContext,
+    view_id: str,
+    reversed_pairs: frozenset[tuple[int, int]],
+) -> list[LintDiagnostic]:
+    """Check 2: curated direct edge ``u -> v`` with no observed ``b_u < b_v`` backing pair."""
+    diagnostics: list[LintDiagnostic] = []
+    event_ids = ctx.cur_poset.event_ids
+    for u_idx, v_idx in _direct_curated_edges(ctx):
+        u_mask, v_mask = ctx.backing_mask[u_idx], ctx.backing_mask[v_idx]
+        if not u_mask or not v_mask or u_mask & v_mask or (u_idx, v_idx) in reversed_pairs:
+            continue
+        if ctx.obs_desc_union[u_idx] & v_mask:
+            continue
+        u_id, v_id = event_ids[u_idx], event_ids[v_idx]
+        symbols = tuple(
+            dict.fromkeys((u_id, v_id, *ctx.backing_ids[u_idx], *ctx.backing_ids[v_idx]))
+        )
+        diagnostics.append(
+            LintDiagnostic(
+                gate=GateId.GATE_3_TOPOLOGY_POSET,
+                severity=DiagnosticSeverity.ERROR,
+                code="PARTIAL_ORDER_FALSE_BARRIER",
+                view_id=view_id,
+                offending_symbols=symbols,
+                witness_path=(u_id, v_id),
+                message=(
+                    f"Curated trace invents happens-before order '{u_id}' -> '{v_id}' in view "
+                    f"'{view_id}': observed backing event(s) "
+                    f"{', '.join(ctx.backing_ids[u_idx])} are not ordered before "
+                    f"{', '.join(ctx.backing_ids[v_idx])} (concurrent or causally independent)."
+                ),
+                repair_hint=(
+                    "Remove the parent_event_id/causal_links edge that has no observed "
+                    "happens-before backing; async fire-and-forget continuations must not "
+                    "depend on the spawned child."
+                ),
+            )
+        )
+    return diagnostics
+
+
+def _observed_projection(ctx: _TraceOrderContext) -> tuple[list[int], list[int]]:
+    """Project observed order onto distinct curated events.
+
+    Returns ``(succ, pred)`` bitmasks over curated indices: ``succ[u]`` has bit ``v`` iff some
+    backing event of ``u`` precedes some backing event of ``v`` in the observed poset, ``u != v``,
+    and the two representatives share no backing events (shared backing means the order is
+    internal to a contracted group and may be abstracted away).
+    """
+    count = len(ctx.cur_poset.event_ids)
+    succ = [0] * count
+    pred = [0] * count
+    for u_idx in range(count):
+        u_mask = ctx.backing_mask[u_idx]
+        if not u_mask:
+            continue
+        reach = ctx.obs_desc_union[u_idx]
+        for v_idx in range(count):
+            v_mask = ctx.backing_mask[v_idx]
+            if v_idx != u_idx and v_mask & reach and not v_mask & u_mask:
+                succ[u_idx] |= 1 << v_idx
+                pred[v_idx] |= 1 << u_idx
+    return succ, pred
+
+
+def _check_lost_order(
+    ctx: _TraceOrderContext,
+    view_id: str,
+    reversed_pairs: frozenset[tuple[int, int]],
+) -> list[LintDiagnostic]:
+    """Check 3: observed order between distinct survivors missing from the curated poset.
+
+    Only minimal missing pairs are reported (no intermediate survivor ``w`` with observed
+    ``u < w < v``), so a single severed chain yields one diagnostic instead of O(N^2) noise.
+    """
+    succ, pred = _observed_projection(ctx)
+    diagnostics: list[LintDiagnostic] = []
+    event_ids = ctx.cur_poset.event_ids
+    for u_idx, u_id in enumerate(event_ids):
+        missing = succ[u_idx] & ~ctx.cur_poset.desc_mask[u_idx]
+        for v_idx in _iter_bits(missing):
+            if (v_idx, u_idx) in reversed_pairs or succ[u_idx] & pred[v_idx]:
+                continue
+            v_id = event_ids[v_idx]
+            b_u, b_v = _find_ordered_backing_pair(
+                ctx.backing_ids[u_idx], ctx.backing_mask[v_idx], ctx.obs_poset
+            )
+            diagnostics.append(
+                LintDiagnostic(
+                    gate=GateId.GATE_3_TOPOLOGY_POSET,
+                    severity=DiagnosticSeverity.ERROR,
+                    code="PARTIAL_ORDER_LOST_EDGE",
+                    view_id=view_id,
+                    offending_symbols=tuple(dict.fromkeys((u_id, v_id, b_u, b_v))),
+                    witness_path=(u_id, v_id),
+                    message=(
+                        f"Curated trace drops observed happens-before order between surviving "
+                        f"events '{u_id}' and '{v_id}' in view '{view_id}': observed '{b_u}' "
+                        f"precedes '{b_v}' but '{u_id}' does not precede '{v_id}'."
+                    ),
+                    repair_hint=(
+                        "Retain a parent_event_id or causal_links path from the earlier "
+                        "representative to the later one; only order internal to a contracted "
+                        "group (loop, recursion cut, depth cut, parallel map) may be abstracted."
+                    ),
+                )
+            )
+    return diagnostics
+
+
+def _check_trace_partial_order(
+    observed: InteractionTraceIR,
+    curated: InteractionTraceIR,
+    view_id: str,
+) -> list[LintDiagnostic]:
+    """Verify the compaction ordering contract (reversed, invented, and dropped order)."""
+    ctx = _build_trace_order_context(observed, curated)
+    diagnostics, reversed_pairs = _check_reversed_order(ctx, view_id)
+    diagnostics.extend(_check_invented_order(ctx, view_id, reversed_pairs))
+    diagnostics.extend(_check_lost_order(ctx, view_id, reversed_pairs))
     return diagnostics
 
 
