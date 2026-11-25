@@ -400,3 +400,61 @@ def test_r4_recursion_cut_depth_truncation_and_r2_r3_loop_with_opt_compaction(
     assert len(loop_reps) == 1
     if with_opt_leaf:
         assert "opt_condition" in loop_reps[0].attributes
+
+
+@settings(max_examples=80)
+@given(
+    ev_count=st.integers(min_value=2, max_value=18),
+    sync_kinds=st.lists(st.sampled_from(list(SyncKind)), min_size=18, max_size=18),
+    parent_choices=st.lists(st.integers(min_value=-1, max_value=16), min_size=18, max_size=18),
+    starts=st.lists(st.integers(min_value=0, max_value=300), min_size=18, max_size=18),
+    flags=st.tuples(st.booleans(), st.booleans(), st.booleans()),
+)
+def test_mixed_sync_kind_compaction_never_upgrades_async_backing_events(
+    ev_count: int,
+    sync_kinds: list[SyncKind],
+    parent_choices: list[int],
+    starts: list[int],
+    flags: tuple[bool, bool, bool],
+) -> None:
+    fold_loops, fold_opt, cut_rec = flags
+    participants = _make_participants(("svc_0", "svc_1"))
+    e_ids = [f"ev_{idx:02d}" for idx in range(ev_count)]
+    events: dict[str, TraceEvent] = {}
+    for idx, eid in enumerate(e_ids):
+        p_raw = parent_choices[idx]
+        parent_id = e_ids[p_raw % idx] if idx > 0 and p_raw >= 0 else None
+        start_ns = starts[idx]
+        events[eid] = TraceEvent(
+            event_id=eid,
+            caller_id="svc_0",
+            callee_id="svc_1" if idx % 3 == 1 else "svc_0",
+            signature="rpc_call()",
+            parent_event_id=parent_id,
+            clock_domain_id="clk_a",
+            start_ns=start_ns,
+            end_ns=start_ns + 10,
+            sync_kind=sync_kinds[idx],
+            provenance=_OBS_PROV,
+        )
+
+    trace = InteractionTraceIR(participants=participants, events=events)
+    config = TraceCompactionConfig(
+        fold_loops=fold_loops,
+        fold_loop_with_opt=fold_opt,
+        cut_recursion=cut_rec,
+        fold_parallel_siblings=True,
+        fold_parallel_map=True,
+        max_call_depth=4,
+    )
+    compacted = TraceCompactionEngine().compact(trace, config)
+
+    assert collect_trace_backing_ids(compacted) == frozenset(events.keys())
+    for surv in compacted.events.values():
+        if surv.sync_kind is SyncKind.SYNC:
+            backing_ids = (*surv.provenance.backing_ids, surv.event_id)
+            assert all(
+                events[bid].sync_kind is not SyncKind.ASYNC_FIRE_FORGET
+                for bid in backing_ids
+                if bid in events
+            )

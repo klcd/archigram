@@ -182,6 +182,14 @@ def _is_recursive_call(
     return False
 
 
+def _merge_sync_kind(root_sync: SyncKind, sub_events: Sequence[TraceEvent]) -> SyncKind:
+    if root_sync is SyncKind.SYNC and any(
+        ev.sync_kind is SyncKind.ASYNC_FIRE_FORGET for ev in sub_events
+    ):
+        return SyncKind.ASYNC_FIRE_FORGET
+    return root_sync
+
+
 def _collapse_subtree_into_root(
     root: TraceEvent,
     sub_events: Sequence[TraceEvent],
@@ -202,6 +210,7 @@ def _collapse_subtree_into_root(
     return root.model_copy(
         update={
             "signature": new_signature if new_signature is not None else root.signature,
+            "sync_kind": _merge_sync_kind(root.sync_kind, sub_events),
             "end_ns": max(ev.end_ns for ev in sub_events),
             "status": _merge_status(sub_events),
             "causal_links": tuple(all_links),
@@ -375,11 +384,11 @@ def _fold_cluster_parallel_maps(
     max_par_branches: int,
     folded_to_rep: dict[str, str],
 ) -> None:
-    buckets: dict[tuple[str, str, str], list[TraceEvent]] = defaultdict(list)
+    buckets: dict[tuple[str, str, str, SyncKind], list[TraceEvent]] = defaultdict(list)
     for eid in cluster.event_ids:
         if eid in working:
             ev = working[eid]
-            buckets[(ev.caller_id, ev.callee_id, ev.signature)].append(ev)
+            buckets[(ev.caller_id, ev.callee_id, ev.signature, ev.sync_kind)].append(ev)
     for key in sorted(buckets):
         members = sorted(buckets[key], key=_event_sort_key)
         if len(members) >= max_par_branches:
@@ -573,6 +582,7 @@ def _optional_leaf_diff(
         first.caller_id != second.caller_id
         or first.callee_id != second.callee_id
         or first.signature != second.signature
+        or first.sync_kind is not second.sync_kind
     ):
         return None
     c1 = children_map.get(first.event_id, [])
@@ -612,6 +622,66 @@ def _can_join_loop_run(
     return _optional_leaf_diff(seen_hashes[0], candidate, children_map, hashes) is not None
 
 
+def _align_rep_children(
+    rep_children: Sequence[TraceEvent],
+    mem_children: Sequence[TraceEvent],
+    children_map: dict[str | None, list[TraceEvent]],
+    hashes: dict[str, str],
+) -> tuple[list[tuple[TraceEvent, TraceEvent]], TraceEvent | None]:
+    if len(rep_children) == len(mem_children):
+        return list(zip(rep_children, mem_children, strict=True)), None
+    mem_hashes = [hashes[c.event_id] for c in mem_children]
+    for idx, cand in enumerate(rep_children):
+        if children_map.get(cand.event_id):
+            continue
+        rem = [hashes[c.event_id] for i, c in enumerate(rep_children) if i != idx]
+        if rem == mem_hashes:
+            kept = [c for i, c in enumerate(rep_children) if i != idx]
+            return list(zip(kept, mem_children, strict=True)), cand
+    return [], None
+
+
+def _pair_loop_subtrees(
+    rep_ev: TraceEvent,
+    mem_ev: TraceEvent,
+    children_map: dict[str | None, list[TraceEvent]],
+    hashes: dict[str, str],
+    matched: dict[str, list[TraceEvent]],
+) -> TraceEvent | None:
+    matched[rep_ev.event_id].append(mem_ev)
+    pairs, opt_cand = _align_rep_children(
+        children_map.get(rep_ev.event_id, []),
+        children_map.get(mem_ev.event_id, []),
+        children_map,
+        hashes,
+    )
+    for r_child, m_child in pairs:
+        _pair_loop_subtrees(r_child, m_child, children_map, hashes, matched)
+    return opt_cand
+
+
+def _apply_matched_loop_provenance(
+    rep_id: str,
+    rule_id: str,
+    matched: dict[str, list[TraceEvent]],
+    working: dict[str, TraceEvent],
+    folded_to_rep: dict[str, str],
+) -> None:
+    for surv_id, group in matched.items():
+        for ev in group:
+            if ev.event_id != surv_id:
+                folded_to_rep[ev.event_id] = surv_id
+                working.pop(ev.event_id, None)
+        if surv_id != rep_id and len(group) > 1 and surv_id in working:
+            surv = working[surv_id]
+            working[surv_id] = surv.model_copy(
+                update={
+                    "status": _merge_status(group),
+                    "provenance": _derive_provenance(rule_id, group),
+                }
+            )
+
+
 def _fold_loop_run(
     run: list[TraceEvent],
     working: dict[str, TraceEvent],
@@ -621,53 +691,65 @@ def _fold_loop_run(
 ) -> None:
     rep = max(run, key=lambda ev: len(children_map.get(ev.event_id, [])))
     all_sub: list[TraceEvent] = []
+    matched: dict[str, list[TraceEvent]] = defaultdict(list)
     opt_leaf: TraceEvent | None = None
     for member in run:
         all_sub.extend(_collect_subtree_events(member.event_id, working, children_map))
-        if opt_leaf is None and hashes[member.event_id] != hashes[rep.event_id]:
-            opt_leaf = _optional_leaf_diff(rep, member, children_map, hashes)
+        cand_opt = _pair_loop_subtrees(rep, member, children_map, hashes, matched)
+        if opt_leaf is None and cand_opt is not None:
+            opt_leaf = cand_opt
 
-    rep_sub_ids = {
-        ev.event_id for ev in _collect_subtree_events(rep.event_id, working, children_map)
-    }
     repeat_count = len(run)
-    is_multi_node = len(rep_sub_ids) > 1
     rule_id = (
         "R3_loop_with_opt"
         if opt_leaf is not None
-        else ("R2_subtree_loop" if is_multi_node else "R1_tandem_loop")
+        else ("R2_subtree_loop" if len(matched) > 1 else "R1_tandem_loop")
     )
-    compacted_kind = "loop_with_opt" if opt_leaf is not None else "loop"
     attrs = dict(rep.attributes)
     attrs["loop_count"] = str(repeat_count)
-    attrs["compacted_kind"] = compacted_kind
+    attrs["compacted_kind"] = "loop_with_opt" if opt_leaf is not None else "loop"
 
     if opt_leaf is not None and opt_leaf.event_id in working:
         opt_ev = working[opt_leaf.event_id]
-        opt_attrs = dict(opt_ev.attributes)
         opt_cond = f"optional {opt_ev.signature}"
-        opt_attrs["opt_condition"] = opt_cond
-        opt_attrs["compacted_kind"] = "opt"
+        opt_attrs = {**opt_ev.attributes, "opt_condition": opt_cond, "compacted_kind": "opt"}
         working[opt_ev.event_id] = opt_ev.model_copy(update={"attributes": opt_attrs})
         attrs["opt_condition"] = opt_cond
 
-    base_sig = rep.signature
-    new_sig = f"{base_sig} [loop x{repeat_count}]"
+    rep_group = matched[rep.event_id]
     working[rep.event_id] = rep.model_copy(
         update={
-            "signature": new_sig,
+            "signature": f"{rep.signature} [loop x{repeat_count}]",
             "start_ns": min(m.start_ns for m in run),
             "end_ns": max(ev.end_ns for ev in all_sub),
             "status": _merge_status(all_sub),
             "attributes": attrs,
-            "provenance": _derive_provenance(rule_id, all_sub),
+            "provenance": _derive_provenance(rule_id, rep_group),
         }
     )
+    _apply_matched_loop_provenance(rep.event_id, rule_id, matched, working, folded_to_rep)
 
-    for ev in all_sub:
-        if ev.event_id not in rep_sub_ids:
-            folded_to_rep[ev.event_id] = rep.event_id
-            working.pop(ev.event_id, None)
+
+def _fold_sibling_runs(
+    siblings: list[TraceEvent],
+    working: dict[str, TraceEvent],
+    children_map: dict[str | None, list[TraceEvent]],
+    hashes: dict[str, str],
+    config: TraceCompactionConfig,
+    folded_to_rep: dict[str, str],
+) -> None:
+    idx = 0
+    while idx < len(siblings):
+        run = [siblings[idx]]
+        nxt = idx + 1
+        while nxt < len(siblings) and _can_join_loop_run(
+            run, siblings[nxt], children_map, hashes, config
+        ):
+            run.append(siblings[nxt])
+            nxt += 1
+        if len(run) >= 2:
+            _fold_loop_run(run, working, children_map, hashes, folded_to_rep)
+        idx = nxt
 
 
 def _apply_loop_folding_pass(
@@ -684,25 +766,17 @@ def _apply_loop_folding_pass(
     folded_to_rep: dict[str, str] = {}
 
     def _fold_level(parent_id: str | None) -> None:
+        nonlocal children_map, hashes
+        before_len = len(working)
+        for ev in list(children_map.get(parent_id, [])):
+            if ev.event_id in working:
+                _fold_level(ev.event_id)
+        if len(working) != before_len:
+            children_map = _build_children_map(working)
+            hashes = _compute_subtree_hashes(working, children_map)
         siblings = [ev for ev in children_map.get(parent_id, []) if ev.event_id in working]
-        for ev in siblings:
-            _fold_level(ev.event_id)
-
-        siblings = [ev for ev in children_map.get(parent_id, []) if ev.event_id in working]
-        if len(siblings) < 2:
-            return
-        idx = 0
-        while idx < len(siblings):
-            run = [siblings[idx]]
-            nxt = idx + 1
-            while nxt < len(siblings) and _can_join_loop_run(
-                run, siblings[nxt], children_map, hashes, config
-            ):
-                run.append(siblings[nxt])
-                nxt += 1
-            if len(run) >= 2:
-                _fold_loop_run(run, working, children_map, hashes, folded_to_rep)
-            idx = nxt
+        if len(siblings) >= 2:
+            _fold_sibling_runs(siblings, working, children_map, hashes, config, folded_to_rep)
 
     _fold_level(None)
     return _remap_event_references(working, folded_to_rep) if folded_to_rep else working
