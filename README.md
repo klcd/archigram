@@ -1,6 +1,16 @@
 # ArchiGram
 
+[![Verify (8 Gates)](https://github.com/klcd/archigram/actions/workflows/verify.yml/badge.svg)](https://github.com/klcd/archigram/actions/workflows/verify.yml)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-3776ab?logo=python&logoColor=white)](pyproject.toml)
+[![Architecture: Hexagonal + 16 Independent Slices](https://img.shields.io/badge/architecture-hexagonal%20%2B%20feature--sliced-10b981)](docs/architecture/README.md)
+[![License: MIT](https://img.shields.io/badge/license-MIT-64748b)](LICENSE)
+
 Deterministic graph projection, runtime concurrency trace compaction (`R1–R6` + Series-Parallel poset lowering), and 5-gate semantic/topological linting CLI + MCP server.
+
+| Stage 2: Triage Overlay on Raw `334`-Node AST (`50,186` Mermaid Chars) | Stage 3: 5-Gate-Verified Curated Result (`17` Nodes, `1,887` Chars) |
+| --- | --- |
+| ![Stage 2 — Triage Overlay](docs/architecture/diagrams/showcase_cli_triage.2_triage.d2.svg) | ![Stage 3 — Curated Result](docs/architecture/diagrams/showcase_cli_triage.3_curated.d2.svg) |
+| *Crimson `[REMOVE]`, Amber `[BYPASS]`, Violet `[COLLAPSE]`, Emerald `[KEEP]` — computed from CLI rules ([full 3-stage showcase ->](docs/architecture/uml-and-curation-showcase.md))* | *Dual-mode transparent styling (`fill: transparent`) + 90° orthogonal ELK routing ([animated runtime playback ->](docs/architecture/diagrams/l3_runtime_pipeline_steps_d2.d2.svg))* |
 
 ## Why We Created ArchiGram
 
@@ -17,7 +27,7 @@ Software teams face three recurring failure modes whenever they try to keep arch
 - **5-Gate Mathematical Verification Before Emission:** Every view must pass **Gate 1** (100% symbol grounding—zero hallucinations), **Gate 2** (protected boundary survival), **Gate 3** (transitive reachability, cycle discipline & concurrency happens-before preservation with concrete witness counterexamples), **Gate 4** (cognitive node/edge budgets), and **Gate 5** (headless target syntax validation).
 - **Bounded Self-Healing AI Loop + Zero-Cost Deterministic CI:** When an LLM curates views via `archigram propose` or the MCP server, it only proposes `CurationSpecV1` rules inside a bounded 3-turn lint-and-repair loop guided by formal counterexamples. Once committed, `archigram apply --check` enforces **zero documentation drift** in CI and Git hooks in milliseconds with zero LLM calls and byte-identical output across Mermaid (`< 5,000` chars for Gitea/GitHub), D2 (+ animated `.d2.svg`), PlantUML, LikeC4, and Graphviz DOT.
 
-## Architecture Documentation (4 Zoom Levels)
+## Architecture Documentation (4 Zoom Levels + UML 2.5 Showcase)
 
 ArchiGram dogfoods itself to generate and lint its own architecture docs (`0` hand-drawn drift, verified by `--sync-md --check` across all 5 Gates). Start at **[docs/architecture/README.md](docs/architecture/README.md)** or jump straight to the abstraction level you need:
 
@@ -30,7 +40,19 @@ ArchiGram dogfoods itself to generate and lint its own architecture docs (`0` ha
 | **Gallery** | [Styling Policy & Multi-Target Gallery](docs/architecture/diagram-styling-and-gallery.md) | Dual-mode transparent styling (`domain/style.py`), edge-only semantic colors, flowing D2 SVGs, animated `steps` playback, compact `< 5,000`-char Gitea-ready Mermaid & all modes | All 5 renderers × all modes |
 | **UML & Triage** | [UML 2.5 & 3-Stage CLI Curation Showcase](docs/architecture/uml-and-curation-showcase.md) | Program-first AST/trace extraction (`50k` chars) -> CLI-only `curate` + `triage` 3-stage SVGs (`original` -> `triage` -> `curated`) & full 14-type UML 2.5 taxonomy (`package`, `deployment`, `use_case`, `communication`, `activity`, `state`) | 3-stage SVGs + 14 UML types |
 
-## Developer & CLI Quickstart (`justfile`)
+## Install & Developer Quickstart
+
+Run directly with [`uv`](https://docs.astral.sh/uv/) (Python 3.12+) or enter the reproducible Nix `devShell` (includes `python312`, `uv`, `d2`, `graphviz`, `just`, `ruff`, and `pyright`):
+
+```bash
+# Run one-off without installing, or install globally as a CLI tool
+uvx --from git+https://github.com/klcd/archigram archigram --help
+uv tool install git+https://github.com/klcd/archigram
+
+# Contributor setup (Nix + uv)
+git clone https://github.com/klcd/archigram.git && cd archigram
+nix develop --command uv sync --frozen
+```
 
 Run `just` to list all grouped quality and diagram recipes:
 

@@ -72,4 +72,5 @@
 # - github.token    → use GITHUB_TOKEN env var instead
 
 export:
-    auto: true
+    auto: false
+    git-add: false
