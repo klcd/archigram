@@ -128,5 +128,5 @@ watch-d2 file="docs/architecture/diagrams/l0_hexagonal_rings_d2.d2":
 
 # Propose a new 5-Gate-verified CurationSpecV1 via the bounded 3-turn self-healing loop
 [group('diagrams')]
-propose target="src/archigram" goal="High-level hexagonal overview" out="curated.yaml":
-    {{nix_exec}}uv run archigram propose "{{target}}" --goal "{{goal}}" --out "{{out}}"
+propose target="src/archigram" out="curated.yaml":
+    {{nix_exec}}uv run archigram propose "{{target}}" --out "{{out}}"

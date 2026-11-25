@@ -1,0 +1,43 @@
+# ArchiGram quickstart curation spec (CurationSpecV1) for the tiny `shop` package.
+# Regenerate the committed diagram with (run from the repository root):
+#   uv run archigram apply examples/python-quickstart/shop \
+#     --spec examples/python-quickstart/diagram-views.yaml \
+#     --out-dir examples/python-quickstart/diagrams
+# Verify it in CI with the same command plus `--check`.
+schema_version: '1.0'
+metadata:
+  project: shop-quickstart
+  purpose: One request-path view with two required reachability assertions
+
+views:
+  - id: request_path
+    title: "Shop request path: API -> service -> repository"
+    ir_mode: structural_graph
+    target_renderer: mermaid
+    diagram_variant: architecture
+    scope:
+      mode: full
+    rules:
+      # Hide the audit stub and its function: a leaf helper nobody needs to see.
+      - op: prune_leaves
+        id: prune_audit_stub
+        node_id_globs: [shop.audit.record, shop.audit]
+        direction: sink
+    invariants:
+      # Endpoints of the declared path must survive curation.
+      protected_nodes:
+        - shop.api
+        - shop.repository
+      require_reachability:
+        # Module level: the API must import its way down to the repository.
+        - from_node: shop.api
+          to_node: shop.repository
+          via_relations: [imports]
+        # Function level: place_order must (transitively) call save_order.
+        - from_node: shop.api.place_order
+          to_node: shop.repository.save_order
+          via_relations: [calls]
+      node_budget:
+        min_count: 3
+        max_count: 12
+      edge_budget_max: 20
