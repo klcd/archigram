@@ -187,9 +187,17 @@ archigram."archigram.features".feature_reducers -> archigram.domain_core: "impor
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }
+archigram."archigram.entrypoints".mcp_controlplane -> archigram."archigram.features".feature_digest: "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
 archigram."archigram.entrypoints".mcp_controlplane -> archigram."archigram.features".feature_digest: "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
+}
+archigram."archigram.entrypoints".mcp_controlplane -> archigram."archigram.features".feature_emitters: "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
 }
 archigram."archigram.entrypoints".mcp_controlplane -> archigram."archigram.features".feature_emitters: "imports" {
   style.stroke: "#64748b"
@@ -202,6 +210,10 @@ archigram."archigram.entrypoints".mcp_controlplane -> archigram."archigram.featu
 archigram."archigram.entrypoints".mcp_controlplane -> archigram."archigram.features".feature_linters: "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
+}
+archigram."archigram.entrypoints".mcp_controlplane -> archigram."archigram.features".feature_reducers: "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
 }
 archigram."archigram.entrypoints".mcp_controlplane -> archigram."archigram.features".feature_reducers: "imports" {
   style.stroke: "#64748b"

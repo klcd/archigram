@@ -75,6 +75,11 @@ archigram."archigram.entrypoints".mcp_controlplane -> archigram."archigram.featu
   style.stroke-dash: 5
   style.animated: true
 }
+archigram."archigram.entrypoints".mcp_controlplane -> archigram."archigram.features".feature_digest: "<<deploy>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+  style.animated: true
+}
 archigram."archigram.features".feature_linters -> archigram.domain_core: "<<deploy>>" {
   style.stroke: "#3b82f6"
   style.stroke-dash: 5
@@ -145,6 +150,11 @@ archigram."archigram.entrypoints".mcp_controlplane -> archigram."archigram.featu
   style.stroke-dash: 5
   style.animated: true
 }
+archigram."archigram.entrypoints".mcp_controlplane -> archigram."archigram.features".feature_emitters: "<<deploy>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+  style.animated: true
+}
 archigram."archigram.entrypoints".cli_dataplane -> archigram."archigram.features".feature_ingestors: "<<deploy>>" {
   style.stroke: "#3b82f6"
   style.stroke-dash: 5
@@ -201,6 +211,11 @@ archigram."archigram.features".feature_ingestors -> archigram.ports_contracts: "
   style.animated: true
 }
 archigram."archigram.features".feature_linters -> archigram.ports_contracts: "<<deploy>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
+  style.animated: true
+}
+archigram."archigram.entrypoints".mcp_controlplane -> archigram."archigram.features".feature_reducers: "<<deploy>>" {
   style.stroke: "#3b82f6"
   style.stroke-dash: 5
   style.animated: true

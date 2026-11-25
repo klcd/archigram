@@ -16,7 +16,7 @@ archigram: "archigram" {
     domain_concurrency_poset: "domain.concurrency (SP-Poset & Overlap Clustering)" {
       style.fill: transparent
       style.stroke: "#64748b"
-      tooltip: "Derived via l2b_d2_concurrency (1 backing node: archigram.domain.concurrency)"
+      tooltip: "Derived via l2b_d2_concurrency (2 backing nodes: archigram.domain.concurrency, archigram.domain.concurrency.PosetCotreeNode)"
     }
     domain_ir_and_spec: "domain.ir & domain.spec (Canonical IR & Spec)" {
       style.fill: transparent
@@ -68,7 +68,7 @@ archigram: "archigram" {
         trace_fragment_tree: "TraceFragment Tree Builder" {
           style.fill: transparent
           style.stroke: "#64748b"
-          tooltip: "Derived via l2b_d2_trace_fragments (1 backing node: archigram.features.reduce_trace.compactor.build_trace_fragment_tree)"
+          tooltip: "Derived via l2b_d2_trace_fragments (2 backing nodes: archigram.features.reduce_trace.compactor.TraceFragment, archigram.features.reduce_trace.compactor.build_trace_fragment_tree)"
         }
       }
     }
@@ -99,6 +99,10 @@ archigram."archigram.features"."archigram.features.reduce_trace"."archigram.feat
 archigram."archigram.features"."archigram.features.reduce_trace"."archigram.features.reduce_trace.compactor" -> archigram."archigram.domain".domain_ir_and_spec: "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
+}
+archigram."archigram.features"."archigram.features.reduce_trace"."archigram.features.reduce_trace.compactor" -> archigram."archigram.features"."archigram.features.reduce_trace"."archigram.features.reduce_trace.compactor".trace_fragment_tree: "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
 }
 archigram."archigram.features".concurrency_consumers -> archigram."archigram.domain".domain_concurrency_poset: "imports" {
   style.stroke: "#64748b"

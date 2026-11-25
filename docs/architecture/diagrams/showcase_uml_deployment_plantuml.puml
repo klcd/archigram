@@ -36,6 +36,7 @@ node "archigram" as n_0_archigram_983b03 {
 }
 n_3_cli_dataplane_493a5b ..>[#3b82f6] n_0_archigram_983b03 : <<deploy>>
 n_10_mcp_controlplane_ff4d3b ..>[#3b82f6] n_5_feature_digest_52876d : <<deploy>>
+n_10_mcp_controlplane_ff4d3b ..>[#3b82f6] n_5_feature_digest_52876d : <<deploy>>
 n_8_feature_linters_57c819 ..>[#3b82f6] n_4_domain_core_f195b2 : <<deploy>>
 n_5_feature_digest_52876d ..>[#3b82f6] n_4_domain_core_f195b2 : <<deploy>>
 n_8_feature_linters_57c819 ..>[#3b82f6] n_4_domain_core_f195b2 : <<deploy>>
@@ -50,6 +51,7 @@ n_9_feature_reducers_8a2858 ..>[#3b82f6] n_4_domain_core_f195b2 : <<deploy>>
 n_7_feature_ingestor_73234e ..>[#3b82f6] n_4_domain_core_f195b2 : <<deploy>>
 n_9_feature_reducers_8a2858 ..>[#3b82f6] n_4_domain_core_f195b2 : <<deploy>>
 n_10_mcp_controlplane_ff4d3b ..>[#3b82f6] n_6_feature_emitters_75a4c0 : <<deploy>>
+n_10_mcp_controlplane_ff4d3b ..>[#3b82f6] n_6_feature_emitters_75a4c0 : <<deploy>>
 n_3_cli_dataplane_493a5b ..>[#3b82f6] n_7_feature_ingestor_73234e : <<deploy>>
 n_3_cli_dataplane_493a5b ..>[#3b82f6] n_7_feature_ingestor_73234e : <<deploy>>
 n_10_mcp_controlplane_ff4d3b ..>[#3b82f6] n_8_feature_linters_57c819 : <<deploy>>
@@ -62,5 +64,6 @@ n_8_feature_linters_57c819 ..>[#3b82f6] n_11_ports_contracts_d0accd : <<deploy>>
 n_7_feature_ingestor_73234e ..>[#3b82f6] n_11_ports_contracts_d0accd : <<deploy>>
 n_7_feature_ingestor_73234e ..>[#3b82f6] n_11_ports_contracts_d0accd : <<deploy>>
 n_8_feature_linters_57c819 ..>[#3b82f6] n_11_ports_contracts_d0accd : <<deploy>>
+n_10_mcp_controlplane_ff4d3b ..>[#3b82f6] n_9_feature_reducers_8a2858 : <<deploy>>
 n_10_mcp_controlplane_ff4d3b ..>[#3b82f6] n_9_feature_reducers_8a2858 : <<deploy>>
 @enduml

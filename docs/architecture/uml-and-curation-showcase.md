@@ -95,23 +95,20 @@ flowchart TD
   classDef default fill:transparent,stroke:#64748b,stroke-width:1.5px
   subgraph n0["archigram"]
     subgraph n1["domain"]
-      n11["Domain Core (Canonical IR, Spec, Diagnostics)"]
-      n12["Canonical Dual-Mode Style Policy (domain.style)"]
+      n7["Domain Core (Canonical IR, Spec, Diagnostics)"]
+      n8["Canonical Dual-Mode Style Policy (domain.style)"]
     end
     subgraph n2["entrypoints"]
       subgraph n3["cli"]
         n4["pipeline"]
-        n10["CLI Commands (app, triage, diff, sync)"]
+        n6["CLI Commands (app, triage, diff, sync)"]
       end
     end
     subgraph n5["features"]
-      n6["emit_d2"]
-      n7["emit_likec4"]
-      n8["emit_mermaid"]
-      n9["emit_plantuml"]
-      n13["Ingestor Slices (5 Extractors)"]
-      n14["5-Gate Linter Slices"]
-      n15["Reducer Slices (Graph & Trace)"]
+      n9["Multi-Target Emitter Slices"]
+      n10["Ingestor Slices (5 Extractors)"]
+      n11["5-Gate Linter Slices"]
+      n12["Reducer Slices (Graph & Trace)"]
     end
   end
   style n0 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
@@ -119,20 +116,19 @@ flowchart TD
   style n2 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   style n3 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   style n5 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
-  n3 -.->|"imports"| n10
-  n10 -.->|"imports"| n0
-  n10 -.->|"imports"| n4
-  n11 -.->|"imports"| n1
-  n4 -.->|"imports"| n12
-  n12 -.->|"imports"| n11
-  n4 -.->|"imports"| n13
-  n4 -.->|"imports"| n14
-  n4 -.->|"imports"| n15
-  n4 -.->|"imports"| n6
-  n4 -.->|"imports"| n7
-  n4 -.->|"imports"| n8
+  n3 -.->|"imports"| n6
+  n6 -.->|"imports"| n0
+  n6 -.->|"imports"| n4
+  n7 -.->|"imports"| n1
+  n9 -.->|"imports"| n8
+  n8 -.->|"imports"| n7
+  n4 -->|"calls"| n9
   n4 -.->|"imports"| n9
-  linkStyle 0,1,2,3,4,5,6,7,8,9,10,11,12 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  n4 -.->|"imports"| n10
+  n4 -.->|"imports"| n11
+  n4 -.->|"imports"| n12
+  linkStyle 0,1,2,3,4,5,7,8,9,10 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 6 stroke:#3b82f6,stroke-width:1.75px
 ```
 <!-- archigram:end showcase_cli_triage_mermaid -->
 
@@ -353,6 +349,7 @@ flowchart TD
   style n2 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   n3 -.->|"<<import>>"| n0
   n10 -.->|"<<import>>"| n5
+  n10 -.->|"<<import>>"| n5
   n5 -.->|"<<import>>"| n4
   n9 -.->|"<<import>>"| n4
   n8 -.->|"<<import>>"| n4
@@ -367,6 +364,7 @@ flowchart TD
   n6 -.->|"<<import>>"| n4
   n6 -.->|"<<import>>"| n4
   n10 -.->|"<<import>>"| n6
+  n10 -.->|"<<import>>"| n6
   n3 -.->|"<<import>>"| n7
   n3 -.->|"<<import>>"| n7
   n10 -.->|"<<import>>"| n8
@@ -380,7 +378,8 @@ flowchart TD
   n7 -.->|"<<import>>"| n11
   n8 -.->|"<<import>>"| n11
   n10 -.->|"<<import>>"| n9
-  linkStyle 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  n10 -.->|"<<import>>"| n9
+  linkStyle 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
 ```
 <!-- archigram:end showcase_uml_package_mermaid -->
 
@@ -426,6 +425,7 @@ flowchart LR
   style n2 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   n3 -.->|"<<deploy>>"| n0
   n10 -.->|"<<deploy>>"| n5
+  n10 -.->|"<<deploy>>"| n5
   n8 -.->|"<<deploy>>"| n4
   n7 -.->|"<<deploy>>"| n4
   n5 -.->|"<<deploy>>"| n4
@@ -440,6 +440,7 @@ flowchart LR
   n7 -.->|"<<deploy>>"| n4
   n8 -.->|"<<deploy>>"| n4
   n10 -.->|"<<deploy>>"| n6
+  n10 -.->|"<<deploy>>"| n6
   n3 -.->|"<<deploy>>"| n7
   n3 -.->|"<<deploy>>"| n7
   n10 -.->|"<<deploy>>"| n8
@@ -453,7 +454,8 @@ flowchart LR
   n7 -.->|"<<deploy>>"| n11
   n8 -.->|"<<deploy>>"| n11
   n10 -.->|"<<deploy>>"| n9
-  linkStyle 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28 stroke:#3b82f6,stroke-width:1.75px,stroke-dasharray:5 5
+  n10 -.->|"<<deploy>>"| n9
+  linkStyle 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31 stroke:#3b82f6,stroke-width:1.75px,stroke-dasharray:5 5
 ```
 <!-- archigram:end showcase_uml_deployment_mermaid -->
 
@@ -521,6 +523,7 @@ flowchart LR
   u7 -.->|"<<include>>"| u10
   u7 -.->|"<<include>>"| u10
   u12 -.->|"<<include>>"| u10
+  u12 -.->|"<<include>>"| u10
   u7 -.->|"<<include>>"| u11
   u12 -.->|"<<include>>"| u14
   u7 -.->|"<<include>>"| u14
@@ -533,7 +536,8 @@ flowchart LR
   u7 -.->|"<<include>>"| u13
   u7 -.->|"<<include>>"| u13
   u12 -.->|"<<include>>"| u13
-  linkStyle 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35 stroke:#3b82f6,stroke-width:1.75px
+  u12 -.->|"<<include>>"| u13
+  linkStyle 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37 stroke:#3b82f6,stroke-width:1.75px
 ```
 <!-- archigram:end showcase_uml_use_case_mermaid -->
 

@@ -1086,6 +1086,42 @@ def _extract_calls_in_subtree(
     return edges
 
 
+def _module_scope_nodes(tree: ast.Module) -> Iterable[ast.AST]:
+    """Yield AST nodes executed at module scope, skipping def/async def/class bodies."""
+    stack: list[ast.AST] = list(reversed(tree.body))
+    while stack:
+        node = stack.pop()
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            continue
+        yield node
+        stack.extend(reversed(list(ast.iter_child_nodes(node))))
+
+
+def _extract_module_scope_calls(
+    idx: _ModuleIndex,
+    mod_indices: dict[str, _ModuleIndex],
+    nodes: dict[str, IRNode],
+) -> list[_EdgeCandidate]:
+    """Extract CALLS edges from the module to symbols called outside any def/class body."""
+    sf = idx.source_file
+    edges: list[_EdgeCandidate] = []
+    for node in _module_scope_nodes(sf.tree):
+        if not isinstance(node, ast.Call):
+            continue
+        target_id = _resolve_call_target(node, idx, mod_indices, nodes)
+        if target_id is not None and target_id != sf.module_id:
+            edges.append(
+                _EdgeCandidate(
+                    sf.module_id,
+                    target_id,
+                    EdgeRelation.CALLS,
+                    sf.rel_posix_path,
+                    _node_line_span(node),
+                )
+            )
+    return edges
+
+
 def _extract_module_edges(
     idx: _ModuleIndex,
     mod_indices: dict[str, _ModuleIndex],
@@ -1109,6 +1145,7 @@ def _extract_module_edges(
             fn_id = f"{sf.module_id}.{stmt.name}"
             if fn_id in nodes:
                 edges.extend(_extract_calls_in_subtree(fn_id, stmt, idx, mod_indices, nodes))
+    edges.extend(_extract_module_scope_calls(idx, mod_indices, nodes))
     return edges
 
 
