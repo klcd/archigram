@@ -179,7 +179,15 @@ def _budget_pct(count: int, max_budget: int) -> float:
     return round((count / max_budget) * 100.0, 1)
 
 
+def _is_budget_diagnostic(diag: LintDiagnostic) -> bool:
+    return "_BUDGET_" in diag.code
+
+
 def _diagnostic_fingerprint(diag: LintDiagnostic) -> tuple[str, str, str, str, tuple[str, ...]]:
+    # Budget diagnostics carry counts and symbol sets that shift as a view improves or
+    # worsens, so identity is (gate, code, view_id) only.
+    if _is_budget_diagnostic(diag):
+        return (diag.gate.value, diag.code, diag.view_id or "", "", ())
     return (
         diag.gate.value,
         diag.code,
@@ -189,7 +197,7 @@ def _diagnostic_fingerprint(diag: LintDiagnostic) -> tuple[str, str, str, str, t
     )
 
 
-def _diff_diagnostics(
+def diff_diagnostics(
     base_diags: tuple[LintDiagnostic, ...],
     head_diags: tuple[LintDiagnostic, ...],
     severity: DiagnosticSeverity,
@@ -579,7 +587,7 @@ def _build_view_delta(
         else ()
     )
     head_view_diags = tuple(d for d in head_comp.lint_report.diagnostics if d.view_id == view.id)
-    new_view_errs, resolved_view_errs = _diff_diagnostics(
+    new_view_errs, resolved_view_errs = diff_diagnostics(
         base_view_diags,
         head_view_diags,
         DiagnosticSeverity.ERROR,
@@ -858,11 +866,9 @@ def compute_pr_regression_diff(
     base_diags = base_comp.lint_report.diagnostics if base_comp is not None else ()
     head_diags = head_comp.lint_report.diagnostics
 
-    new_errors, resolved_errors = _diff_diagnostics(
-        base_diags, head_diags, DiagnosticSeverity.ERROR
-    )
+    new_errors, resolved_errors = diff_diagnostics(base_diags, head_diags, DiagnosticSeverity.ERROR)
     new_errors = _prioritize_diagnostics(new_errors, spec)
-    new_warnings, _ = _diff_diagnostics(base_diags, head_diags, DiagnosticSeverity.WARNING)
+    new_warnings, _ = diff_diagnostics(base_diags, head_diags, DiagnosticSeverity.WARNING)
 
     base_failures = (
         _declared_failures(base_comp.lint_report, spec) if base_comp is not None else None

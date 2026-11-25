@@ -619,6 +619,11 @@ archigram: "[KEEP] archigram" {
           style.stroke: "#ef4444"
           style.stroke-dash: 5
         }
+        "archigram.entrypoints.cli.diff_report.diff_diagnostics": "[REMOVE] diff_diagnostics" {
+          style.fill: transparent
+          style.stroke: "#ef4444"
+          style.stroke-dash: 5
+        }
       }
       "archigram.entrypoints.cli.markdown_sync": "[COLLAPSE] markdown_sync -> CLI Commands (app, triage, diff, sync)" {
         style.fill: transparent
@@ -2285,6 +2290,10 @@ archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypo
   style.stroke-dash: 5
 }
 archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.diff_report"."archigram.entrypoints.cli.diff_report.compute_pr_regression_diff" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.diff_report"."archigram.entrypoints.cli.diff_report._ReportData": "[remove] calls" {
+  style.stroke: "#ef4444"
+  style.stroke-dash: 5
+}
+archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.diff_report"."archigram.entrypoints.cli.diff_report.compute_pr_regression_diff" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.diff_report"."archigram.entrypoints.cli.diff_report.diff_diagnostics": "[remove] calls" {
   style.stroke: "#ef4444"
   style.stroke-dash: 5
 }
