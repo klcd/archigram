@@ -20,6 +20,7 @@ from archigram.entrypoints.cli.pipeline import (
     format_lint_report_text,
     load_canonical_ir,
     load_curation_spec,
+    load_mermaid_theme,
     sync_compiled_artifacts,
 )
 from archigram.entrypoints.cli.triage import TriageOptions, TriageOutcome, execute_triage
@@ -47,6 +48,7 @@ class ApplyOptions:
     input_format: InputFormat = InputFormat.AUTO
     check_only: bool = False
     sync_md: Path | None = None
+    mermaid_theme: Path | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -57,6 +59,7 @@ class LintOptions:
     spec_path: Path
     input_format: InputFormat = InputFormat.AUTO
     output_json: bool = False
+    mermaid_theme: Path | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -100,7 +103,8 @@ def execute_apply(options: ApplyOptions) -> ApplySyncOutcome:
     """Run deterministic `apply` (or `apply --check`) pipeline without Typer framing."""
     observed_ir = load_canonical_ir(options.input_path, options.input_format)
     spec = load_curation_spec(options.spec_path)
-    compilation = compile_and_lint_pipeline(observed_ir, spec)
+    theme = load_mermaid_theme(options.spec_path, options.mermaid_theme)
+    compilation = compile_and_lint_pipeline(observed_ir, spec, mermaid_theme=theme)
     return sync_compiled_artifacts(
         compilation,
         options.out_dir,
@@ -113,7 +117,8 @@ def execute_lint(options: LintOptions) -> PipelineCompilationResult:
     """Run deterministic 5-Gate `lint` pipeline without Typer framing."""
     observed_ir = load_canonical_ir(options.input_path, options.input_format)
     spec = load_curation_spec(options.spec_path)
-    return compile_and_lint_pipeline(observed_ir, spec)
+    theme = load_mermaid_theme(options.spec_path, options.mermaid_theme)
+    return compile_and_lint_pipeline(observed_ir, spec, mermaid_theme=theme)
 
 
 def execute_diff(options: DiffOptions) -> PrDiffSummary:

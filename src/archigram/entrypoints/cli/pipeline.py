@@ -35,9 +35,12 @@ from archigram.domain.spec import (
     parse_curation_spec_yaml,
 )
 from archigram.domain.style import (
+    DEFAULT_MERMAID_THEME,
     NEUTRAL_BORDER_HEX,
     TRANSPARENT_FILL,
     LinePattern,
+    MermaidThemeConfig,
+    parse_mermaid_theme_yaml,
     resolve_edge_visual_style,
 )
 from archigram.features.emit_d2 import D2Emitter
@@ -185,6 +188,26 @@ def load_curation_spec(spec_source: Path | str) -> CurationSpecV1:
         msg = "Curation spec YAML must not be empty"
         raise ValueError(msg)
     return parse_curation_spec_yaml(raw_yaml)
+
+
+MERMAID_THEME_FILENAME = "mermaid-theme.yaml"
+
+
+def load_mermaid_theme(
+    spec_source: Path | str | None = None,
+    theme_path: Path | None = None,
+) -> MermaidThemeConfig:
+    """Load central MermaidThemeConfig from `theme_path` or sibling `mermaid-theme.yaml`."""
+    if theme_path is not None:
+        if not theme_path.is_file():
+            msg = f"Mermaid theme file does not exist: {theme_path}"
+            raise FileNotFoundError(msg)
+        return parse_mermaid_theme_yaml(theme_path.read_text(encoding="utf-8"))
+    if isinstance(spec_source, Path) and spec_source.is_file():
+        sibling = spec_source.parent / MERMAID_THEME_FILENAME
+        if sibling.is_file():
+            return parse_mermaid_theme_yaml(sibling.read_text(encoding="utf-8"))
+    return DEFAULT_MERMAID_THEME
 
 
 def _detect_json_format(payload: object) -> InputFormat:
@@ -460,6 +483,7 @@ def emit_view_source(
     ir: CanonicalIR,
     view: DiagramViewSpec,
     overflow_markdown: str = "",
+    mermaid_theme: MermaidThemeConfig = DEFAULT_MERMAID_THEME,
 ) -> str:
     """Emit deterministic target diagram source for a view, appending overflow comment if any."""
     meta_updates: dict[str, str] = {}
@@ -472,6 +496,8 @@ def emit_view_source(
     )
     if view.target_renderer is TargetRenderer.DOT:
         raw_source = emit_deterministic_dot(effective_ir)
+    elif view.target_renderer is TargetRenderer.MERMAID:
+        raw_source = MermaidEmitter(mermaid_theme).emit(effective_ir)
     else:
         emitter = _EMITTERS[view.target_renderer]
         raw_source = emitter.emit(effective_ir)
@@ -580,6 +606,7 @@ def compile_and_lint_pipeline(
     spec: CurationSpecV1,
     *,
     use_external_syntax_cli: bool = False,
+    mermaid_theme: MermaidThemeConfig = DEFAULT_MERMAID_THEME,
 ) -> PipelineCompilationResult:
     """Compile all views in a CurationSpecV1 and execute Gates 1-5 deterministically."""
     structural_reducer = StructuralTopologicalReducer()
@@ -599,7 +626,7 @@ def compile_and_lint_pipeline(
         )
         pre_diagnostics.extend(view_diags)
         curated_by_id[view.id] = curated_ir
-        diagram_source = emit_view_source(emitted_ir, view, overflow_md)
+        diagram_source = emit_view_source(emitted_ir, view, overflow_md, mermaid_theme)
         compiled_views[view.id] = CompiledViewArtifact(
             view=view,
             curated_ir=curated_ir,
@@ -689,6 +716,28 @@ def _stamp_svg_with_source_hash(raw_svg: str, source_sha256: str) -> str:
     return f"{stamp_line}\n{stripped}"
 
 
+_D2_DUAL_MODE_SVG_CSS = (
+    '.appendix-icon path[fill="white"]{fill:#f8fafc;stroke:#94a3b8;}\n'
+    "@media screen and (prefers-color-scheme:dark){\n"
+    '.appendix-icon path[fill="white"]{fill:#1e293b !important;stroke:#64748b !important;}\n'
+    '.appendix-icon path[stroke="#2E3346"]{stroke:#cbd5e1 !important;}\n'
+    "}"
+)
+
+_DOT_DUAL_MODE_SVG_CSS = (
+    "text{fill:#1e293b;}\n@media (prefers-color-scheme:dark){text{fill:#e2e8f0;}}"
+)
+
+
+def inject_svg_dual_mode_style(raw_svg: str, css_rules: str) -> str:
+    """Inject a dual-mode `<style>` block immediately before the closing `</svg>` tag."""
+    close_idx = raw_svg.rfind("</svg>")
+    if close_idx == -1:
+        return raw_svg
+    style_tag = f'<style type="text/css"><![CDATA[\n{css_rules}\n]]></style>'
+    return f"{raw_svg[:close_idx]}{style_tag}{raw_svg[close_idx:]}"
+
+
 def _render_d2_svg(binary: str, diagram_source: str) -> str:
     has_steps = any(line.strip() == "steps: {" for line in diagram_source.splitlines())
     with tempfile.TemporaryDirectory() as tmp_str:
@@ -712,7 +761,7 @@ def _render_d2_svg(binary: str, diagram_source: str) -> str:
     if proc.returncode != 0 or "<svg" not in svg_text:
         msg = f"Failed to render SVG via 'd2': {(proc.stderr or proc.stdout).strip()}"
         raise ValueError(msg)
-    return svg_text
+    return inject_svg_dual_mode_style(svg_text, _D2_DUAL_MODE_SVG_CSS)
 
 
 def render_companion_svg(renderer: TargetRenderer, diagram_source: str) -> str | None:
@@ -738,7 +787,8 @@ def render_companion_svg(renderer: TargetRenderer, diagram_source: str) -> str |
         if proc.returncode != 0 or "<svg" not in proc.stdout:
             msg = f"Failed to render SVG via 'dot': {(proc.stderr or proc.stdout).strip()}"
             raise ValueError(msg)
-        return _stamp_svg_with_source_hash(proc.stdout, source_sha)
+        styled_dot = inject_svg_dual_mode_style(proc.stdout, _DOT_DUAL_MODE_SVG_CSS)
+        return _stamp_svg_with_source_hash(styled_dot, source_sha)
     return None
 
 

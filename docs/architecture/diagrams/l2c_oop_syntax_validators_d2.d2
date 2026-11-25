@@ -21,24 +21,18 @@ archigram: "archigram" {
         style.stroke: "#64748b"
         "archigram.features.lint_syntax.validators.D2SyntaxValidator": "D2SyntaxValidator" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+__init__(use_cli: bool, cli_timeout: float)": "None"
           "+property target_format()": "str"
           "+validate(diagram_source: str)": "SyntaxValidationResult"
         }
         "archigram.features.lint_syntax.validators.DotSyntaxValidator": "DotSyntaxValidator" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+__init__(use_cli: bool, cli_timeout: float)": "None"
           "+property target_format()": "str"
           "+validate(diagram_source: str)": "SyntaxValidationResult"
         }
         "archigram.features.lint_syntax.validators.Gate5SyntaxHarness": "Gate5SyntaxHarness" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+slice_name": "str"
           "+__init__(validators: Mapping[str, SyntaxValidatorPort] | None)": "None"
           "+property supported_formats()": "tuple[str, ...]"
@@ -47,22 +41,16 @@ archigram: "archigram" {
         }
         "archigram.features.lint_syntax.validators.LikeC4SyntaxValidator": "LikeC4SyntaxValidator" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+property target_format()": "str"
           "+validate(diagram_source: str)": "SyntaxValidationResult"
         }
         "archigram.features.lint_syntax.validators.MermaidSyntaxValidator": "MermaidSyntaxValidator" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+property target_format()": "str"
           "+validate(diagram_source: str)": "SyntaxValidationResult"
         }
         "archigram.features.lint_syntax.validators.PlantUmlSyntaxValidator": "PlantUmlSyntaxValidator" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+__init__(use_cli: bool, cli_timeout: float)": "None"
           "+property target_format()": "str"
           "+validate(diagram_source: str)": "SyntaxValidationResult"
@@ -78,16 +66,12 @@ archigram: "archigram" {
       style.stroke: "#64748b"
       "archigram.ports.contracts.SyntaxValidationResult": "SyntaxValidationResult" {
         shape: class
-        style.fill: transparent
-        style.stroke: "#64748b"
         "+valid": "bool"
         "+target_format": "str"
         "+errors": "tuple[str, ...]"
       }
       "archigram.ports.contracts.SyntaxValidatorPort": "SyntaxValidatorPort" {
         shape: class
-        style.fill: transparent
-        style.stroke: "#64748b"
         "+property target_format()": "str"
         "+validate(diagram_source: str)": "SyntaxValidationResult"
       }

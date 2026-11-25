@@ -25,6 +25,10 @@ ArchiGram centralizes all visual defaults—element transparency, light/dark mod
    - **Flowing Runtime Edges ("Marching Ants"):** Active runtime/data-flow relations (`calls`, `reads_data`, `writes_data`, `async_spawn`, `fork_join`) default to `animated=True` in [`domain/style.py`](../../src/archigram/domain/style.py), emitting pure-CSS `@keyframes` (`style.animated: true`) in **D2** `.d2.svg` diagrams (which render natively in Gitea/GitHub `<img>` tags with zero JS parser dependencies)—while static compile-time/OOP relations stay calm (`animated=False`). Mermaid flowcharts stay Gitea/Mermaid-v10 safe by default and emit v11.4+ edge animation (`e0@-->` + `e0@{ animate: true }`) when explicitly opted in via `animate_edges: true`.
    - **Step-by-Step Animated Trace Playback (`diagram_variant: steps`):** Setting `diagram_variant: steps` on a D2 `interaction_trace` view emits ordered causal waves (`steps: { step_1: { ... } ... }`) compiled with `d2 --animate-interval 1200` into a self-playing multi-frame SVG.
 
+5. **Centralized Mermaid Governance (`docs/architecture/mermaid-theme.yaml` → `docs/mermaid-theme.js`):**
+   - Theme colors and routing defaults are maintained **once** per repository in [`docs/architecture/mermaid-theme.yaml`](mermaid-theme.yaml) (`MermaidThemeConfig`) and strictly forbidden inside AI curation specs (`CurationSpecV1` `extra="forbid"`).
+   - Compiled `.mmd` files emit layout-only frontmatter (omitting `primaryColor: transparent` and `actorBkg: transparent` so GitHub and Gitea host themes never hit Mermaid's `khroma` dark-mode black-text bug), while standalone web pages consume [`docs/mermaid-theme.js`](../mermaid-theme.js) with WCAG AAA (`>= 7.0:1`) light and dark hex palettes.
+
 ---
 
 ## 2. Canonical Edge-Only Color, Animation & UML Arrowhead Reference
@@ -69,15 +73,6 @@ config:
   flowchart:
     defaultRenderer: elk
     curve: linear
-  themeVariables:
-    primaryColor: transparent
-    secondaryColor: transparent
-    tertiaryColor: transparent
-    mainBkg: transparent
-    nodeBorder: '#64748b'
-    clusterBkg: transparent
-    clusterBorder: '#64748b'
-    lineColor: '#64748b'
 ---
 flowchart TD
   classDef default fill:transparent,stroke:#64748b,stroke-width:1.5px
@@ -158,7 +153,7 @@ archigram: "archigram" {
     cli_dataplane: "CLI Data Plane" {
       style.fill: transparent
       style.stroke: "#64748b"
-      tooltip: "Derived via l0_d2_cli_dataplane (69 backing nodes: archigram.entrypoints.cli, archigram.entrypoints.cli.app, archigram.entrypoints.cli.app.ApplyOptions, archigram.entrypoints.cli.app.DiffOptions, archigram.entrypoints.cli.app.LintOptions, ...)"
+      tooltip: "Derived via l0_d2_cli_dataplane (71 backing nodes: archigram.entrypoints.cli, archigram.entrypoints.cli.app, archigram.entrypoints.cli.app.ApplyOptions, archigram.entrypoints.cli.app.DiffOptions, archigram.entrypoints.cli.app.LintOptions, ...)"
     }
     mcp_controlplane: "MCP Control Plane" {
       style.fill: transparent
@@ -198,7 +193,7 @@ archigram: "archigram" {
   domain_core: "Domain Core" {
     style.fill: transparent
     style.stroke: "#64748b"
-    tooltip: "Derived via l0_d2_domain_core (69 backing nodes: archigram.domain, archigram.domain.ProvenanceGrade, archigram.domain.ProvenanceStamp, archigram.domain.concurrency, archigram.domain.concurrency.ConcurrencyMode, ...)"
+    tooltip: "Derived via l0_d2_domain_core (75 backing nodes: archigram.domain, archigram.domain.ProvenanceGrade, archigram.domain.ProvenanceStamp, archigram.domain.concurrency, archigram.domain.concurrency.ConcurrencyMode, ...)"
   }
   ports_contracts: "Ports & Contracts" {
     style.fill: transparent
@@ -653,15 +648,6 @@ config:
   flowchart:
     defaultRenderer: elk
     curve: linear
-  themeVariables:
-    primaryColor: transparent
-    secondaryColor: transparent
-    tertiaryColor: transparent
-    mainBkg: transparent
-    nodeBorder: '#64748b'
-    clusterBkg: transparent
-    clusterBorder: '#64748b'
-    lineColor: '#64748b'
 ---
 classDiagram
   class c0["lint_syntax"]
@@ -759,24 +745,18 @@ archigram: "archigram" {
         style.stroke: "#64748b"
         "archigram.features.lint_syntax.validators.D2SyntaxValidator": "D2SyntaxValidator" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+__init__(use_cli: bool, cli_timeout: float)": "None"
           "+property target_format()": "str"
           "+validate(diagram_source: str)": "SyntaxValidationResult"
         }
         "archigram.features.lint_syntax.validators.DotSyntaxValidator": "DotSyntaxValidator" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+__init__(use_cli: bool, cli_timeout: float)": "None"
           "+property target_format()": "str"
           "+validate(diagram_source: str)": "SyntaxValidationResult"
         }
         "archigram.features.lint_syntax.validators.Gate5SyntaxHarness": "Gate5SyntaxHarness" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+slice_name": "str"
           "+__init__(validators: Mapping[str, SyntaxValidatorPort] | None)": "None"
           "+property supported_formats()": "tuple[str, ...]"
@@ -785,22 +765,16 @@ archigram: "archigram" {
         }
         "archigram.features.lint_syntax.validators.LikeC4SyntaxValidator": "LikeC4SyntaxValidator" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+property target_format()": "str"
           "+validate(diagram_source: str)": "SyntaxValidationResult"
         }
         "archigram.features.lint_syntax.validators.MermaidSyntaxValidator": "MermaidSyntaxValidator" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+property target_format()": "str"
           "+validate(diagram_source: str)": "SyntaxValidationResult"
         }
         "archigram.features.lint_syntax.validators.PlantUmlSyntaxValidator": "PlantUmlSyntaxValidator" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+__init__(use_cli: bool, cli_timeout: float)": "None"
           "+property target_format()": "str"
           "+validate(diagram_source: str)": "SyntaxValidationResult"
@@ -816,16 +790,12 @@ archigram: "archigram" {
       style.stroke: "#64748b"
       "archigram.ports.contracts.SyntaxValidationResult": "SyntaxValidationResult" {
         shape: class
-        style.fill: transparent
-        style.stroke: "#64748b"
         "+valid": "bool"
         "+target_format": "str"
         "+errors": "tuple[str, ...]"
       }
       "archigram.ports.contracts.SyntaxValidatorPort": "SyntaxValidatorPort" {
         shape: class
-        style.fill: transparent
-        style.stroke: "#64748b"
         "+property target_format()": "str"
         "+validate(diagram_source: str)": "SyntaxValidationResult"
       }
@@ -1024,15 +994,9 @@ Uses transparent actor/note/loop theme variables and UML synchronous call/return
 ```mermaid
 ---
 config:
-  themeVariables:
-    actorBkg: transparent
-    actorBorder: '#64748b'
-    actorLineColor: '#64748b'
-    signalColor: '#3b82f6'
-    activationBkgColor: transparent
-    activationBorderColor: '#64748b'
-    noteBkgColor: transparent
-    noteBorderColor: '#64748b'
+  sequence:
+    mirrorActors: false
+    messageAlign: center
 ---
 sequenceDiagram
   participant p0 as "diagnostics"
@@ -1053,6 +1017,8 @@ sequenceDiagram
   p4->>+p4: compile_and_lint_pipeline
   p4->>+p14: StructuralTopologicalReducer.reduce
   p14-->>-p4: return
+  p4->>+p8: MermaidEmitter.__init__
+  p8-->>-p4: return
   p4->>+p8: MermaidEmitter.emit
   p8-->>-p4: return
   p4->>+p14: StructuralTopologicalReducer.reduce
@@ -1238,6 +1204,10 @@ shape: sequence_diagram
   style.animated: true
 }
 "archigram.entrypoints.cli.pipeline" -> "archigram.features.reduce_structural.reducer": "StructuralTopologicalReducer.reduce" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+"archigram.entrypoints.cli.pipeline" -> "archigram.features.emit_mermaid.emitter": "MermaidEmitter.__init__" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
@@ -1464,6 +1434,8 @@ participant "reducer" as p_14_archigram_featur_df5fa8
 p_4_archigram_entryp_8024d0 -> p_4_archigram_entryp_8024d0 : compile_and_lint_pipeline
 p_4_archigram_entryp_8024d0 -> p_14_archigram_featur_df5fa8 : StructuralTopologicalReducer.reduce
 p_14_archigram_featur_df5fa8 --> p_4_archigram_entryp_8024d0 : return StructuralTopologicalReducer.reduce
+p_4_archigram_entryp_8024d0 -> p_8_archigram_featur_4d345c : MermaidEmitter.__init__
+p_8_archigram_featur_4d345c --> p_4_archigram_entryp_8024d0 : return MermaidEmitter.__init__
 p_4_archigram_entryp_8024d0 -> p_8_archigram_featur_4d345c : MermaidEmitter.emit
 p_8_archigram_featur_4d345c --> p_4_archigram_entryp_8024d0 : return MermaidEmitter.emit
 p_4_archigram_entryp_8024d0 -> p_14_archigram_featur_df5fa8 : StructuralTopologicalReducer.reduce
@@ -1698,6 +1670,7 @@ views {
 
     archigram_entrypoints_cli_pipeline -> archigram_entrypoints_cli_pipeline 'compile_and_lint_pipeline'
     archigram_entrypoints_cli_pipeline -> archigram_features_reduce_structural_reducer 'StructuralTopologicalReducer.reduce'
+    archigram_entrypoints_cli_pipeline -> archigram_features_emit_mermaid_emitter 'MermaidEmitter.__init__'
     archigram_entrypoints_cli_pipeline -> archigram_features_emit_mermaid_emitter 'MermaidEmitter.emit'
     archigram_entrypoints_cli_pipeline -> archigram_features_reduce_structural_reducer 'StructuralTopologicalReducer.reduce'
     archigram_entrypoints_cli_pipeline -> archigram_features_emit_d2_emitter 'D2Emitter.emit'
@@ -1774,6 +1747,7 @@ digraph "archigram_pipeline_and_repair_v1" {
   "archigram.features.reduce_structural.reducer" [label="reducer", kind="module", _kind="module"];
   "archigram.entrypoints.cli.pipeline" -> "archigram.entrypoints.cli.pipeline" [xlabel="compile_and_lint_pipeline", style="solid", color="#3b82f6", arrowhead="vee"];
   "archigram.entrypoints.cli.pipeline" -> "archigram.features.reduce_structural.reducer" [xlabel="StructuralTopologicalReducer.reduce", style="solid", color="#3b82f6", arrowhead="vee"];
+  "archigram.entrypoints.cli.pipeline" -> "archigram.features.emit_mermaid.emitter" [xlabel="MermaidEmitter.__init__", style="solid", color="#3b82f6", arrowhead="vee"];
   "archigram.entrypoints.cli.pipeline" -> "archigram.features.emit_mermaid.emitter" [xlabel="MermaidEmitter.emit", style="solid", color="#3b82f6", arrowhead="vee"];
   "archigram.entrypoints.cli.pipeline" -> "archigram.features.reduce_structural.reducer" [xlabel="StructuralTopologicalReducer.reduce", style="solid", color="#3b82f6", arrowhead="vee"];
   "archigram.entrypoints.cli.pipeline" -> "archigram.features.emit_d2.emitter" [xlabel="D2Emitter.emit", style="solid", color="#3b82f6", arrowhead="vee"];
@@ -1918,7 +1892,7 @@ steps: {
     }
   }
   step_2: {
-    "archigram.entrypoints.cli.pipeline" -> "archigram.features.emit_mermaid.emitter": "MermaidEmitter.emit" {
+    "archigram.entrypoints.cli.pipeline" -> "archigram.features.emit_mermaid.emitter": "MermaidEmitter.__init__ (x2)" {
       style.stroke: "#3b82f6"
       style.animated: true
     }

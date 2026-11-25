@@ -7,15 +7,6 @@ config:
   flowchart:
     defaultRenderer: elk
     curve: linear
-  themeVariables:
-    primaryColor: transparent
-    secondaryColor: transparent
-    tertiaryColor: transparent
-    mainBkg: transparent
-    nodeBorder: '#64748b'
-    clusterBkg: transparent
-    clusterBorder: '#64748b'
-    lineColor: '#64748b'
 ---
 flowchart LR
   classDef default fill:transparent,stroke:#64748b,stroke-width:1.5px
@@ -58,6 +49,7 @@ flowchart LR
   u10 -.->|"<<include>>"| u9
   u13 -.->|"<<include>>"| u9
   u7 -.->|"<<include>>"| u10
+  u7 -.->|"<<include>>"| u10
   u12 -.->|"<<include>>"| u10
   u7 -.->|"<<include>>"| u11
   u12 -.->|"<<include>>"| u14
@@ -71,4 +63,4 @@ flowchart LR
   u7 -.->|"<<include>>"| u13
   u7 -.->|"<<include>>"| u13
   u12 -.->|"<<include>>"| u13
-  linkStyle 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33 stroke:#3b82f6,stroke-width:1.75px
+  linkStyle 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34 stroke:#3b82f6,stroke-width:1.75px

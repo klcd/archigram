@@ -19,8 +19,6 @@ archigram: "archigram" {
     }
     "archigram.domain.ProvenanceStamp": "ProvenanceStamp" {
       shape: class
-      style.fill: transparent
-      style.stroke: "#64748b"
       "+grade": "ProvenanceGrade"
       "+extractor": "str | None"
       "+input_sha256": "str | None"
@@ -38,8 +36,6 @@ archigram: "archigram" {
       }
       "archigram.domain.concurrency.ParallelMapSummary": "ParallelMapSummary" {
         shape: class
-        style.fill: transparent
-        style.stroke: "#64748b"
         "+parent_event_id": "NonBlankStr | None"
         "+clock_domain_id": "NonBlankStr"
         "+callee_id": "NonBlankStr"
@@ -52,8 +48,6 @@ archigram: "archigram" {
       }
       "archigram.domain.concurrency.ParallelSiblingCluster": "ParallelSiblingCluster" {
         shape: class
-        style.fill: transparent
-        style.stroke: "#64748b"
         "+parent_event_id": "NonBlankStr | None"
         "+clock_domain_id": "NonBlankStr"
         "+event_ids": "tuple[NonBlankStr, ...]"
@@ -63,8 +57,6 @@ archigram: "archigram" {
       }
       "archigram.domain.concurrency.PosetCotreeNode": "PosetCotreeNode" {
         shape: class
-        style.fill: transparent
-        style.stroke: "#64748b"
         "+kind": "PosetModuleKind"
         "+concurrency_mode": "ConcurrencyMode"
         "+node_id": "NonBlankStr | None"
@@ -79,8 +71,6 @@ archigram: "archigram" {
       }
       "archigram.domain.concurrency.SpanInterval": "SpanInterval" {
         shape: class
-        style.fill: transparent
-        style.stroke: "#64748b"
         "+event_id": "NonBlankStr"
         "+parent_event_id": "NonBlankStr | None"
         "+clock_domain_id": "NonBlankStr"
@@ -93,8 +83,6 @@ archigram: "archigram" {
       }
       "archigram.domain.concurrency._CausalPoset": "_CausalPoset" {
         shape: class
-        style.fill: transparent
-        style.stroke: "#64748b"
         "+node_ids": "tuple[str, ...]"
         "+anc": "tuple[int, ...]"
         "+desc": "tuple[int, ...]"
@@ -134,8 +122,6 @@ archigram: "archigram" {
       }
       "archigram.domain.diagnostics.LintDiagnostic": "LintDiagnostic" {
         shape: class
-        style.fill: transparent
-        style.stroke: "#64748b"
         "+gate": "GateId"
         "+severity": "DiagnosticSeverity"
         "+code": "NonBlankStr"
@@ -148,8 +134,6 @@ archigram: "archigram" {
       }
       "archigram.domain.diagnostics.LintReport": "LintReport" {
         shape: class
-        style.fill: transparent
-        style.stroke: "#64748b"
         "+passed": "bool"
         "+diagnostics": "tuple[LintDiagnostic, ...]"
         "-_validate_passed_invariant()": "LintReport"
@@ -165,8 +149,6 @@ archigram: "archigram" {
       style.stroke: "#64748b"
       "archigram.domain.ir.ClassMember": "ClassMember" {
         shape: class
-        style.fill: transparent
-        style.stroke: "#64748b"
         "+name": "NonBlankStr"
         "+visibility": "Visibility"
         "+signature": "str"
@@ -184,8 +166,6 @@ archigram: "archigram" {
       }
       "archigram.domain.ir.IREdge": "IREdge" {
         shape: class
-        style.fill: transparent
-        style.stroke: "#64748b"
         "+edge_id": "NonBlankStr"
         "+source": "NonBlankStr"
         "+target": "NonBlankStr"
@@ -198,8 +178,6 @@ archigram: "archigram" {
       }
       "archigram.domain.ir.IRNode": "IRNode" {
         shape: class
-        style.fill: transparent
-        style.stroke: "#64748b"
         "+symbol_id": "NonBlankStr"
         "+label": "NonBlankStr"
         "+kind": "NodeKind"
@@ -211,8 +189,6 @@ archigram: "archigram" {
       }
       "archigram.domain.ir.InteractionTraceIR": "InteractionTraceIR" {
         shape: class
-        style.fill: transparent
-        style.stroke: "#64748b"
         "+schema_version": "Literal['1.0']"
         "+ir_mode": "Literal['interaction_trace']"
         "+trace_id": "NonBlankStr"
@@ -227,8 +203,6 @@ archigram: "archigram" {
       }
       "archigram.domain.ir.StructuralGraphIR": "StructuralGraphIR" {
         shape: class
-        style.fill: transparent
-        style.stroke: "#64748b"
         "+schema_version": "Literal['1.0']"
         "+ir_mode": "Literal['structural_graph']"
         "+graph_id": "NonBlankStr"
@@ -243,8 +217,6 @@ archigram: "archigram" {
       }
       "archigram.domain.ir.TraceEvent": "TraceEvent" {
         shape: class
-        style.fill: transparent
-        style.stroke: "#64748b"
         "+event_id": "NonBlankStr"
         "+caller_id": "NonBlankStr"
         "+callee_id": "NonBlankStr"
@@ -262,8 +234,6 @@ archigram: "archigram" {
       }
       "archigram.domain.ir.TraceParticipant": "TraceParticipant" {
         shape: class
-        style.fill: transparent
-        style.stroke: "#64748b"
         "+participant_id": "NonBlankStr"
         "+symbol_id": "NonBlankStr"
         "+label": "NonBlankStr"
@@ -288,8 +258,6 @@ archigram: "archigram" {
       style.stroke: "#64748b"
       "archigram.domain.likec4_boundary.CurationCapabilityProfile": "CurationCapabilityProfile" {
         shape: class
-        style.fill: transparent
-        style.stroke: "#64748b"
         "+view_id": "str"
         "+target_kind": "DiagramTargetKind"
         "+hierarchical_rollup": "bool"
@@ -316,8 +284,6 @@ archigram: "archigram" {
       }
       "archigram.domain.likec4_boundary.CurationRoutingDecision": "CurationRoutingDecision" {
         shape: class
-        style.fill: transparent
-        style.stroke: "#64748b"
         "+view_id": "str"
         "+strategy": "CurationStrategyMode"
         "+native_likec4_operators": "tuple[CurationOperatorKind, ...]"
@@ -346,16 +312,12 @@ archigram: "archigram" {
       style.stroke: "#64748b"
       "archigram.domain.spec.BudgetRange": "BudgetRange" {
         shape: class
-        style.fill: transparent
-        style.stroke: "#64748b"
         "+min_count": "int"
         "+max_count": "int"
         "-_validate_bounds()": "BudgetRange"
       }
       "archigram.domain.spec.BypassVerticesRule": "BypassVerticesRule" {
         shape: class
-        style.fill: transparent
-        style.stroke: "#64748b"
         "+op": "Literal['bypass_vertices']"
         "+id": "NonBlankStr"
         "+node_id_globs": "tuple[NonBlankStr, ...]"
@@ -365,8 +327,6 @@ archigram: "archigram" {
       }
       "archigram.domain.spec.CollapsePartitionRule": "CollapsePartitionRule" {
         shape: class
-        style.fill: transparent
-        style.stroke: "#64748b"
         "+op": "Literal['collapse_partition']"
         "+id": "NonBlankStr"
         "+target_node_id": "NonBlankStr"
@@ -377,8 +337,6 @@ archigram: "archigram" {
       }
       "archigram.domain.spec.CurationSpecV1": "CurationSpecV1" {
         shape: class
-        style.fill: transparent
-        style.stroke: "#64748b"
         "+schema_version": "Literal['1.0']"
         "+global_abstractions": "tuple[GlobalAbstractionRule, ...]"
         "+views": "tuple[DiagramViewSpec, ...]"
@@ -391,8 +349,6 @@ archigram: "archigram" {
       }
       "archigram.domain.spec.DiagramViewSpec": "DiagramViewSpec" {
         shape: class
-        style.fill: transparent
-        style.stroke: "#64748b"
         "+id": "NonBlankStr"
         "+title": "NonBlankStr"
         "+ir_mode": "IRMode"
@@ -409,8 +365,6 @@ archigram: "archigram" {
       }
       "archigram.domain.spec.FullScope": "FullScope" {
         shape: class
-        style.fill: transparent
-        style.stroke: "#64748b"
         "+mode": "Literal['full']"
       }
       "archigram.domain.spec.IRMode": "IRMode" {
@@ -419,8 +373,6 @@ archigram: "archigram" {
       }
       "archigram.domain.spec.KHopNeighborhoodScope": "KHopNeighborhoodScope" {
         shape: class
-        style.fill: transparent
-        style.stroke: "#64748b"
         "+mode": "Literal['k_hop_neighborhood']"
         "+focal_nodes": "tuple[NonBlankStr, ...]"
         "+upstream_depth": "int"
@@ -428,8 +380,6 @@ archigram: "archigram" {
       }
       "archigram.domain.spec.PruneLeavesRule": "PruneLeavesRule" {
         shape: class
-        style.fill: transparent
-        style.stroke: "#64748b"
         "+op": "Literal['prune_leaves']"
         "+id": "NonBlankStr"
         "+node_id_globs": "tuple[NonBlankStr, ...]"
@@ -437,16 +387,12 @@ archigram: "archigram" {
       }
       "archigram.domain.spec.ReachabilityAssertion": "ReachabilityAssertion" {
         shape: class
-        style.fill: transparent
-        style.stroke: "#64748b"
         "+from_node": "NonBlankStr"
         "+to_node": "NonBlankStr"
         "+via_relations": "tuple[NonBlankStr, ...]"
       }
       "archigram.domain.spec.SimplifyConfig": "SimplifyConfig" {
         shape: class
-        style.fill: transparent
-        style.stroke: "#64748b"
         "+condense_sccs": "bool"
         "+transitive_reduction": "bool"
       }
@@ -456,8 +402,6 @@ archigram: "archigram" {
       }
       "archigram.domain.spec.TraceCompactionConfig": "TraceCompactionConfig" {
         shape: class
-        style.fill: transparent
-        style.stroke: "#64748b"
         "+fold_loops": "bool"
         "+fold_loop_with_opt": "bool"
         "+cut_recursion": "bool"
@@ -470,8 +414,6 @@ archigram: "archigram" {
       }
       "archigram.domain.spec.ViewInvariants": "ViewInvariants" {
         shape: class
-        style.fill: transparent
-        style.stroke: "#64748b"
         "+protected_nodes": "tuple[NonBlankStr, ...]"
         "+preserve_reachability": "tuple[ReachabilityAssertion, ...]"
         "+preserve_partial_order": "bool"
@@ -498,8 +440,6 @@ archigram: "archigram" {
       style.stroke: "#64748b"
       "archigram.domain.style.EdgeVisualStyle": "EdgeVisualStyle" {
         shape: class
-        style.fill: transparent
-        style.stroke: "#64748b"
         "+relation": "EdgeRelation"
         "+stroke_hex": "str"
         "+likec4_color": "str"
@@ -514,11 +454,65 @@ archigram: "archigram" {
         style.fill: transparent
         style.stroke: "#64748b"
       }
+      "archigram.domain.style.MermaidThemeConfig": "MermaidThemeConfig" {
+        shape: class
+        "+schema_version": "Literal['1.0']"
+        "+layout_engine": "Literal['elk', 'dagre']"
+        "+elk_merge_edges": "bool"
+        "+elk_node_placement_strategy": "Literal['BRANDES_KOEPF', 'NETWORK_SIMPLEX', 'LINEAR_SEGMENTS', 'SIMPLE']"
+        "+flowchart_curve": "Literal['linear', 'basis', 'stepBefore', 'stepAfter']"
+        "+sequence_mirror_actors": "bool"
+        "+node_fill": "Literal['transparent']"
+        "+node_border_hex": "str"
+        "+node_border_width_px": "str"
+        "+subgraph_border_hex": "str"
+        "+subgraph_border_width_px": "str"
+        "+subgraph_dash_array": "str"
+        "+edge_stroke_width_px": "str"
+        "+bold_edge_stroke_width_px": "str"
+        "+dashed_edge_array": "str"
+        "+web_light": "MermaidWebModePalette"
+        "+web_dark": "MermaidWebModePalette"
+        "-_validate_dual_mode_bounds()": "MermaidThemeConfig"
+        "+structural_frontmatter()": "str"
+        "+sequence_frontmatter()": "str"
+        "+state_frontmatter()": "str"
+        "+default_classdef()": "str"
+        "+subgraph_style_attrs()": "str"
+        "+web_theme_variables(mode: Literal['light', 'dark'])": "dict[str, str | bool]"
+      }
+      "archigram.domain.style.MermaidWebModePalette": "MermaidWebModePalette" {
+        shape: class
+        "+background_hex": "str"
+        "+surface_hex": "str"
+        "+text_hex": "str"
+        "+muted_text_hex": "str"
+        "+border_hex": "str"
+        "+line_hex": "str"
+        "+signal_hex": "str"
+        "-_validate_contrast()": "MermaidWebModePalette"
+      }
       "archigram.domain.style.UmlArrowheadKind": "UmlArrowheadKind" {
         style.fill: transparent
         style.stroke: "#64748b"
       }
+      "archigram.domain.style.contrast_ratio": "contrast_ratio" {
+        style.fill: transparent
+        style.stroke: "#64748b"
+      }
+      "archigram.domain.style.dump_mermaid_theme_yaml": "dump_mermaid_theme_yaml" {
+        style.fill: transparent
+        style.stroke: "#64748b"
+      }
+      "archigram.domain.style.parse_mermaid_theme_yaml": "parse_mermaid_theme_yaml" {
+        style.fill: transparent
+        style.stroke: "#64748b"
+      }
       "archigram.domain.style.relative_luminance": "relative_luminance" {
+        style.fill: transparent
+        style.stroke: "#64748b"
+      }
+      "archigram.domain.style.render_mermaid_web_theme_js": "render_mermaid_web_theme_js" {
         style.fill: transparent
         style.stroke: "#64748b"
       }
@@ -543,19 +537,16 @@ archigram: "archigram" {
         style.stroke: "#64748b"
         "archigram.entrypoints.cli.app.ApplyOptions": "ApplyOptions" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+input_path": "Path"
           "+spec_path": "Path"
           "+out_dir": "Path"
           "+input_format": "InputFormat"
           "+check_only": "bool"
           "+sync_md": "Path | None"
+          "+mermaid_theme": "Path | None"
         }
         "archigram.entrypoints.cli.app.DiffOptions": "DiffOptions" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+base_path": "Path"
           "+head_path": "Path"
           "+spec_path": "Path"
@@ -564,12 +555,11 @@ archigram: "archigram" {
         }
         "archigram.entrypoints.cli.app.LintOptions": "LintOptions" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+input_path": "Path"
           "+spec_path": "Path"
           "+input_format": "InputFormat"
           "+output_json": "bool"
+          "+mermaid_theme": "Path | None"
         }
         "archigram.entrypoints.cli.app.apply_cmd": "apply_cmd" {
           style.fill: transparent
@@ -677,8 +667,6 @@ archigram: "archigram" {
         style.stroke: "#64748b"
         "archigram.entrypoints.cli.diff_report.PrDiffSummary": "PrDiffSummary" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+passed": "bool"
           "+has_regressions": "bool"
           "+base_passed": "bool"
@@ -695,8 +683,6 @@ archigram: "archigram" {
         }
         "archigram.entrypoints.cli.diff_report.ViewRegressionDelta": "ViewRegressionDelta" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+view_id": "str"
           "+title": "str"
           "+renderer": "str"
@@ -732,8 +718,6 @@ archigram: "archigram" {
         style.stroke: "#64748b"
         "archigram.entrypoints.cli.markdown_sync.MarkdownSyncOutcome": "MarkdownSyncOutcome" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+synced_files": "tuple[Path, ...]"
           "+drifted_files": "tuple[Path, ...]"
           "+matched_view_ids": "tuple[str, ...]"
@@ -741,8 +725,6 @@ archigram: "archigram" {
         }
         "archigram.entrypoints.cli.markdown_sync._MarkdownRenderState": "_MarkdownRenderState" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+source_label": "str"
           "+strict_unknown_views": "bool"
           "+out_chunks": "list[str]"
@@ -777,8 +759,6 @@ archigram: "archigram" {
         style.stroke: "#64748b"
         "archigram.entrypoints.cli.pipeline.ApplySyncOutcome": "ApplySyncOutcome" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+compilation": "PipelineCompilationResult"
           "+written_files": "tuple[Path, ...]"
           "+drifted_files": "tuple[Path, ...]"
@@ -788,8 +768,6 @@ archigram: "archigram" {
         }
         "archigram.entrypoints.cli.pipeline.CompiledViewArtifact": "CompiledViewArtifact" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+view": "DiagramViewSpec"
           "+curated_ir": "CanonicalIR"
           "+emitted_ir": "CanonicalIR"
@@ -805,8 +783,6 @@ archigram: "archigram" {
         }
         "archigram.entrypoints.cli.pipeline.PipelineCompilationResult": "PipelineCompilationResult" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+observed_ir": "CanonicalIR"
           "+spec": "CurationSpecV1"
           "+views": "dict[str, CompiledViewArtifact]"
@@ -833,11 +809,19 @@ archigram: "archigram" {
           style.fill: transparent
           style.stroke: "#64748b"
         }
+        "archigram.entrypoints.cli.pipeline.inject_svg_dual_mode_style": "inject_svg_dual_mode_style" {
+          style.fill: transparent
+          style.stroke: "#64748b"
+        }
         "archigram.entrypoints.cli.pipeline.load_canonical_ir": "load_canonical_ir" {
           style.fill: transparent
           style.stroke: "#64748b"
         }
         "archigram.entrypoints.cli.pipeline.load_curation_spec": "load_curation_spec" {
+          style.fill: transparent
+          style.stroke: "#64748b"
+        }
+        "archigram.entrypoints.cli.pipeline.load_mermaid_theme": "load_mermaid_theme" {
           style.fill: transparent
           style.stroke: "#64748b"
         }
@@ -859,8 +843,6 @@ archigram: "archigram" {
         style.stroke: "#64748b"
         "archigram.entrypoints.cli.self_trace._SelfHealingWorkloadProposer": "_SelfHealingWorkloadProposer" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+__init__(observed_ir: StructuralGraphIR)": "None"
           "+propose(digest_markdown: str, prior_spec_yaml: str | None, diagnostics: tuple[LintDiagnostic, ...], turn: int)": "str"
         }
@@ -886,8 +868,6 @@ archigram: "archigram" {
         }
         "archigram.entrypoints.cli.triage.TriageOptions": "TriageOptions" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+input_path": "Path"
           "+spec_path": "Path"
           "+view_id": "str"
@@ -897,8 +877,6 @@ archigram: "archigram" {
         }
         "archigram.entrypoints.cli.triage.TriageOutcome": "TriageOutcome" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+compilation": "PipelineCompilationResult"
           "+stats": "TriageStats"
           "+stage1_d2": "str"
@@ -912,8 +890,6 @@ archigram: "archigram" {
         }
         "archigram.entrypoints.cli.triage.TriageStats": "TriageStats" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+view_id": "str"
           "+raw_elements": "int"
           "+raw_links": "int"
@@ -929,8 +905,6 @@ archigram: "archigram" {
         }
         "archigram.entrypoints.cli.triage._TriageTreeCtx": "_TriageTreeCtx" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+nodes": "dict[str, IRNode]"
           "+children": "dict[str, list[str]]"
           "+key_map": "dict[str, str]"
@@ -955,8 +929,6 @@ archigram: "archigram" {
         style.stroke: "#64748b"
         "archigram.entrypoints.mcp.propose_loop.CompiledViewPreview": "CompiledViewPreview" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+view_id": "str"
           "+title": "str"
           "+ir_mode": "str"
@@ -970,24 +942,18 @@ archigram: "archigram" {
         }
         "archigram.entrypoints.mcp.propose_loop.CuratedViewsPreviewReport": "CuratedViewsPreviewReport" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+passed": "bool"
           "+lint_report": "LintReport"
           "+views": "tuple[CompiledViewPreview, ...]"
         }
         "archigram.entrypoints.mcp.propose_loop.DeterministicHeuristicProposer": "DeterministicHeuristicProposer" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+__init__(observed_ir: CanonicalIR | None)": "None"
           "+bind_ir(observed_ir: CanonicalIR)": "None"
           "+propose(digest_markdown: str, prior_spec_yaml: str | None, diagnostics: tuple[LintDiagnostic, ...], turn: int)": "str"
         }
         "archigram.entrypoints.mcp.propose_loop.ProposeResult": "ProposeResult" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+succeeded": "bool"
           "+turns_used": "int"
           "+spec": "CurationSpecV1 | None"
@@ -997,8 +963,6 @@ archigram: "archigram" {
         }
         "archigram.entrypoints.mcp.propose_loop.RuleProposerProtocol": "RuleProposerProtocol" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+propose(digest_markdown: str, prior_spec_yaml: str | None, diagnostics: tuple[LintDiagnostic, ...], turn: int)": "str"
         }
         "archigram.entrypoints.mcp.propose_loop.build_heuristic_baseline_spec": "build_heuristic_baseline_spec" {
@@ -1071,8 +1035,6 @@ archigram: "archigram" {
         style.stroke: "#64748b"
         "archigram.features.digest.generator.CandidateLeafSink": "CandidateLeafSink" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+symbol_id": "str"
           "+label": "str"
           "+kind": "NodeKind"
@@ -1081,8 +1043,6 @@ archigram: "archigram" {
         }
         "archigram.features.digest.generator.CandidateWrapperNode": "CandidateWrapperNode" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+symbol_id": "str"
           "+label": "str"
           "+kind": "NodeKind"
@@ -1092,8 +1052,6 @@ archigram: "archigram" {
         }
         "archigram.features.digest.generator.CentralityHub": "CentralityHub" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+symbol_id": "str"
           "+label": "str"
           "+kind": "NodeKind"
@@ -1104,8 +1062,6 @@ archigram: "archigram" {
         }
         "archigram.features.digest.generator.CommunityCluster": "CommunityCluster" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+community_id": "str"
           "+node_count": "int"
           "+member_symbols": "tuple[str, ...]"
@@ -1115,8 +1071,6 @@ archigram: "archigram" {
         }
         "archigram.features.digest.generator.CommunityCoupling": "CommunityCoupling" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+source_community_id": "str"
           "+target_community_id": "str"
           "+edge_count": "int"
@@ -1124,8 +1078,6 @@ archigram: "archigram" {
         }
         "archigram.features.digest.generator.ConcurrentFanoutHotspot": "ConcurrentFanoutHotspot" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+parent_event_id": "str"
           "+clock_domain_id": "str"
           "+caller_id": "str"
@@ -1135,16 +1087,12 @@ archigram: "archigram" {
         }
         "archigram.features.digest.generator.ContainmentClusterSummary": "ContainmentClusterSummary" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+container_id": "str"
           "+member_count": "int"
           "+sample_symbols": "tuple[str, ...]"
         }
         "archigram.features.digest.generator.GraphDigestGenerator": "GraphDigestGenerator" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+digest_structural(ir: StructuralGraphIR)": "StructuralDigest"
           "+digest_trace(ir: InteractionTraceIR)": "TraceDigest"
           "+digest(ir: CanonicalIR)": "StructuralDigest | TraceDigest"
@@ -1152,8 +1100,6 @@ archigram: "archigram" {
         }
         "archigram.features.digest.generator.ParticipantCallSummary": "ParticipantCallSummary" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+participant_id": "str"
           "+symbol_id": "str"
           "+label": "str"
@@ -1164,8 +1110,6 @@ archigram: "archigram" {
         }
         "archigram.features.digest.generator.RecursiveCallHotspot": "RecursiveCallHotspot" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+participant_id": "str"
           "+signature": "str"
           "+max_recursion_depth": "int"
@@ -1174,8 +1118,6 @@ archigram: "archigram" {
         }
         "archigram.features.digest.generator.RepeatingLoopHotspot": "RepeatingLoopHotspot" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+parent_event_id": "str"
           "+caller_id": "str"
           "+callee_id": "str"
@@ -1185,8 +1127,6 @@ archigram: "archigram" {
         }
         "archigram.features.digest.generator.StructuralDigest": "StructuralDigest" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+ir_mode": "Literal['structural_graph']"
           "+graph_id": "str"
           "+node_count": "int"
@@ -1203,8 +1143,6 @@ archigram: "archigram" {
         }
         "archigram.features.digest.generator.TraceDigest": "TraceDigest" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+ir_mode": "Literal['interaction_trace']"
           "+trace_id": "str"
           "+participant_count": "int"
@@ -1227,15 +1165,11 @@ archigram: "archigram" {
         style.stroke: "#64748b"
         "archigram.features.emit_d2.emitter.D2Emitter": "D2Emitter" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+property target_format()": "str"
           "+emit(ir: CanonicalIR)": "str"
         }
         "archigram.features.emit_d2.emitter._D2StructuralCtx": "_D2StructuralCtx" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+key_map": "dict[str, str]"
           "+children_by_parent": "dict[str | None, list[str]]"
           "+nodes": "dict[str, IRNode]"
@@ -1243,8 +1177,6 @@ archigram: "archigram" {
         }
         "archigram.features.emit_d2.emitter._StepEdge": "_StepEdge" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+caller_id": "str"
           "+callee_id": "str"
           "+signature": "str"
@@ -1257,8 +1189,6 @@ archigram: "archigram" {
         style.stroke: "#64748b"
         "archigram.features.emit_d2.uml_variants._D2TreeCtx": "_D2TreeCtx" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+nodes": "dict[str, IRNode]"
           "+children": "dict[str, list[str]]"
           "+key_map": "dict[str, str]"
@@ -1294,8 +1224,6 @@ archigram: "archigram" {
         style.stroke: "#64748b"
         "archigram.features.emit_likec4.emitter.LikeC4Emitter": "LikeC4Emitter" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+property target_format()": "str"
           "+emit(ir: CanonicalIR)": "str"
         }
@@ -1309,27 +1237,21 @@ archigram: "archigram" {
         style.stroke: "#64748b"
         "archigram.features.emit_mermaid.emitter.MermaidEmitter": "MermaidEmitter" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
+          "+__init__(theme: MermaidThemeConfig)": "None"
+          "+property theme()": "MermaidThemeConfig"
           "+property target_format()": "str"
           "+emit(ir: CanonicalIR)": "str"
         }
         "archigram.features.emit_mermaid.emitter._LoopStep": "_LoopStep" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+events": "tuple[TraceEvent, ...]"
         }
         "archigram.features.emit_mermaid.emitter._ParStep": "_ParStep" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+branches": "tuple[TraceEvent, ...]"
         }
         "archigram.features.emit_mermaid.emitter._SingleStep": "_SingleStep" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+event": "TraceEvent"
         }
         "archigram.features.emit_mermaid.emitter.build_alias_map": "build_alias_map" {
@@ -1398,33 +1320,23 @@ archigram: "archigram" {
         style.stroke: "#64748b"
         "archigram.features.emit_plantuml.emitter.PlantUmlEmitter": "PlantUmlEmitter" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+property target_format()": "str"
           "+emit(ir: CanonicalIR)": "str"
         }
         "archigram.features.emit_plantuml.emitter._AnchorStep": "_AnchorStep" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+events": "tuple[TraceEvent, ...]"
         }
         "archigram.features.emit_plantuml.emitter._LoopStep": "_LoopStep" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+events": "tuple[TraceEvent, ...]"
         }
         "archigram.features.emit_plantuml.emitter._ParStep": "_ParStep" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+branches": "tuple[TraceEvent, ...]"
         }
         "archigram.features.emit_plantuml.emitter._SingleStep": "_SingleStep" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+event": "TraceEvent"
         }
         "archigram.features.emit_plantuml.emitter.build_alias_map": "build_alias_map" {
@@ -1449,8 +1361,6 @@ archigram: "archigram" {
         style.stroke: "#64748b"
         "archigram.features.emit_plantuml.uml_variants._PumlTreeCtx": "_PumlTreeCtx" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+nodes": "dict[str, IRNode]"
           "+children": "dict[str, list[str]]"
           "+aliases": "dict[str, str]"
@@ -1486,15 +1396,11 @@ archigram: "archigram" {
         style.stroke: "#64748b"
         "archigram.features.ingest_class.ingestor.ClassHierarchyIngestor": "ClassHierarchyIngestor" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+property extractor_name()": "str"
           "+ingest(source: Path | str)": "StructuralGraphIR"
         }
         "archigram.features.ingest_class.ingestor._ActiveClassBlock": "_ActiveClassBlock" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+raw_name": "str"
           "+explicit_sym": "str | None"
           "+label": "str | None"
@@ -1507,8 +1413,6 @@ archigram: "archigram" {
         }
         "archigram.features.ingest_class.ingestor._ClassGraphBuilder": "_ClassGraphBuilder" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+__init__(extractor: str, input_sha256: str, default_file: str | None)": "None"
           "-_stamp(file_path: str | None, line_span: tuple[int, int] | None)": "ProvenanceStamp"
           "-_index_short_name(short_name: str, sym_id: str)": "None"
@@ -1522,8 +1426,6 @@ archigram: "archigram" {
         }
         "archigram.features.ingest_class.ingestor._ClassRegistration": "_ClassRegistration" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+raw_name": "str"
           "+kind": "NodeKind"
           "+parent_pkg": "str | None"
@@ -1538,8 +1440,6 @@ archigram: "archigram" {
         }
         "archigram.features.ingest_class.ingestor._PackageRegistration": "_PackageRegistration" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+raw_name": "str"
           "+parent_pkg": "str | None"
           "+explicit_sym": "str | None"
@@ -1550,8 +1450,6 @@ archigram: "archigram" {
         }
         "archigram.features.ingest_class.ingestor._PumlParser": "_PumlParser" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+__init__(builder: _ClassGraphBuilder)": "None"
           "-_current_pkg()": "str | None"
           "-_skip_non_code_line(stripped: str)": "bool"
@@ -1562,8 +1460,6 @@ archigram: "archigram" {
         }
         "archigram.features.ingest_class.ingestor._RawEdge": "_RawEdge" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+source_ref": "str"
           "+target_ref": "str"
           "+relation": "EdgeRelation"
@@ -1583,15 +1479,11 @@ archigram: "archigram" {
         style.stroke: "#64748b"
         "archigram.features.ingest_dot.normalizer.DotStructuralIngestor": "DotStructuralIngestor" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+property extractor_name()": "str"
           "+ingest(source: Path | str)": "StructuralGraphIR"
         }
         "archigram.features.ingest_dot.normalizer._ParseContext": "_ParseContext" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+extractor": "str"
           "+input_sha256": "str"
           "+default_file": "str | None"
@@ -1606,8 +1498,6 @@ archigram: "archigram" {
         }
         "archigram.features.ingest_dot.normalizer._RawEdgeRecord": "_RawEdgeRecord" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+raw_source": "str"
           "+raw_target": "str"
           "+attrs": "dict[str, str]"
@@ -1623,16 +1513,12 @@ archigram: "archigram" {
         style.stroke: "#64748b"
         "archigram.features.ingest_otel.ingestor.OtelTraceIngestor": "OtelTraceIngestor" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+source_format": "str"
           "+property extractor_name()": "str"
           "+ingest(source: Path | str | bytes | None, raw_payload: Path | str | bytes | None, source_name: str)": "InteractionTraceIR"
         }
         "archigram.features.ingest_otel.ingestor._RawSpanRecord": "_RawSpanRecord" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+span_id": "str"
           "+trace_id": "str"
           "+parent_span_id": "str | None"
@@ -1659,16 +1545,12 @@ archigram: "archigram" {
         style.stroke: "#64748b"
         "archigram.features.ingest_python.ast_ingestor.PythonAstStructuralIngestor": "PythonAstStructuralIngestor" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+__init__(include_private: bool)": "None"
           "+property extractor_name()": "str"
           "+ingest(source: Path | str)": "StructuralGraphIR"
         }
         "archigram.features.ingest_python.ast_ingestor._EdgeCandidate": "_EdgeCandidate" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+source": "str"
           "+target": "str"
           "+relation": "EdgeRelation"
@@ -1677,8 +1559,6 @@ archigram: "archigram" {
         }
         "archigram.features.ingest_python.ast_ingestor._ModuleIndex": "_ModuleIndex" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+source_file": "_SourceFile"
           "+local_defs": "dict[str, str]"
           "+import_bindings": "dict[str, str]"
@@ -1687,8 +1567,6 @@ archigram: "archigram" {
         }
         "archigram.features.ingest_python.ast_ingestor._SourceFile": "_SourceFile" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+rel_posix_path": "str"
           "+module_id": "str"
           "+is_package": "bool"
@@ -1702,15 +1580,11 @@ archigram: "archigram" {
         style.stroke: "#64748b"
         "archigram.features.ingest_python.trace_ingestor.PythonTraceIngestor": "PythonTraceIngestor" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+property extractor_name()": "str"
           "+ingest(source: Path | str)": "InteractionTraceIR"
         }
         "archigram.features.ingest_python.trace_ingestor._ActiveFrame": "_ActiveFrame" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+code": "CodeType"
           "+participant_id": "str"
           "+event_id": "str | None"
@@ -1719,8 +1593,6 @@ archigram: "archigram" {
         }
         "archigram.features.ingest_python.trace_ingestor._CodeMeta": "_CodeMeta" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+module_name": "str"
           "+qualname": "str"
           "+participant_id": "str"
@@ -1731,8 +1603,6 @@ archigram: "archigram" {
         }
         "archigram.features.ingest_python.trace_ingestor._ParticipantMeta": "_ParticipantMeta" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+participant_id": "str"
           "+label": "str"
           "+kind": "NodeKind"
@@ -1741,8 +1611,6 @@ archigram: "archigram" {
         }
         "archigram.features.ingest_python.trace_ingestor._RecordedEvent": "_RecordedEvent" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+event_id": "str"
           "+caller_id": "str"
           "+callee_id": "str"
@@ -1759,8 +1627,6 @@ archigram: "archigram" {
         }
         "archigram.features.ingest_python.trace_ingestor._TraceRecorder": "_TraceRecorder" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+trace_id": "str"
           "+module_prefixes": "tuple[str, ...]"
           "+granularity": "Literal['module', 'callable']"
@@ -1797,16 +1663,12 @@ archigram: "archigram" {
         style.stroke: "#64748b"
         "archigram.features.ingest_scip.ingestor.ScipStructuralIngestor": "ScipStructuralIngestor" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+source_format": "str"
           "+property extractor_name()": "str"
           "+ingest(source: Path | str | bytes | None, raw_payload: Path | str | bytes | None, source_name: str)": "StructuralGraphIR"
         }
         "archigram.features.ingest_scip.ingestor._ConcurrencyAnnotation": "_ConcurrencyAnnotation" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+caller": "str | None"
           "+callee": "str | None"
           "+file_path": "str | None"
@@ -1818,8 +1680,6 @@ archigram: "archigram" {
         }
         "archigram.features.ingest_scip.ingestor._DefSpan": "_DefSpan" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+symbol_id": "str"
           "+start_pos": "tuple[int, int]"
           "+end_pos": "tuple[int, int]"
@@ -1827,15 +1687,11 @@ archigram: "archigram" {
         }
         "archigram.features.ingest_scip.ingestor._ParsedDescriptor": "_ParsedDescriptor" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+package_id": "str | None"
           "+descriptor_chain": "tuple[tuple[str, str], ...]"
         }
         "archigram.features.ingest_scip.ingestor._RawEdgeRecord": "_RawEdgeRecord" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+source": "str"
           "+target": "str"
           "+relation": "EdgeRelation"
@@ -1847,8 +1703,6 @@ archigram: "archigram" {
         }
         "archigram.features.ingest_scip.ingestor._RawNodeRecord": "_RawNodeRecord" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+symbol_id": "str"
           "+display_name": "str | None"
           "+explicit_kind": "NodeKind | None"
@@ -1867,8 +1721,6 @@ archigram: "archigram" {
         style.stroke: "#64748b"
         "archigram.features.lint_budget.gate.CognitiveBudgetAndOrphanGate": "CognitiveBudgetAndOrphanGate" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+property gate_id()": "GateId"
           "+check(observed_ir: CanonicalIR, spec: CurationSpecV1, curated_views: Mapping[str, CanonicalIR] | None)": "LintReport"
         }
@@ -1886,38 +1738,28 @@ archigram: "archigram" {
         style.stroke: "#64748b"
         "archigram.features.lint_grounding.gates.Gate1GroundingGate": "Gate1GroundingGate" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+property gate_id()": "GateId"
           "+check(observed_ir: CanonicalIR, spec: CurationSpecV1, curated_views: Mapping[str, CanonicalIR] | None)": "LintReport"
         }
         "archigram.features.lint_grounding.gates.Gate2BoundaryLeafGate": "Gate2BoundaryLeafGate" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+property gate_id()": "GateId"
           "+check(observed_ir: CanonicalIR, spec: CurationSpecV1, curated_views: Mapping[str, CanonicalIR] | None)": "LintReport"
         }
         "archigram.features.lint_grounding.gates.GroundingAndBoundaryGate": "GroundingAndBoundaryGate" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+__init__(primary_gate_id: GateId)": "None"
           "+property gate_id()": "GateId"
           "+check(observed_ir: CanonicalIR, spec: CurationSpecV1, curated_views: Mapping[str, CanonicalIR] | None)": "LintReport"
         }
         "archigram.features.lint_grounding.gates._ProtectedNodeSimulation": "_ProtectedNodeSimulation" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+visible_nodes": "frozenset[str]"
           "+dropped_by_rule": "dict[str, tuple[str, str]]"
           "+collapsed_into": "dict[str, tuple[str, str]]"
         }
         "archigram.features.lint_grounding.gates._RuleContext": "_RuleContext" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+observed_symbols": "frozenset[str]"
           "+target_node_ids": "frozenset[str]"
           "+view_id": "str | None"
@@ -1952,24 +1794,18 @@ archigram: "archigram" {
         style.stroke: "#64748b"
         "archigram.features.lint_syntax.validators.D2SyntaxValidator": "D2SyntaxValidator" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+__init__(use_cli: bool, cli_timeout: float)": "None"
           "+property target_format()": "str"
           "+validate(diagram_source: str)": "SyntaxValidationResult"
         }
         "archigram.features.lint_syntax.validators.DotSyntaxValidator": "DotSyntaxValidator" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+__init__(use_cli: bool, cli_timeout: float)": "None"
           "+property target_format()": "str"
           "+validate(diagram_source: str)": "SyntaxValidationResult"
         }
         "archigram.features.lint_syntax.validators.Gate5SyntaxHarness": "Gate5SyntaxHarness" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+slice_name": "str"
           "+__init__(validators: Mapping[str, SyntaxValidatorPort] | None)": "None"
           "+property supported_formats()": "tuple[str, ...]"
@@ -1978,30 +1814,22 @@ archigram: "archigram" {
         }
         "archigram.features.lint_syntax.validators.LikeC4SyntaxValidator": "LikeC4SyntaxValidator" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+property target_format()": "str"
           "+validate(diagram_source: str)": "SyntaxValidationResult"
         }
         "archigram.features.lint_syntax.validators.MermaidSyntaxValidator": "MermaidSyntaxValidator" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+property target_format()": "str"
           "+validate(diagram_source: str)": "SyntaxValidationResult"
         }
         "archigram.features.lint_syntax.validators.PlantUmlSyntaxValidator": "PlantUmlSyntaxValidator" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+__init__(use_cli: bool, cli_timeout: float)": "None"
           "+property target_format()": "str"
           "+validate(diagram_source: str)": "SyntaxValidationResult"
         }
         "archigram.features.lint_syntax.validators._MaskOptions": "_MaskOptions" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+single_quotes": "bool"
           "+hash_comments": "bool"
           "+slash_comments": "bool"
@@ -2011,8 +1839,6 @@ archigram: "archigram" {
         }
         "archigram.features.lint_syntax.validators._PumlState": "_PumlState" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+started": "bool"
           "+ended": "bool"
           "+brace_depth": "int"
@@ -2036,8 +1862,6 @@ archigram: "archigram" {
         style.stroke: "#64748b"
         "archigram.features.lint_topology.gate.TopologicalInvariantGate": "TopologicalInvariantGate" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+__init__(strict_cohesion: bool)": "None"
           "+property gate_id()": "GateId"
           "-_check_structural(observed_ir: StructuralGraphIR, spec: CurationSpecV1, curated_views: Mapping[str, CanonicalIR] | None)": "list[LintD..."
@@ -2046,16 +1870,12 @@ archigram: "archigram" {
         }
         "archigram.features.lint_topology.gate._IndexedDiGraph": "_IndexedDiGraph" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+graph": "rx.PyDiGraph[str, float]"
           "+id_to_idx": "dict[str, int]"
           "+idx_to_id": "tuple[str, ...]"
         }
         "archigram.features.lint_topology.gate._StructuralContext": "_StructuralContext" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+observed_ir": "StructuralGraphIR"
           "+full_digraph": "_IndexedDiGraph"
           "+obs_scc_by_id": "dict[str, int]"
@@ -2065,8 +1885,6 @@ archigram: "archigram" {
         }
         "archigram.features.lint_topology.gate._TracePoset": "_TracePoset" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+event_ids": "tuple[str, ...]"
           "+id_to_idx": "dict[str, int]"
           "+desc_mask": "tuple[int, ...]"
@@ -2082,14 +1900,10 @@ archigram: "archigram" {
         style.stroke: "#64748b"
         "archigram.features.reduce_structural.reducer.CycleInducedError": "CycleInducedError" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+__init__(message: str, rule_id: str, target_node_id: str, member_ids: tuple[str, ...], witness_path: tuple[str, ...])": "None"
         }
         "archigram.features.reduce_structural.reducer.StructuralTopologicalReducer": "StructuralTopologicalReducer" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+reduce(ir: StructuralGraphIR, view: DiagramViewSpec, global_abstractions: tuple[GlobalAbstractionRule, ...])": "StructuralG..."
         }
         "archigram.features.reduce_structural.reducer.apply_structural_rule": "apply_structural_rule" {
@@ -2130,15 +1944,11 @@ archigram: "archigram" {
         style.stroke: "#64748b"
         "archigram.features.reduce_trace.compactor.TraceCompactionEngine": "TraceCompactionEngine" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+compact_with_fragments(ir: InteractionTraceIR, config: TraceCompactionConfig | None)": "tuple[InteractionTraceIR, tuple[TraceFragment, ...]]"
           "+compact(ir: InteractionTraceIR, config: TraceCompactionConfig)": "InteractionTraceIR"
         }
         "archigram.features.reduce_trace.compactor.TraceFragment": "TraceFragment" {
           shape: class
-          style.fill: transparent
-          style.stroke: "#64748b"
           "+kind": "TraceFragmentKind"
           "+event_id": "str | None"
           "+label": "str"
@@ -2172,8 +1982,6 @@ archigram: "archigram" {
     style.stroke: "#64748b"
     "archigram.ports.SliceDescriptor": "SliceDescriptor" {
       shape: class
-      style.fill: transparent
-      style.stroke: "#64748b"
       "+property slice_name()": "str"
     }
     "archigram.ports.contracts": "contracts" {
@@ -2181,63 +1989,45 @@ archigram: "archigram" {
       style.stroke: "#64748b"
       "archigram.ports.contracts.DiagramEmitterPort": "DiagramEmitterPort" {
         shape: class
-        style.fill: transparent
-        style.stroke: "#64748b"
         "+property target_format()": "str"
         "+emit(ir: CanonicalIR)": "str"
       }
       "archigram.ports.contracts.DigestGeneratorPort": "DigestGeneratorPort" {
         shape: class
-        style.fill: transparent
-        style.stroke: "#64748b"
         "+digest(ir: CanonicalIR)": "object"
         "+to_compact_markdown(ir: CanonicalIR, max_items_per_section: int)": "str"
       }
       "archigram.ports.contracts.LintGatePort": "LintGatePort" {
         shape: class
-        style.fill: transparent
-        style.stroke: "#64748b"
         "+property gate_id()": "GateId"
         "+check(observed_ir: CanonicalIR, spec: CurationSpecV1, curated_views: Mapping[str, CanonicalIR] | None)": "LintReport"
       }
       "archigram.ports.contracts.StructuralIngestorPort": "StructuralIngestorPort" {
         shape: class
-        style.fill: transparent
-        style.stroke: "#64748b"
         "+property extractor_name()": "str"
         "+ingest(source: Path | str)": "StructuralGraphIR"
       }
       "archigram.ports.contracts.StructuralReducerPort": "StructuralReducerPort" {
         shape: class
-        style.fill: transparent
-        style.stroke: "#64748b"
         "+reduce(ir: StructuralGraphIR, view: DiagramViewSpec, global_abstractions: tuple[GlobalAbstractionRule, ...])": "StructuralG..."
       }
       "archigram.ports.contracts.SyntaxValidationResult": "SyntaxValidationResult" {
         shape: class
-        style.fill: transparent
-        style.stroke: "#64748b"
         "+valid": "bool"
         "+target_format": "str"
         "+errors": "tuple[str, ...]"
       }
       "archigram.ports.contracts.SyntaxValidatorPort": "SyntaxValidatorPort" {
         shape: class
-        style.fill: transparent
-        style.stroke: "#64748b"
         "+property target_format()": "str"
         "+validate(diagram_source: str)": "SyntaxValidationResult"
       }
       "archigram.ports.contracts.TraceCompactorPort": "TraceCompactorPort" {
         shape: class
-        style.fill: transparent
-        style.stroke: "#64748b"
         "+compact(ir: InteractionTraceIR, config: TraceCompactionConfig)": "InteractionTraceIR"
       }
       "archigram.ports.contracts.TraceIngestorPort": "TraceIngestorPort" {
         shape: class
-        style.fill: transparent
-        style.stroke: "#64748b"
         "+property extractor_name()": "str"
         "+ingest(source: Path | str)": "InteractionTraceIR"
       }
@@ -2519,6 +2309,29 @@ archigram."archigram.domain"."archigram.domain.style"."archigram.domain.style.Ed
     style.filled: true
   }
 }
+archigram."archigram.domain"."archigram.domain.style"."archigram.domain.style.MermaidThemeConfig" -> archigram."archigram.domain"."archigram.domain.style"."archigram.domain.style.MermaidWebModePalette": "composes" {
+  style.stroke: "#14b8a6"
+  source-arrowhead: {
+    shape: diamond
+    style.filled: true
+  }
+}
+archigram."archigram.domain"."archigram.domain.style"."archigram.domain.style.MermaidThemeConfig" -> archigram."archigram.domain"."archigram.domain.style"."archigram.domain.style.relative_luminance": "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.domain"."archigram.domain.style"."archigram.domain.style.MermaidWebModePalette" -> archigram."archigram.domain"."archigram.domain.style"."archigram.domain.style.contrast_ratio": "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.domain"."archigram.domain.style"."archigram.domain.style.contrast_ratio" -> archigram."archigram.domain"."archigram.domain.style"."archigram.domain.style.relative_luminance": "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.domain"."archigram.domain.style"."archigram.domain.style.parse_mermaid_theme_yaml" -> archigram."archigram.domain"."archigram.domain.style"."archigram.domain.style.MermaidThemeConfig": "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
 archigram."archigram.entrypoints"."archigram.entrypoints.cli" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.app": "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
@@ -2600,6 +2413,10 @@ archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypo
   style.stroke: "#3b82f6"
   style.animated: true
 }
+archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.app"."archigram.entrypoints.cli.app.execute_apply" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.load_mermaid_theme": "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
 archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.app"."archigram.entrypoints.cli.app.execute_apply" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.sync_compiled_artifacts": "calls" {
   style.stroke: "#3b82f6"
   style.animated: true
@@ -2625,6 +2442,10 @@ archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypo
   style.animated: true
 }
 archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.app"."archigram.entrypoints.cli.app.execute_lint" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.load_curation_spec": "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.app"."archigram.entrypoints.cli.app.execute_lint" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.load_mermaid_theme": "calls" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
@@ -2964,6 +2785,10 @@ archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypo
   style.stroke: "#3b82f6"
   style.animated: true
 }
+archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.emit_view_source" -> archigram."archigram.features"."archigram.features.emit_mermaid"."archigram.features.emit_mermaid.emitter"."archigram.features.emit_mermaid.emitter.MermaidEmitter": "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
 archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.load_canonical_ir" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.InputFormat": "calls" {
   style.stroke: "#3b82f6"
   style.animated: true
@@ -2973,6 +2798,14 @@ archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypo
   style.animated: true
 }
 archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.load_curation_spec" -> archigram."archigram.domain"."archigram.domain.spec"."archigram.domain.spec.parse_curation_spec_yaml": "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.load_mermaid_theme" -> archigram."archigram.domain"."archigram.domain.style"."archigram.domain.style.parse_mermaid_theme_yaml": "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.render_companion_svg" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.inject_svg_dual_mode_style": "calls" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
@@ -3108,6 +2941,10 @@ archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypo
   style.animated: true
 }
 archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.execute_triage" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.load_curation_spec": "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.execute_triage" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.load_mermaid_theme": "calls" {
   style.stroke: "#3b82f6"
   style.animated: true
 }

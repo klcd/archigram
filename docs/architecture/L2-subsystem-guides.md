@@ -39,15 +39,6 @@ config:
   flowchart:
     defaultRenderer: elk
     curve: linear
-  themeVariables:
-    primaryColor: transparent
-    secondaryColor: transparent
-    tertiaryColor: transparent
-    mainBkg: transparent
-    nodeBorder: '#64748b'
-    clusterBkg: transparent
-    clusterBorder: '#64748b'
-    lineColor: '#64748b'
 ---
 flowchart TD
   classDef default fill:transparent,stroke:#64748b,stroke-width:1.5px
@@ -101,15 +92,6 @@ config:
   flowchart:
     defaultRenderer: elk
     curve: linear
-  themeVariables:
-    primaryColor: transparent
-    secondaryColor: transparent
-    tertiaryColor: transparent
-    mainBkg: transparent
-    nodeBorder: '#64748b'
-    clusterBkg: transparent
-    clusterBorder: '#64748b'
-    lineColor: '#64748b'
 ---
 flowchart TD
   classDef default fill:transparent,stroke:#64748b,stroke-width:1.5px
@@ -197,15 +179,6 @@ config:
   flowchart:
     defaultRenderer: elk
     curve: linear
-  themeVariables:
-    primaryColor: transparent
-    secondaryColor: transparent
-    tertiaryColor: transparent
-    mainBkg: transparent
-    nodeBorder: '#64748b'
-    clusterBkg: transparent
-    clusterBorder: '#64748b'
-    lineColor: '#64748b'
 ---
 flowchart TD
   classDef default fill:transparent,stroke:#64748b,stroke-width:1.5px
@@ -264,15 +237,6 @@ config:
   flowchart:
     defaultRenderer: elk
     curve: linear
-  themeVariables:
-    primaryColor: transparent
-    secondaryColor: transparent
-    tertiaryColor: transparent
-    mainBkg: transparent
-    nodeBorder: '#64748b'
-    clusterBkg: transparent
-    clusterBorder: '#64748b'
-    lineColor: '#64748b'
 ---
 classDiagram
   class c0["lint_syntax"]
@@ -367,15 +331,6 @@ config:
   flowchart:
     defaultRenderer: elk
     curve: linear
-  themeVariables:
-    primaryColor: transparent
-    secondaryColor: transparent
-    tertiaryColor: transparent
-    mainBkg: transparent
-    nodeBorder: '#64748b'
-    clusterBkg: transparent
-    clusterBorder: '#64748b'
-    lineColor: '#64748b'
 ---
 flowchart TD
   classDef default fill:transparent,stroke:#64748b,stroke-width:1.5px

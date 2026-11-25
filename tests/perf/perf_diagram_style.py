@@ -91,3 +91,22 @@ def test_perf_emit_d2_steps_animated_trace_200_events(benchmark: Callable[..., A
     rendered = benchmark(emitter.emit, trace)
     assert "\nsteps: {\n" in rendered
     assert "style.animated: true" in rendered
+
+
+def test_perf_central_mermaid_theme_parse_and_web_js(benchmark: Callable[..., Any]) -> None:
+    """Benchmark parsing central mermaid-theme.yaml and emitting shared web mermaid-theme.js."""
+    from archigram.domain.style import (
+        DEFAULT_MERMAID_THEME,
+        dump_mermaid_theme_yaml,
+        parse_mermaid_theme_yaml,
+        render_mermaid_web_theme_js,
+    )
+
+    raw_yaml = dump_mermaid_theme_yaml(DEFAULT_MERMAID_THEME)
+
+    def _run() -> str:
+        cfg = parse_mermaid_theme_yaml(raw_yaml)
+        return render_mermaid_web_theme_js(cfg)
+
+    rendered_js = benchmark(_run)
+    assert "ArchiGramMermaidTheme" in rendered_js

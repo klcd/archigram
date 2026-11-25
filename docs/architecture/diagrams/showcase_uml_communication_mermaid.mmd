@@ -7,15 +7,6 @@ config:
   flowchart:
     defaultRenderer: elk
     curve: linear
-  themeVariables:
-    primaryColor: transparent
-    secondaryColor: transparent
-    tertiaryColor: transparent
-    mainBkg: transparent
-    nodeBorder: '#64748b'
-    clusterBkg: transparent
-    clusterBorder: '#64748b'
-    lineColor: '#64748b'
 ---
 flowchart LR
   classDef default fill:transparent,stroke:#64748b,stroke-width:1.5px
@@ -35,15 +26,15 @@ flowchart LR
   o13[":lint_topology.gate"]
   o14[":reducer"]
   o4 -->|"1: compile_and_lint_pipeline"| o4
-  o4 -->|"1.1: StructuralTopologicalReducer.reduce, 1.3: StructuralTopologicalReducer.reduce, 1.5: StructuralTopologicalReducer.reduce"| o14
-  o4 -->|"1.2: MermaidEmitter.emit"| o8
-  o4 -->|"1.4: D2Emitter.emit"| o7
-  o4 -->|"1.6: PlantUmlEmitter.emit"| o9
-  o4 -->|"1.7: GroundingAndBoundaryGate.__init__, 1.8: GroundingAndBoundaryGate.check"| o11
-  o4 -->|"1.9: TopologicalInvariantGate.__init__, 1.10: TopologicalInvariantGate.check"| o13
-  o4 -->|"1.11: CognitiveBudgetAndOrphanGate.check"| o10
-  o4 -->|"1.12: build_default_validators, 1.13: Gate5SyntaxHarness.__init__, 1.14: Gate5SyntaxHarness.validate (loop x3"| o12
-  o4 -->|"1.15: LintReport.from_diagnostics"| o0
+  o4 -->|"1.1: StructuralTopologicalReducer.reduce, 1.4: StructuralTopologicalReducer.reduce, 1.6: StructuralTopologicalReducer.reduce"| o14
+  o4 -->|"1.2: MermaidEmitter.__init__, 1.3: MermaidEmitter.emit"| o8
+  o4 -->|"1.5: D2Emitter.emit"| o7
+  o4 -->|"1.7: PlantUmlEmitter.emit"| o9
+  o4 -->|"1.8: GroundingAndBoundaryGate.__init__, 1.9: GroundingAndBoundaryGate.check"| o11
+  o4 -->|"1.10: TopologicalInvariantGate.__init__, 1.11: TopologicalInvariantGate.check"| o13
+  o4 -->|"1.12: CognitiveBudgetAndOrphanGate.check"| o10
+  o4 -->|"1.13: build_default_validators, 1.14: Gate5SyntaxHarness.__init__, 1.15: Gate5SyntaxHarness.validate (loop x3"| o12
+  o4 -->|"1.16: LintReport.from_diagnostics"| o0
   o5 -->|"2: run_propose_loop"| o5
   o5 -->|"2.1: GraphDigestGenerator.to_compact_mark"| o6
   o5 -->|"2.2: parse_curation_spec_yaml, 2.7: parse_curation_spec_yaml, 2.9: DiagramViewSpec._validate_unique_vie (+4)"| o2

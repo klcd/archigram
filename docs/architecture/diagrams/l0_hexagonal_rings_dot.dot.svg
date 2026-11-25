@@ -251,4 +251,7 @@
 <text xml:space="preserve" text-anchor="middle" x="552.02" y="-160.03" font-family="Times,serif" font-size="14.00" fill="#64748b">imports</text>
 </g>
 </g>
-</svg>
+<style type="text/css"><![CDATA[
+text{fill:#1e293b;}
+@media (prefers-color-scheme:dark){text{fill:#e2e8f0;}}
+]]></style></svg>

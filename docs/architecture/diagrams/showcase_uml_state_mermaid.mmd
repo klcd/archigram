@@ -1,12 +1,6 @@
 ---
 config:
-  themeVariables:
-    primaryColor: transparent
-    secondaryColor: transparent
-    tertiaryColor: transparent
-    mainBkg: transparent
-    nodeBorder: '#64748b'
-    lineColor: '#3b82f6'
+  layout: elk
 ---
 stateDiagram-v2
   direction TB
@@ -28,7 +22,7 @@ stateDiagram-v2
   [*] --> s4
   s4 --> s4 : compile_and_lint_pipeline
   s4 --> s14 : StructuralTopologicalReducer.reduce
-  s4 --> s8 : MermaidEmitter.emit
+  s4 --> s8 : MermaidEmitter.__init__
   s4 --> s7 : D2Emitter.emit
   s4 --> s9 : PlantUmlEmitter.emit
   s4 --> s11 : GroundingAndBoundaryGate.__init__

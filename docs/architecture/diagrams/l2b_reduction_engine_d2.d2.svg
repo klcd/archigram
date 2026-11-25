@@ -169,4 +169,10 @@
 <rect x="438" y="920" width="35" height="21" fill="black"></rect>
 <rect x="1773" y="1387" width="35" height="21" fill="black"></rect>
 <rect x="1598" y="900" width="35" height="21" fill="black"></rect>
-</mask></svg></svg>
+</mask></svg><style type="text/css"><![CDATA[
+.appendix-icon path[fill="white"]{fill:#f8fafc;stroke:#94a3b8;}
+@media screen and (prefers-color-scheme:dark){
+.appendix-icon path[fill="white"]{fill:#1e293b !important;stroke:#64748b !important;}
+.appendix-icon path[stroke="#2E3346"]{stroke:#cbd5e1 !important;}
+}
+]]></style></svg>

@@ -459,7 +459,7 @@ def _emit_d2_stereo_subtree(
     if ctx.mode == "package" and not child_ids:
         lines.append(f"{inner}shape: package")
     elif ctx.mode == "deployment" and not child_ids:
-        lines.append(f"{inner}style.3d: true")
+        lines.append(f"{inner}style.double-border: true")
     lines.append(f"{inner}style.fill: {TRANSPARENT_FILL}")
     lines.append(f'{inner}style.stroke: "{NEUTRAL_BORDER_HEX}"')
     for cid in child_ids:
@@ -506,7 +506,7 @@ def emit_d2_package_or_deployment(ir: CanonicalIR, mode: str) -> str:
         k = _format_d2_key(key_map[pid])
         stereo = "<<package>>" if mode == "package" else "<<artifact>>"
         lines.append(f"{k}: {_quote_d2_string(f'{stereo} {ir.participants[pid].label}')} {{")
-        lines.append("  shape: package" if mode == "package" else "  style.3d: true")
+        lines.append("  shape: package" if mode == "package" else "  style.double-border: true")
         lines.append(f"  style.fill: {TRANSPARENT_FILL}")
         lines.append(f'  style.stroke: "{NEUTRAL_BORDER_HEX}"')
         lines.append("}")

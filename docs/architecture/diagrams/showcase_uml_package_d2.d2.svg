@@ -62,4 +62,10 @@
 <rect x="1415" y="1311" width="80" height="21" fill="black"></rect>
 <rect x="934" y="1255" width="80" height="21" fill="black"></rect>
 <rect x="1514" y="704" width="80" height="21" fill="black"></rect>
-</mask></svg></svg>
+</mask></svg><style type="text/css"><![CDATA[
+.appendix-icon path[fill="white"]{fill:#f8fafc;stroke:#94a3b8;}
+@media screen and (prefers-color-scheme:dark){
+.appendix-icon path[fill="white"]{fill:#1e293b !important;stroke:#64748b !important;}
+.appendix-icon path[stroke="#2E3346"]{stroke:#cbd5e1 !important;}
+}
+]]></style></svg>

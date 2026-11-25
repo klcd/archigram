@@ -15,11 +15,8 @@ from archigram.domain.ir import (
 )
 from archigram.domain.style import (
     CANONICAL_EDGE_STYLES,
-    DEFAULT_STROKE_WIDTH_PX,
-    MERMAID_DEFAULT_CLASSDEF,
-    MERMAID_STATE_FRONTMATTER,
-    MERMAID_STRUCTURAL_FRONTMATTER,
-    MERMAID_SUBGRAPH_STYLE_ATTRS,
+    DEFAULT_MERMAID_THEME,
+    MermaidThemeConfig,
 )
 
 if TYPE_CHECKING:
@@ -90,11 +87,14 @@ def _number_trace_events(trace: InteractionTraceIR) -> list[tuple[str, TraceEven
     return numbered
 
 
-def emit_mermaid_state_structural(ir: StructuralGraphIR) -> str:
+def emit_mermaid_state_structural(
+    ir: StructuralGraphIR,
+    theme: MermaidThemeConfig = DEFAULT_MERMAID_THEME,
+) -> str:
     """Emit a Gitea-compatible Mermaid `stateDiagram-v2` from `StructuralGraphIR`."""
     sorted_ids = sorted(ir.nodes)
     aliases = _alias_map(sorted_ids, "s")
-    lines = [MERMAID_STATE_FRONTMATTER, "stateDiagram-v2", "  direction TB"]
+    lines = [theme.state_frontmatter(), "stateDiagram-v2", "  direction TB"]
     for sid in sorted_ids:
         label = _clean_state_trigger(ir.nodes[sid].label)
         lines.append(f'  state "{label}" as {aliases[sid]}')
@@ -116,11 +116,14 @@ def emit_mermaid_state_structural(ir: StructuralGraphIR) -> str:
     return "\n".join(lines) + "\n"
 
 
-def emit_mermaid_state_trace(trace: InteractionTraceIR) -> str:
+def emit_mermaid_state_trace(
+    trace: InteractionTraceIR,
+    theme: MermaidThemeConfig = DEFAULT_MERMAID_THEME,
+) -> str:
     """Emit a Gitea-compatible Mermaid `stateDiagram-v2` from `InteractionTraceIR`."""
     sorted_pids = sorted(trace.participants)
     aliases = _alias_map(sorted_pids, "s")
-    lines = [MERMAID_STATE_FRONTMATTER, "stateDiagram-v2", "  direction TB"]
+    lines = [theme.state_frontmatter(), "stateDiagram-v2", "  direction TB"]
     for pid in sorted_pids:
         label = _clean_state_trigger(trace.participants[pid].label)
         lines.append(f'  state "{label}" as {aliases[pid]}')
@@ -141,11 +144,14 @@ def emit_mermaid_state_trace(trace: InteractionTraceIR) -> str:
     return "\n".join(lines) + "\n"
 
 
-def emit_mermaid_communication_trace(trace: InteractionTraceIR) -> str:
+def emit_mermaid_communication_trace(
+    trace: InteractionTraceIR,
+    theme: MermaidThemeConfig = DEFAULT_MERMAID_THEME,
+) -> str:
     """Emit a UML 2.5 Communication Diagram with numbered sequence messages in Mermaid."""
     sorted_pids = sorted(trace.participants)
     aliases = _alias_map(sorted_pids, "o")
-    lines = [MERMAID_STRUCTURAL_FRONTMATTER, "flowchart LR", f"  {MERMAID_DEFAULT_CLASSDEF}"]
+    lines = [theme.structural_frontmatter(), "flowchart LR", f"  {theme.default_classdef()}"]
     for pid in sorted_pids:
         label = _clean_text(trace.participants[pid].label)
         lines.append(f'  {aliases[pid]}[":{label}"]')
@@ -164,16 +170,19 @@ def emit_mermaid_communication_trace(trace: InteractionTraceIR) -> str:
     if edge_count:
         indices = ",".join(str(i) for i in range(edge_count))
         lines.append(
-            f"  linkStyle {indices} stroke:{_CALL_HEX},stroke-width:{DEFAULT_STROKE_WIDTH_PX}"
+            f"  linkStyle {indices} stroke:{_CALL_HEX},stroke-width:{theme.edge_stroke_width_px}"
         )
     return "\n".join(lines) + "\n"
 
 
-def emit_mermaid_communication_structural(ir: StructuralGraphIR) -> str:
+def emit_mermaid_communication_structural(
+    ir: StructuralGraphIR,
+    theme: MermaidThemeConfig = DEFAULT_MERMAID_THEME,
+) -> str:
     """Emit a UML 2.5 Communication Diagram with numbered links from `StructuralGraphIR`."""
     sorted_ids = sorted(ir.nodes)
     aliases = _alias_map(sorted_ids, "o")
-    lines = [MERMAID_STRUCTURAL_FRONTMATTER, "flowchart LR", f"  {MERMAID_DEFAULT_CLASSDEF}"]
+    lines = [theme.structural_frontmatter(), "flowchart LR", f"  {theme.default_classdef()}"]
     for sid in sorted_ids:
         lines.append(f'  {aliases[sid]}[":{_clean_text(ir.nodes[sid].label)}"]')
     sorted_edges = sorted(ir.edges, key=lambda item: item.edge_id)
@@ -183,7 +192,7 @@ def emit_mermaid_communication_structural(ir: StructuralGraphIR) -> str:
     if sorted_edges:
         indices = ",".join(str(i) for i in range(len(sorted_edges)))
         lines.append(
-            f"  linkStyle {indices} stroke:{_CALL_HEX},stroke-width:{DEFAULT_STROKE_WIDTH_PX}"
+            f"  linkStyle {indices} stroke:{_CALL_HEX},stroke-width:{theme.edge_stroke_width_px}"
         )
     return "\n".join(lines) + "\n"
 
@@ -263,29 +272,35 @@ def _emit_activity_trace_nodes(
     return node_lines, edges
 
 
-def emit_mermaid_activity_trace(trace: InteractionTraceIR) -> str:
+def emit_mermaid_activity_trace(
+    trace: InteractionTraceIR,
+    theme: MermaidThemeConfig = DEFAULT_MERMAID_THEME,
+) -> str:
     """Emit a UML 2.5 Activity Diagram (`flowchart TD`) from `InteractionTraceIR`."""
-    lines = [MERMAID_STRUCTURAL_FRONTMATTER, "flowchart TD", f"  {MERMAID_DEFAULT_CLASSDEF}"]
+    lines = [theme.structural_frontmatter(), "flowchart TD", f"  {theme.default_classdef()}"]
     node_lines, edges = _emit_activity_trace_nodes(_ordered_events(trace), trace)
     lines.extend(node_lines)
     grouped_styles: dict[str, list[str]] = {}
     for edge_idx, (src, dst, hex_color) in enumerate(edges):
         lines.append(f"  {src} --> {dst}")
-        spec = f"stroke:{hex_color},stroke-width:{DEFAULT_STROKE_WIDTH_PX}"
+        spec = f"stroke:{hex_color},stroke-width:{theme.edge_stroke_width_px}"
         grouped_styles.setdefault(spec, []).append(str(edge_idx))
     for spec, idxs in grouped_styles.items():
         lines.append(f"  linkStyle {','.join(idxs)} {spec}")
     return "\n".join(lines) + "\n"
 
 
-def emit_mermaid_activity_structural(ir: StructuralGraphIR) -> str:
+def emit_mermaid_activity_structural(
+    ir: StructuralGraphIR,
+    theme: MermaidThemeConfig = DEFAULT_MERMAID_THEME,
+) -> str:
     """Emit a UML 2.5 Activity workflow Diagram (`flowchart TD`) from `StructuralGraphIR`."""
     sorted_ids = sorted(ir.nodes)
     aliases = _alias_map(sorted_ids, "a")
     lines = [
-        MERMAID_STRUCTURAL_FRONTMATTER,
+        theme.structural_frontmatter(),
         "flowchart TD",
-        f"  {MERMAID_DEFAULT_CLASSDEF}",
+        f"  {theme.default_classdef()}",
         '  act_start((" "))',
     ]
     for sid in sorted_ids:
@@ -312,7 +327,7 @@ def emit_mermaid_activity_structural(ir: StructuralGraphIR) -> str:
     if edge_count:
         idxs = ",".join(str(i) for i in range(edge_count))
         lines.append(
-            f"  linkStyle {idxs} stroke:{_CALL_HEX},stroke-width:{DEFAULT_STROKE_WIDTH_PX}"
+            f"  linkStyle {idxs} stroke:{_CALL_HEX},stroke-width:{theme.edge_stroke_width_px}"
         )
     return "\n".join(lines) + "\n"
 
@@ -341,11 +356,14 @@ def _partition_actors_and_use_cases(ir: StructuralGraphIR) -> tuple[list[str], l
     return actors, use_cases
 
 
-def emit_mermaid_use_case_structural(ir: StructuralGraphIR) -> str:
+def emit_mermaid_use_case_structural(
+    ir: StructuralGraphIR,
+    theme: MermaidThemeConfig = DEFAULT_MERMAID_THEME,
+) -> str:
     """Emit a UML 2.5 Use Case Diagram (`flowchart LR`) from `StructuralGraphIR`."""
     actors, use_cases = _partition_actors_and_use_cases(ir)
     aliases = _alias_map(sorted(ir.nodes), "u")
-    lines = [MERMAID_STRUCTURAL_FRONTMATTER, "flowchart LR", f"  {MERMAID_DEFAULT_CLASSDEF}"]
+    lines = [theme.structural_frontmatter(), "flowchart LR", f"  {theme.default_classdef()}"]
     for aid in actors:
         lines.append(f'  {aliases[aid]}["<<actor>> {_clean_text(ir.nodes[aid].label)}"]')
     if use_cases:
@@ -353,7 +371,7 @@ def emit_mermaid_use_case_structural(ir: StructuralGraphIR) -> str:
         for ucid in use_cases:
             lines.append(f'    {aliases[ucid]}(["{_clean_text(ir.nodes[ucid].label)}"])')
         lines.append("  end")
-        lines.append(f"  style sys_boundary {MERMAID_SUBGRAPH_STYLE_ATTRS}")
+        lines.append(f"  style sys_boundary {theme.subgraph_style_attrs()}")
     actor_set = set(actors)
     sorted_edges = sorted(ir.edges, key=lambda item: item.edge_id)
     for edge in sorted_edges:
@@ -364,12 +382,15 @@ def emit_mermaid_use_case_structural(ir: StructuralGraphIR) -> str:
     if sorted_edges:
         idxs = ",".join(str(i) for i in range(len(sorted_edges)))
         lines.append(
-            f"  linkStyle {idxs} stroke:{_CALL_HEX},stroke-width:{DEFAULT_STROKE_WIDTH_PX}"
+            f"  linkStyle {idxs} stroke:{_CALL_HEX},stroke-width:{theme.edge_stroke_width_px}"
         )
     return "\n".join(lines) + "\n"
 
 
-def emit_mermaid_use_case_trace(trace: InteractionTraceIR) -> str:
+def emit_mermaid_use_case_trace(
+    trace: InteractionTraceIR,
+    theme: MermaidThemeConfig = DEFAULT_MERMAID_THEME,
+) -> str:
     """Emit a UML 2.5 Use Case Diagram (`flowchart LR`) from `InteractionTraceIR`."""
     ordered = _ordered_events(trace)
     root_callers = sorted({ev.caller_id for ev in ordered if ev.parent_event_id is None})
@@ -382,14 +403,14 @@ def emit_mermaid_use_case_trace(trace: InteractionTraceIR) -> str:
     actor_set = set(actors)
     use_cases = [pid for pid in sorted_pids if pid not in actor_set] or sorted_pids
     aliases = _alias_map(sorted_pids, "u")
-    lines = [MERMAID_STRUCTURAL_FRONTMATTER, "flowchart LR", f"  {MERMAID_DEFAULT_CLASSDEF}"]
+    lines = [theme.structural_frontmatter(), "flowchart LR", f"  {theme.default_classdef()}"]
     for aid in actors:
         lines.append(f'  {aliases[aid]}["<<actor>> {_clean_text(trace.participants[aid].label)}"]')
     lines.append('  subgraph sys_boundary["System Subject Boundary"]')
     for ucid in use_cases:
         lines.append(f'    {aliases[ucid]}(["{_clean_text(trace.participants[ucid].label)}"])')
     lines.append("  end")
-    lines.append(f"  style sys_boundary {MERMAID_SUBGRAPH_STYLE_ATTRS}")
+    lines.append(f"  style sys_boundary {theme.subgraph_style_attrs()}")
     seen: set[tuple[str, str]] = set()
     for ev in ordered:
         pair = (ev.caller_id, ev.callee_id)
@@ -401,7 +422,7 @@ def emit_mermaid_use_case_trace(trace: InteractionTraceIR) -> str:
     if seen:
         idxs = ",".join(str(i) for i in range(len(seen)))
         lines.append(
-            f"  linkStyle {idxs} stroke:{_CALL_HEX},stroke-width:{DEFAULT_STROKE_WIDTH_PX}"
+            f"  linkStyle {idxs} stroke:{_CALL_HEX},stroke-width:{theme.edge_stroke_width_px}"
         )
     return "\n".join(lines) + "\n"
 
@@ -434,6 +455,7 @@ def _emit_stereotyped_structural(
     stereotypes: tuple[str, str],
     edge_stereotype: str,
     edge_hex: str,
+    theme: MermaidThemeConfig = DEFAULT_MERMAID_THEME,
 ) -> str:
     sorted_ids = sorted(ir.nodes)
     aliases = _alias_map(sorted_ids, "n")
@@ -445,16 +467,17 @@ def _emit_stereotyped_structural(
             roots.append(sid)
         else:
             children[pid].append(sid)
+    sub_style = theme.subgraph_style_attrs()
     lines = [
-        MERMAID_STRUCTURAL_FRONTMATTER,
+        theme.structural_frontmatter(),
         f"flowchart {direction}",
-        f"  {MERMAID_DEFAULT_CLASSDEF}",
+        f"  {theme.default_classdef()}",
     ]
     for rid in roots:
         lines.extend(_emit_stereotyped_tree(rid, ir.nodes, children, aliases, stereotypes))
     for sid in sorted_ids:
         if children[sid]:
-            lines.append(f"  style {aliases[sid]} {MERMAID_SUBGRAPH_STYLE_ATTRS}")
+            lines.append(f"  style {aliases[sid]} {sub_style}")
     sorted_edges: list[IREdge] = sorted(ir.edges, key=lambda item: item.edge_id)
     for edge in sorted_edges:
         lines.append(f'  {aliases[edge.source]} -.->|"{edge_stereotype}"| {aliases[edge.target]}')
@@ -462,20 +485,23 @@ def _emit_stereotyped_structural(
         idxs = ",".join(str(i) for i in range(len(sorted_edges)))
         lines.append(
             f"  linkStyle {idxs} stroke:{edge_hex},"
-            f"stroke-width:{DEFAULT_STROKE_WIDTH_PX},stroke-dasharray:5 5"
+            f"stroke-width:{theme.edge_stroke_width_px},stroke-dasharray:{theme.dashed_edge_array}"
         )
     return "\n".join(lines) + "\n"
 
 
-def emit_mermaid_package(ir: StructuralGraphIR | InteractionTraceIR) -> str:
+def emit_mermaid_package(
+    ir: StructuralGraphIR | InteractionTraceIR,
+    theme: MermaidThemeConfig = DEFAULT_MERMAID_THEME,
+) -> str:
     """Emit a UML 2.5 Package Diagram (`<<package>>` + `<<import>>` dependencies)."""
     if isinstance(ir, StructuralGraphIR):
         return _emit_stereotyped_structural(
-            ir, "TD", ("<<package>>", "<<package>>"), "<<import>>", _IMPORT_HEX
+            ir, "TD", ("<<package>>", "<<package>>"), "<<import>>", _IMPORT_HEX, theme
         )
     sorted_pids = sorted(ir.participants)
     aliases = _alias_map(sorted_pids, "p")
-    lines = [MERMAID_STRUCTURAL_FRONTMATTER, "flowchart TD", f"  {MERMAID_DEFAULT_CLASSDEF}"]
+    lines = [theme.structural_frontmatter(), "flowchart TD", f"  {theme.default_classdef()}"]
     for pid in sorted_pids:
         lines.append(f'  {aliases[pid]}["<<package>> {_clean_text(ir.participants[pid].label)}"]')
     seen = sorted(
@@ -487,16 +513,19 @@ def emit_mermaid_package(ir: StructuralGraphIR | InteractionTraceIR) -> str:
         idxs = ",".join(str(i) for i in range(len(seen)))
         lines.append(
             f"  linkStyle {idxs} stroke:{_IMPORT_HEX},"
-            f"stroke-width:{DEFAULT_STROKE_WIDTH_PX},stroke-dasharray:5 5"
+            f"stroke-width:{theme.edge_stroke_width_px},stroke-dasharray:{theme.dashed_edge_array}"
         )
     return "\n".join(lines) + "\n"
 
 
-def emit_mermaid_deployment(ir: StructuralGraphIR | InteractionTraceIR) -> str:
+def emit_mermaid_deployment(
+    ir: StructuralGraphIR | InteractionTraceIR,
+    theme: MermaidThemeConfig = DEFAULT_MERMAID_THEME,
+) -> str:
     """Emit a UML 2.5 Deployment Diagram (`<<executionEnv>>` nodes + `<<artifact>>` targets)."""
     if isinstance(ir, StructuralGraphIR):
         return _emit_stereotyped_structural(
-            ir, "LR", ("<<executionEnv>>", "<<artifact>>"), "<<deploy>>", _CALL_HEX
+            ir, "LR", ("<<executionEnv>>", "<<artifact>>"), "<<deploy>>", _CALL_HEX, theme
         )
     sorted_pids = sorted(ir.participants)
     aliases = _alias_map(sorted_pids, "d")
@@ -509,7 +538,8 @@ def emit_mermaid_deployment(ir: StructuralGraphIR | InteractionTraceIR) -> str:
     for pid in sorted_pids:
         if pid not in assigned:
             domains.setdefault("default_runtime", []).append(pid)
-    lines = [MERMAID_STRUCTURAL_FRONTMATTER, "flowchart LR", f"  {MERMAID_DEFAULT_CLASSDEF}"]
+    sub_style = theme.subgraph_style_attrs()
+    lines = [theme.structural_frontmatter(), "flowchart LR", f"  {theme.default_classdef()}"]
     for d_idx, (dom_id, members) in enumerate(sorted(domains.items())):
         env_alias = f"env{d_idx}"
         lines.append(f'  subgraph {env_alias}["<<executionEnv>> {_clean_text(dom_id)}"]')
@@ -518,7 +548,7 @@ def emit_mermaid_deployment(ir: StructuralGraphIR | InteractionTraceIR) -> str:
                 f'    {aliases[pid]}["<<artifact>> {_clean_text(ir.participants[pid].label)}"]'
             )
         lines.append("  end")
-        lines.append(f"  style {env_alias} {MERMAID_SUBGRAPH_STYLE_ATTRS}")
+        lines.append(f"  style {env_alias} {sub_style}")
     seen = sorted(
         {(ev.caller_id, ev.callee_id) for ev in ir.events.values() if ev.caller_id != ev.callee_id}
     )
@@ -527,6 +557,6 @@ def emit_mermaid_deployment(ir: StructuralGraphIR | InteractionTraceIR) -> str:
     if seen:
         idxs = ",".join(str(i) for i in range(len(seen)))
         lines.append(
-            f"  linkStyle {idxs} stroke:{_CALL_HEX},stroke-width:{DEFAULT_STROKE_WIDTH_PX}"
+            f"  linkStyle {idxs} stroke:{_CALL_HEX},stroke-width:{theme.edge_stroke_width_px}"
         )
     return "\n".join(lines) + "\n"

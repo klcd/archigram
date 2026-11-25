@@ -11,7 +11,10 @@
 .claude
 .codex
 .cursor
-.agents
+.agents/*
+!.agents/skills/
+.agents/skills/*
+!.agents/skills/dual-mode-diagrams/
 .worktrees/
 .orca-specs/
 

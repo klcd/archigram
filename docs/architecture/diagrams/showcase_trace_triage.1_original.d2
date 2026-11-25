@@ -77,7 +77,7 @@ direction: right
 "archigram.entrypoints.cli.pipeline" -> "archigram.features.emit_d2.emitter": "D2Emitter.emit (x1 raw)" {
   style.stroke: "#3b82f6"
 }
-"archigram.entrypoints.cli.pipeline" -> "archigram.features.emit_mermaid.emitter": "MermaidEmitter.emit (x1 raw)" {
+"archigram.entrypoints.cli.pipeline" -> "archigram.features.emit_mermaid.emitter": "MermaidEmitter.__init__ (x2 raw)" {
   style.stroke: "#3b82f6"
 }
 "archigram.entrypoints.cli.pipeline" -> "archigram.features.emit_plantuml.emitter": "PlantUmlEmitter.emit (x1 raw)" {
@@ -131,7 +131,7 @@ direction: right
 "archigram.features.emit_d2.emitter" -> "archigram.domain.style": "resolve_edge_visual_style (x6 raw)" {
   style.stroke: "#3b82f6"
 }
-"archigram.features.emit_mermaid.emitter" -> "archigram.domain.style": "resolve_edge_visual_style (x13 raw)" {
+"archigram.features.emit_mermaid.emitter" -> "archigram.domain.style": "MermaidThemeConfig.subgraph_ (x22 raw)" {
   style.stroke: "#3b82f6"
 }
 "archigram.features.emit_plantuml.emitter" -> "archigram.domain.style": "resolve_edge_visual_style (x3 raw)" {

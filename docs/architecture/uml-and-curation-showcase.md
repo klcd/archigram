@@ -90,15 +90,6 @@ config:
   flowchart:
     defaultRenderer: elk
     curve: linear
-  themeVariables:
-    primaryColor: transparent
-    secondaryColor: transparent
-    tertiaryColor: transparent
-    mainBkg: transparent
-    nodeBorder: '#64748b'
-    clusterBkg: transparent
-    clusterBorder: '#64748b'
-    lineColor: '#64748b'
 ---
 flowchart TD
   classDef default fill:transparent,stroke:#64748b,stroke-width:1.5px
@@ -170,15 +161,9 @@ Native Gitea-ready Mermaid `sequenceDiagram` (`3,866` chars < `5,000` limit):
 ```mermaid
 ---
 config:
-  themeVariables:
-    actorBkg: transparent
-    actorBorder: '#64748b'
-    actorLineColor: '#64748b'
-    signalColor: '#3b82f6'
-    activationBkgColor: transparent
-    activationBorderColor: '#64748b'
-    noteBkgColor: transparent
-    noteBorderColor: '#64748b'
+  sequence:
+    mirrorActors: false
+    messageAlign: center
 ---
 sequenceDiagram
   participant p0 as "diagnostics"
@@ -199,6 +184,8 @@ sequenceDiagram
   p4->>+p4: compile_and_lint_pipeline
   p4->>+p14: StructuralTopologicalReducer.reduce
   p14-->>-p4: return
+  p4->>+p8: MermaidEmitter.__init__
+  p8-->>-p4: return
   p4->>+p8: MermaidEmitter.emit
   p8-->>-p4: return
   p4->>+p14: StructuralTopologicalReducer.reduce
@@ -343,15 +330,6 @@ config:
   flowchart:
     defaultRenderer: elk
     curve: linear
-  themeVariables:
-    primaryColor: transparent
-    secondaryColor: transparent
-    tertiaryColor: transparent
-    mainBkg: transparent
-    nodeBorder: '#64748b'
-    clusterBkg: transparent
-    clusterBorder: '#64748b'
-    lineColor: '#64748b'
 ---
 flowchart TD
   classDef default fill:transparent,stroke:#64748b,stroke-width:1.5px
@@ -418,15 +396,6 @@ config:
   flowchart:
     defaultRenderer: elk
     curve: linear
-  themeVariables:
-    primaryColor: transparent
-    secondaryColor: transparent
-    tertiaryColor: transparent
-    mainBkg: transparent
-    nodeBorder: '#64748b'
-    clusterBkg: transparent
-    clusterBorder: '#64748b'
-    lineColor: '#64748b'
 ---
 flowchart LR
   classDef default fill:transparent,stroke:#64748b,stroke-width:1.5px
@@ -493,15 +462,6 @@ config:
   flowchart:
     defaultRenderer: elk
     curve: linear
-  themeVariables:
-    primaryColor: transparent
-    secondaryColor: transparent
-    tertiaryColor: transparent
-    mainBkg: transparent
-    nodeBorder: '#64748b'
-    clusterBkg: transparent
-    clusterBorder: '#64748b'
-    lineColor: '#64748b'
 ---
 flowchart LR
   classDef default fill:transparent,stroke:#64748b,stroke-width:1.5px
@@ -544,6 +504,7 @@ flowchart LR
   u10 -.->|"<<include>>"| u9
   u13 -.->|"<<include>>"| u9
   u7 -.->|"<<include>>"| u10
+  u7 -.->|"<<include>>"| u10
   u12 -.->|"<<include>>"| u10
   u7 -.->|"<<include>>"| u11
   u12 -.->|"<<include>>"| u14
@@ -557,7 +518,7 @@ flowchart LR
   u7 -.->|"<<include>>"| u13
   u7 -.->|"<<include>>"| u13
   u12 -.->|"<<include>>"| u13
-  linkStyle 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33 stroke:#3b82f6,stroke-width:1.75px
+  linkStyle 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34 stroke:#3b82f6,stroke-width:1.75px
 ```
 <!-- archigram:end showcase_uml_use_case_mermaid -->
 
@@ -580,15 +541,6 @@ config:
   flowchart:
     defaultRenderer: elk
     curve: linear
-  themeVariables:
-    primaryColor: transparent
-    secondaryColor: transparent
-    tertiaryColor: transparent
-    mainBkg: transparent
-    nodeBorder: '#64748b'
-    clusterBkg: transparent
-    clusterBorder: '#64748b'
-    lineColor: '#64748b'
 ---
 flowchart LR
   classDef default fill:transparent,stroke:#64748b,stroke-width:1.5px
@@ -608,15 +560,15 @@ flowchart LR
   o13[":lint_topology.gate"]
   o14[":reducer"]
   o4 -->|"1: compile_and_lint_pipeline"| o4
-  o4 -->|"1.1: StructuralTopologicalReducer.reduce, 1.3: StructuralTopologicalReducer.reduce, 1.5: StructuralTopologicalReducer.reduce"| o14
-  o4 -->|"1.2: MermaidEmitter.emit"| o8
-  o4 -->|"1.4: D2Emitter.emit"| o7
-  o4 -->|"1.6: PlantUmlEmitter.emit"| o9
-  o4 -->|"1.7: GroundingAndBoundaryGate.__init__, 1.8: GroundingAndBoundaryGate.check"| o11
-  o4 -->|"1.9: TopologicalInvariantGate.__init__, 1.10: TopologicalInvariantGate.check"| o13
-  o4 -->|"1.11: CognitiveBudgetAndOrphanGate.check"| o10
-  o4 -->|"1.12: build_default_validators, 1.13: Gate5SyntaxHarness.__init__, 1.14: Gate5SyntaxHarness.validate (loop x3"| o12
-  o4 -->|"1.15: LintReport.from_diagnostics"| o0
+  o4 -->|"1.1: StructuralTopologicalReducer.reduce, 1.4: StructuralTopologicalReducer.reduce, 1.6: StructuralTopologicalReducer.reduce"| o14
+  o4 -->|"1.2: MermaidEmitter.__init__, 1.3: MermaidEmitter.emit"| o8
+  o4 -->|"1.5: D2Emitter.emit"| o7
+  o4 -->|"1.7: PlantUmlEmitter.emit"| o9
+  o4 -->|"1.8: GroundingAndBoundaryGate.__init__, 1.9: GroundingAndBoundaryGate.check"| o11
+  o4 -->|"1.10: TopologicalInvariantGate.__init__, 1.11: TopologicalInvariantGate.check"| o13
+  o4 -->|"1.12: CognitiveBudgetAndOrphanGate.check"| o10
+  o4 -->|"1.13: build_default_validators, 1.14: Gate5SyntaxHarness.__init__, 1.15: Gate5SyntaxHarness.validate (loop x3"| o12
+  o4 -->|"1.16: LintReport.from_diagnostics"| o0
   o5 -->|"2: run_propose_loop"| o5
   o5 -->|"2.1: GraphDigestGenerator.to_compact_mark"| o6
   o5 -->|"2.2: parse_curation_spec_yaml, 2.7: parse_curation_spec_yaml, 2.9: DiagramViewSpec._validate_unique_vie (+4)"| o2
@@ -650,39 +602,30 @@ config:
   flowchart:
     defaultRenderer: elk
     curve: linear
-  themeVariables:
-    primaryColor: transparent
-    secondaryColor: transparent
-    tertiaryColor: transparent
-    mainBkg: transparent
-    nodeBorder: '#64748b'
-    clusterBkg: transparent
-    clusterBorder: '#64748b'
-    lineColor: '#64748b'
 ---
 flowchart TD
   classDef default fill:transparent,stroke:#64748b,stroke-width:1.5px
   act_start((" "))
   a0("pipeline: compile_and_lint_pipeline")
   a1("reducer: StructuralTopologicalReducer.reduce")
-  a2("emit_mermaid.emitter: MermaidEmitter.emit")
-  a3("reducer: StructuralTopologicalReducer.reduce")
-  a4("emit_d2.emitter: D2Emitter.emit")
-  a5("reducer: StructuralTopologicalReducer.reduce")
-  a6("emit_plantuml.emitter: PlantUmlEmitter.emit")
-  a7("gates: GroundingAndBoundaryGate.__init__")
-  a8("gates: GroundingAndBoundaryGate.check")
-  a9("lint_topology.gate: TopologicalInvariantGate.__init__")
-  a10("lint_topology.gate: TopologicalInvariantGate.check")
-  a11("lint_budget.gate: CognitiveBudgetAndOrphanGate.check")
-  a12("validators: build_default_validators")
-  a13("validators: Gate5SyntaxHarness.__init__")
-  g14{"loop x3"}
-  a14("validators: Gate5SyntaxHarness.validate (loop x3")
-  a15("diagnostics: LintReport.from_diagnostics")
-  a16("propose_loop: run_propose_loop")
-  a17("generator: GraphDigestGenerator.to_compact_mark")
-  a_more("+30 compacted actions")
+  a2("emit_mermaid.emitter: MermaidEmitter.__init__")
+  a3("emit_mermaid.emitter: MermaidEmitter.emit")
+  a4("reducer: StructuralTopologicalReducer.reduce")
+  a5("emit_d2.emitter: D2Emitter.emit")
+  a6("reducer: StructuralTopologicalReducer.reduce")
+  a7("emit_plantuml.emitter: PlantUmlEmitter.emit")
+  a8("gates: GroundingAndBoundaryGate.__init__")
+  a9("gates: GroundingAndBoundaryGate.check")
+  a10("lint_topology.gate: TopologicalInvariantGate.__init__")
+  a11("lint_topology.gate: TopologicalInvariantGate.check")
+  a12("lint_budget.gate: CognitiveBudgetAndOrphanGate.check")
+  a13("validators: build_default_validators")
+  a14("validators: Gate5SyntaxHarness.__init__")
+  g15{"loop x3"}
+  a15("validators: Gate5SyntaxHarness.validate (loop x3")
+  a16("diagnostics: LintReport.from_diagnostics")
+  a17("propose_loop: run_propose_loop")
+  a_more("+31 compacted actions")
   act_stop(((" ")))
   act_start --> a0
   a0 --> a1
@@ -698,9 +641,9 @@ flowchart TD
   a10 --> a11
   a11 --> a12
   a12 --> a13
-  a13 --> g14
-  g14 --> a14
-  a14 --> a15
+  a13 --> a14
+  a14 --> g15
+  g15 --> a15
   a15 --> a16
   a16 --> a17
   a17 --> a_more
@@ -721,13 +664,7 @@ Projects active control-flow transfers across participants as a deterministic `s
 ```mermaid
 ---
 config:
-  themeVariables:
-    primaryColor: transparent
-    secondaryColor: transparent
-    tertiaryColor: transparent
-    mainBkg: transparent
-    nodeBorder: '#64748b'
-    lineColor: '#3b82f6'
+  layout: elk
 ---
 stateDiagram-v2
   direction TB
@@ -749,7 +686,7 @@ stateDiagram-v2
   [*] --> s4
   s4 --> s4 : compile_and_lint_pipeline
   s4 --> s14 : StructuralTopologicalReducer.reduce
-  s4 --> s8 : MermaidEmitter.emit
+  s4 --> s8 : MermaidEmitter.__init__
   s4 --> s7 : D2Emitter.emit
   s4 --> s9 : PlantUmlEmitter.emit
   s4 --> s11 : GroundingAndBoundaryGate.__init__

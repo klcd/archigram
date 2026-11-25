@@ -24,6 +24,7 @@ from archigram.domain.spec import (
 )
 from archigram.domain.style import (
     D2_CANONICAL_HEADER,
+    DEFAULT_MERMAID_THEME,
     MERMAID_GITEA_MAX_SOURCE_CHARS,
     NEUTRAL_BORDER_HEX,
     TRANSPARENT_FILL,
@@ -31,6 +32,7 @@ from archigram.domain.style import (
     TRIAGE_COLLAPSE_HEX,
     TRIAGE_KEEP_HEX,
     TRIAGE_REMOVE_HEX,
+    MermaidThemeConfig,
 )
 from archigram.entrypoints.cli.pipeline import (
     InputFormat,
@@ -39,6 +41,7 @@ from archigram.entrypoints.cli.pipeline import (
     emit_view_source,
     load_canonical_ir,
     load_curation_spec,
+    load_mermaid_theme,
     render_companion_svg,
 )
 from archigram.features.emit_d2 import D2Emitter
@@ -397,8 +400,9 @@ def _build_structural_stages(
     view: DiagramViewSpec,
     spec: CurationSpecV1,
     overflow_md: str,
+    theme: MermaidThemeConfig = DEFAULT_MERMAID_THEME,
 ) -> tuple[str, str, str, str, TriageStats]:
-    mermaid = MermaidEmitter()
+    mermaid = MermaidEmitter(theme)
     d2 = D2Emitter()
     raw_mmd = mermaid.emit(observed)
     stage1_d2 = d2.emit(observed)
@@ -407,8 +411,8 @@ def _build_structural_stages(
     stage2_d2 = _emit_structural_triage_d2(observed, emitted, disps, collapse_targets)
     d2_view = view.model_copy(update={"target_renderer": TargetRenderer.D2})
     mmd_view = view.model_copy(update={"target_renderer": TargetRenderer.MERMAID})
-    stage3_d2 = emit_view_source(emitted, d2_view, overflow_md)
-    stage3_mmd = emit_view_source(emitted, mmd_view, overflow_md)
+    stage3_d2 = emit_view_source(emitted, d2_view, overflow_md, theme)
+    stage3_mmd = emit_view_source(emitted, mmd_view, overflow_md, theme)
     stats = TriageStats(
         view_id=view.id,
         raw_elements=len(observed.nodes),
@@ -429,14 +433,15 @@ def _build_trace_stages(
     observed: InteractionTraceIR,
     curated: InteractionTraceIR,
     view: DiagramViewSpec,
+    theme: MermaidThemeConfig = DEFAULT_MERMAID_THEME,
 ) -> tuple[str, str, str, str, TriageStats]:
-    raw_mmd = MermaidEmitter().emit(observed)
+    raw_mmd = MermaidEmitter(theme).emit(observed)
     stage1_d2 = _emit_trace_raw_call_d2(observed)
     stage2_d2 = _emit_trace_triage_d2(observed, curated)
     d2_view = view.model_copy(update={"target_renderer": TargetRenderer.D2})
     mmd_view = view.model_copy(update={"target_renderer": TargetRenderer.MERMAID})
-    stage3_d2 = emit_view_source(curated, d2_view)
-    stage3_mmd = emit_view_source(curated, mmd_view)
+    stage3_d2 = emit_view_source(curated, d2_view, "", theme)
+    stage3_mmd = emit_view_source(curated, mmd_view, "", theme)
     cur_ids = set(curated.events)
     folded_backing = {
         bid
@@ -467,6 +472,7 @@ def compute_triage_stages(
     observed_ir: CanonicalIR,
     spec: CurationSpecV1,
     view_id: str,
+    mermaid_theme: MermaidThemeConfig = DEFAULT_MERMAID_THEME,
 ) -> TriageOutcome:
     """Compile a view and generate Stage 1 (Original), Stage 2 (Triage), and Stage 3 (Curated)."""
     matching = [v for v in spec.views if v.id == view_id]
@@ -474,19 +480,24 @@ def compute_triage_stages(
         msg = f"View '{view_id}' not found in spec (available: {[v.id for v in spec.views]})"
         raise ValueError(msg)
     single_spec = spec.model_copy(update={"views": (matching[0],)})
-    compilation = compile_and_lint_pipeline(observed_ir, single_spec)
+    compilation = compile_and_lint_pipeline(observed_ir, single_spec, mermaid_theme=mermaid_theme)
     artifact = compilation.views[view_id]
     if isinstance(observed_ir, StructuralGraphIR) and isinstance(
         artifact.emitted_ir, StructuralGraphIR
     ):
         s1, s2, s3_d2, s3_mmd, stats = _build_structural_stages(
-            observed_ir, artifact.emitted_ir, artifact.view, single_spec, artifact.overflow_markdown
+            observed_ir,
+            artifact.emitted_ir,
+            artifact.view,
+            single_spec,
+            artifact.overflow_markdown,
+            mermaid_theme,
         )
     elif isinstance(observed_ir, InteractionTraceIR) and isinstance(
         artifact.emitted_ir, InteractionTraceIR
     ):
         s1, s2, s3_d2, s3_mmd, stats = _build_trace_stages(
-            observed_ir, artifact.emitted_ir, artifact.view
+            observed_ir, artifact.emitted_ir, artifact.view, mermaid_theme
         )
     else:
         msg = f"IR mode mismatch between input '{observed_ir.ir_mode}' and view '{view_id}'"
@@ -505,7 +516,8 @@ def execute_triage(options: TriageOptions) -> TriageOutcome:
     """Run 3-stage triage generation (or `--check` verification) on disk."""
     observed_ir = load_canonical_ir(options.input_path, options.input_format)
     spec = load_curation_spec(options.spec_path)
-    base = compute_triage_stages(observed_ir, spec, options.view_id)
+    theme = load_mermaid_theme(options.spec_path)
+    base = compute_triage_stages(observed_ir, spec, options.view_id, theme)
     if not options.check_only and not base.compilation.lint_report.passed:
         return base
 

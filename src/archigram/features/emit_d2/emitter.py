@@ -233,8 +233,9 @@ def _emit_structural_node(
     lines.append(f"{header} {{")
     if shape is not None:
         lines.append(f"{inner}shape: {shape}")
-    lines.append(f"{inner}style.fill: {TRANSPARENT_FILL}")
-    lines.append(f'{inner}style.stroke: "{NEUTRAL_BORDER_HEX}"')
+    if not is_class:
+        lines.append(f"{inner}style.fill: {TRANSPARENT_FILL}")
+        lines.append(f'{inner}style.stroke: "{NEUTRAL_BORDER_HEX}"')
     if tooltip is not None:
         lines.append(f"{inner}tooltip: {_quote_d2_string(tooltip)}")
     if is_class and node.members:

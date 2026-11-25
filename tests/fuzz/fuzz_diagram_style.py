@@ -7,8 +7,10 @@ import re
 import tempfile
 from pathlib import Path
 
+import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
+from pydantic import ValidationError
 
 from archigram.domain import ProvenanceGrade, ProvenanceStamp
 from archigram.domain.ir import (
@@ -36,6 +38,7 @@ from archigram.domain.spec import (
 from archigram.domain.style import (
     CANONICAL_EDGE_STYLES,
     D2_CANONICAL_HEADER,
+    DEFAULT_MERMAID_THEME,
     MERMAID_DEFAULT_CLASSDEF,
     MERMAID_GITEA_MAX_SOURCE_CHARS,
     MERMAID_SEQUENCE_FRONTMATTER,
@@ -45,15 +48,25 @@ from archigram.domain.style import (
     PLANTUML_SEQUENCE_SKINPARAMS,
     TRANSPARENT_FILL,
     LinePattern,
+    MermaidThemeConfig,
+    MermaidWebModePalette,
     UmlArrowheadKind,
+    contrast_ratio,
+    dump_mermaid_theme_yaml,
+    parse_mermaid_theme_yaml,
     relative_luminance,
+    render_mermaid_web_theme_js,
     resolve_edge_animated,
     resolve_edge_visual_style,
 )
 from archigram.entrypoints.cli.pipeline import (
     compile_and_lint_pipeline,
+    inject_svg_dual_mode_style,
+    load_mermaid_theme,
     sync_compiled_artifacts,
 )
+from archigram.features.emit_d2 import D2Emitter
+from archigram.features.emit_mermaid import MermaidEmitter
 
 _HEX_RE = re.compile(r"^#[0-9a-f]{6}$")
 _LIGHT_BG_LUM = relative_luminance("#ffffff")
@@ -153,9 +166,11 @@ def test_transparent_preambles_and_view_spec_variant_roundtrip(
     assert _HEX_RE.match(NEUTRAL_BORDER_HEX) is not None
     assert "defaultRenderer: elk" in MERMAID_STRUCTURAL_FRONTMATTER
     assert "curve: linear" in MERMAID_STRUCTURAL_FRONTMATTER
-    assert "primaryColor: transparent" in MERMAID_STRUCTURAL_FRONTMATTER
-    assert "actorBkg: transparent" in MERMAID_SEQUENCE_FRONTMATTER
+    assert "primaryColor: transparent" not in MERMAID_STRUCTURAL_FRONTMATTER
+    assert "actorBkg: transparent" not in MERMAID_SEQUENCE_FRONTMATTER
+    assert "mirrorActors: false" in MERMAID_SEQUENCE_FRONTMATTER
     assert "fill:transparent" in MERMAID_DEFAULT_CLASSDEF
+    assert "color:" not in MERMAID_DEFAULT_CLASSDEF
     assert "dark-theme-id: 200" in D2_CANONICAL_HEADER
     assert "style.fill: transparent" in D2_CANONICAL_HEADER
     assert "skinparam linetype ortho" in PLANTUML_ORTHO_SKINPARAMS
@@ -386,3 +401,142 @@ def test_animated_edges_and_d2_steps_trace_compilation(
     assert "\nsteps: {\n" in steps_src
     assert "  step_1: {" in steps_src
     assert ("style.animated: true" in steps_src) is (animate_edges is not False)
+
+
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+_MID_BORDERS = ("#64748b", "#3b82f6", "#14b8a6", "#8b5cf6", "#10b981", "#f59e0b")
+
+
+@settings(max_examples=30, deadline=None)
+@given(
+    layout_engine=st.sampled_from(["elk", "dagre"]),
+    curve=st.sampled_from(["linear", "basis", "stepBefore", "stepAfter"]),
+    border_hex=st.sampled_from(_MID_BORDERS),
+    mirror_actors=st.booleans(),
+)
+def test_central_mermaid_theme_governance_and_repo_sync(
+    layout_engine: str,
+    curve: str,
+    border_hex: str,
+    mirror_actors: bool,
+) -> None:
+    """Central mermaid-theme.yaml stays synced with mermaid-theme.js and forbids AI overrides."""
+    repo_yaml = (_REPO_ROOT / "docs" / "architecture" / "mermaid-theme.yaml").read_text(
+        encoding="utf-8"
+    )
+    repo_js = (_REPO_ROOT / "docs" / "mermaid-theme.js").read_text(encoding="utf-8")
+    assert parse_mermaid_theme_yaml(repo_yaml) == DEFAULT_MERMAID_THEME
+    assert repo_js == render_mermaid_web_theme_js(DEFAULT_MERMAID_THEME)
+
+    custom = MermaidThemeConfig.model_validate(
+        {
+            "layout_engine": layout_engine,
+            "flowchart_curve": curve,
+            "node_border_hex": border_hex,
+            "subgraph_border_hex": border_hex,
+            "sequence_mirror_actors": mirror_actors,
+        }
+    )
+    raw_yaml = dump_mermaid_theme_yaml(custom)
+    assert parse_mermaid_theme_yaml(raw_yaml) == custom
+    for mode in ("light", "dark"):
+        variables = custom.web_theme_variables(mode)
+        assert variables["primaryColor"] != "transparent"
+        assert variables["actorBkg"] != "transparent"
+        assert contrast_ratio(str(variables["textColor"]), str(variables["background"])) >= 7.0
+
+    with pytest.raises(ValidationError):
+        MermaidWebModePalette(
+            background_hex="#0b0f19",
+            surface_hex="#111827",
+            text_hex="#334155",
+            muted_text_hex="#94a3b8",
+        )
+    with pytest.raises(ValidationError):
+        DiagramViewSpec.model_validate(
+            {
+                "id": "ai_override",
+                "title": "Forbidden AI Theme",
+                "ir_mode": "structural_graph",
+                "target_renderer": "mermaid",
+                "theme_variables": {"primaryColor": "#ff00ff"},
+            }
+        )
+
+    with tempfile.TemporaryDirectory() as tmp_str:
+        tmp_dir = Path(tmp_str)
+        spec_file = tmp_dir / "curation.yaml"
+        spec_file.write_text("schema_version: '1.0'\nviews: []\n", encoding="utf-8")
+        (tmp_dir / "mermaid-theme.yaml").write_text(raw_yaml, encoding="utf-8")
+        assert load_mermaid_theme(spec_file) == custom
+
+    ir = StructuralGraphIR(
+        graph_id="theme_ir",
+        nodes={
+            "n1": IRNode(
+                symbol_id="n1",
+                label="Node 1",
+                kind=NodeKind.MODULE,
+                provenance=_OBS_PROV,
+            )
+        },
+    )
+    emitted = MermaidEmitter(theme=custom).emit(ir)
+    assert f"layout: {layout_engine}" in emitted
+    assert f"curve: {curve}" in emitted
+    assert f"stroke:{border_hex}" in emitted
+
+
+@settings(max_examples=30, deadline=None)
+@given(
+    variant=st.sampled_from([DiagramVariant.CLASS, DiagramVariant.DEPLOYMENT]),
+    css_token=st.sampled_from(["text{fill:#e2e8f0;}", ".appendix-icon{opacity:0.9;}"]),
+)
+def test_d2_dark_mode_class_deployment_and_svg_style_injection(
+    variant: DiagramVariant,
+    css_token: str,
+) -> None:
+    """D2 class shapes avoid fill/stroke inversion, deployment avoids 3d, and SVG CSS injects."""
+    ir = StructuralGraphIR(
+        graph_id="d2_dual_ir",
+        nodes={
+            "archigram.ports.ValidatorPort": IRNode(
+                symbol_id="archigram.ports.ValidatorPort",
+                label="ValidatorPort",
+                kind=NodeKind.INTERFACE,
+                members=(ClassMember(name="validate", is_method=True, signature="(str) -> bool"),),
+                provenance=_OBS_PROV,
+            ),
+            "archigram.features.MermaidValidator": IRNode(
+                symbol_id="archigram.features.MermaidValidator",
+                label="MermaidValidator",
+                kind=NodeKind.CLASS,
+                members=(ClassMember(name="strict", signature="bool"),),
+                provenance=_OBS_PROV,
+            ),
+        },
+        edges=(
+            IREdge(
+                edge_id="e_impl",
+                source="archigram.features.MermaidValidator",
+                target="archigram.ports.ValidatorPort",
+                relation=EdgeRelation.IMPLEMENTS,
+                provenance=_OBS_PROV,
+            ),
+        ),
+        metadata={"diagram_variant": variant.value},
+    )
+    d2_out = D2Emitter().emit(ir)
+    assert "dark-theme-id: 200" in d2_out
+    assert "style.3d: true" not in d2_out
+    if variant is DiagramVariant.CLASS:
+        assert "shape: class" in d2_out
+        assert d2_out.count("style.fill: transparent") == 1
+    else:
+        assert "style.double-border: true" in d2_out
+
+    raw_svg = '<svg xmlns="http://www.w3.org/2000/svg"><g><text>Label</text></g></svg>'
+    styled_svg = inject_svg_dual_mode_style(raw_svg, css_token)
+    assert styled_svg.endswith("</svg>")
+    assert css_token in styled_svg
+    assert inject_svg_dual_mode_style("<not-svg/>", css_token) == "<not-svg/>"

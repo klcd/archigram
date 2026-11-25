@@ -1,0 +1,46 @@
+# Central human-owned Mermaid layout & dual-mode theme policy for ArchiGram.
+#
+# Governance:
+# - Automatically discovered by `archigram apply`, `archigram lint`, and `archigram triage`
+#   whenever a CurationSpecV1 resides in this directory.
+# - AI curation specs (`CurationSpecV1` / `archigram curate` / MCP `propose_loop`) CANNOT
+#   override theme colors per diagram (`extra="forbid"`).
+# - Emitted `.mmd` files contain layout/routing frontmatter only (never `primaryColor: transparent`
+#   or `actorBkg: transparent`, which break Mermaid's `khroma` text-luminance math on dark hosts)
+#   so GitHub, Gitea, and web pages render crisp contrast in both light and dark modes.
+# - Shared browser pages consume `docs/mermaid-theme.js`, deterministically rendered from this file
+#   via `archigram.domain.style.render_mermaid_web_theme_js()`.
+
+schema_version: "1.0"
+layout_engine: elk
+elk_merge_edges: false
+elk_node_placement_strategy: BRANDES_KOEPF
+flowchart_curve: linear
+sequence_mirror_actors: false
+node_fill: transparent
+node_border_hex: "#64748b"
+node_border_width_px: "1.5px"
+subgraph_border_hex: "#64748b"
+subgraph_border_width_px: "1px"
+subgraph_dash_array: "4 4"
+edge_stroke_width_px: "1.75px"
+bold_edge_stroke_width_px: "2.5px"
+dashed_edge_array: "5 5"
+
+web_light:
+  background_hex: "#ffffff"
+  surface_hex: "#f8fafc"
+  text_hex: "#0f172a"
+  muted_text_hex: "#475569"
+  border_hex: "#64748b"
+  line_hex: "#64748b"
+  signal_hex: "#3b82f6"
+
+web_dark:
+  background_hex: "#0b0f19"
+  surface_hex: "#111827"
+  text_hex: "#e2e8f0"
+  muted_text_hex: "#94a3b8"
+  border_hex: "#64748b"
+  line_hex: "#94a3b8"
+  signal_hex: "#3b82f6"

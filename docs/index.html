@@ -46,7 +46,7 @@
     }
 
     @media (prefers-color-scheme: dark) {
-      :root {
+      :root:not([data-theme="light"]) {
         --bg: #0b0f19;
         --bg-elevated: #111827;
         --bg-subtle: #161f33;
@@ -71,6 +71,93 @@
         --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
         --shadow-md: 0 16px 40px -12px rgba(0, 0, 0, 0.55);
       }
+    }
+
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #0b0f19;
+      --bg-elevated: #111827;
+      --bg-subtle: #161f33;
+      --bg-code: #070a12;
+      --fg-code: #e2e8f0;
+      --ink: #f1f5f9;
+      --ink-muted: #94a3b8;
+      --ink-faint: #64748b;
+      --border: #1e293b;
+      --border-strong: #334155;
+      --accent: #2dd4bf;
+      --accent-soft: rgba(45, 212, 191, 0.12);
+      --crimson: #f87171;
+      --crimson-soft: rgba(248, 113, 113, 0.14);
+      --amber: #fbbf24;
+      --amber-soft: rgba(251, 191, 36, 0.14);
+      --violet: #a78bfa;
+      --violet-soft: rgba(167, 139, 250, 0.14);
+      --emerald: #34d399;
+      --emerald-soft: rgba(52, 211, 153, 0.14);
+      --grid-line: rgba(148, 163, 184, 0.06);
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+      --shadow-md: 0 16px 40px -12px rgba(0, 0, 0, 0.55);
+    }
+
+    :root[data-theme="light"] {
+      color-scheme: light;
+    }
+
+    .theme-switch {
+      display: inline-flex;
+      align-items: center;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-strong);
+      border-radius: 999px;
+      padding: 2px;
+      gap: 2px;
+    }
+
+    .theme-btn {
+      border: 0;
+      background: transparent;
+      color: var(--ink-muted);
+      font-family: var(--font-mono);
+      font-size: 0.74rem;
+      padding: 0.22rem 0.58rem;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background 0.14s ease, color 0.14s ease;
+    }
+
+    .theme-btn[aria-pressed="true"] {
+      background: var(--bg-elevated);
+      color: var(--ink);
+      font-weight: 600;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .theme-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+      align-items: start;
+    }
+
+    @media (max-width: 960px) {
+      .theme-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .mermaid-live-stage {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.5rem;
+    }
+
+    .mermaid-live-stage svg {
+      max-width: 100%;
+      height: auto;
     }
 
     * {
@@ -167,14 +254,16 @@
     .nav-links {
       display: flex;
       align-items: center;
-      gap: 1.25rem;
-      font-size: 0.9rem;
+      flex-wrap: wrap;
+      gap: 0.55rem 1.1rem;
+      font-size: 0.88rem;
     }
 
     .nav-links a {
       color: var(--ink-muted);
       text-decoration: none;
       font-weight: 500;
+      white-space: nowrap;
     }
 
     .nav-links a:hover {
@@ -875,7 +964,13 @@
         <a href="#why">Why ArchiGram</a>
         <a href="#triage">3-Stage Triage</a>
         <a href="#animated">Animated Traces</a>
+        <a href="#theming">Central Theme</a>
         <a href="#docs">L0–L3 Docs</a>
+        <div class="theme-switch" role="group" aria-label="Color theme">
+          <button class="theme-btn" type="button" data-theme-choice="auto" aria-pressed="true">Auto</button>
+          <button class="theme-btn" type="button" data-theme-choice="light" aria-pressed="false">Light</button>
+          <button class="theme-btn" type="button" data-theme-choice="dark" aria-pressed="false">Dark</button>
+        </div>
         <a href="https://github.com/klcd/archigram" class="nav-cta">GitHub ↗</a>
       </nav>
     </div>
@@ -1005,6 +1100,7 @@
               data-zoom-title="L0 System & Hexagonal Rings (Self-Hosted ArchiGram Architecture)"
             >
               <img
+                data-dual-svg
                 src="./architecture/diagrams/l0_hexagonal_rings_d2.d2.svg"
                 alt="ArchiGram L0 Hexagonal Architecture and Data vs Control Plane"
               />
@@ -1149,6 +1245,7 @@
             >
               <img
                 id="anim-img"
+                data-dual-svg
                 src="./architecture/diagrams/l3_runtime_pipeline_steps_d2.d2.svg"
                 alt="Step-by-Step Pipeline and Self-Repair Animated D2 SVG"
               />
@@ -1158,10 +1255,128 @@
       </div>
     </section>
 
-    <!-- 5. ARCHITECTURE DOCS MATRIX -->
+    <!-- 5. CENTRALIZED MERMAID & DUAL-MODE GOVERNANCE -->
+    <section id="theming">
+      <div class="wide-wrap">
+        <div class="section-kicker">05 · Centralized Dual-Mode Governance</div>
+        <h2>One Human-Owned Theme Policy—Never Per-Diagram AI Colors</h2>
+        <p style="max-width: 800px; color: var(--ink-muted);">
+          Letting an AI agent invent <code>themeVariables</code> or custom colors per diagram causes
+          palette drift, wastes Gitea’s <code>5,000</code>-character Mermaid budget, and triggers
+          dark-mode landmines like Mermaid’s <code>khroma</code> <code>primaryColor: transparent</code>
+          black-text bug or D2’s <code>shape: class</code> header inversion. ArchiGram enforces
+          <code>extra="forbid"</code> on AI curation specs and compiles every diagram from one
+          WCAG-validated <code>docs/architecture/mermaid-theme.yaml</code> policy. Toggle
+          <strong>Light</strong> and <strong>Dark</strong> in the top bar to inspect live contrast.
+        </p>
+
+        <div class="theme-grid">
+          <div class="workbench" style="margin-top: 0;">
+            <div class="workbench-toolbar">
+              <span style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--ink-muted);">
+                docs/architecture/mermaid-theme.yaml → docs/mermaid-theme.js
+              </span>
+              <div class="seg-group" role="tablist" aria-label="Dual-mode target preview">
+                <button class="seg-btn" type="button" role="tab" data-dual-tab="mermaid" aria-selected="true">
+                  Live Mermaid
+                </button>
+                <button class="seg-btn" type="button" role="tab" data-dual-tab="d2class" aria-selected="false">
+                  D2 UML Class
+                </button>
+                <button class="seg-btn" type="button" role="tab" data-dual-tab="dot" aria-selected="false">
+                  Graphviz DOT
+                </button>
+              </div>
+            </div>
+            <div class="cli-drawer" style="border-top: 0;">
+              <pre style="margin: 0;"># Central human-owned policy (WCAG AAA &gt;= 7.0:1 text contrast verified)
+# AI curation specs (CurationSpecV1) cannot override colors per diagram!
+layout_engine: elk
+flowchart_curve: linear
+node_fill: transparent
+node_border_hex: "#64748b"
+
+web_light:
+  background_hex: "#ffffff"
+  surface_hex: "#f8fafc"   # Real hex avoids Mermaid khroma NaN trap
+  text_hex: "#0f172a"      # 17.9:1 contrast on #ffffff
+  border_hex: "#64748b"
+
+web_dark:
+  background_hex: "#0b0f19"
+  surface_hex: "#111827"   # Real hex avoids dark-mode black text
+  text_hex: "#e2e8f0"      # 14.8:1 contrast on #0b0f19
+  line_hex: "#94a3b8"</pre>
+            </div>
+          </div>
+
+          <div class="diagram-frame">
+            <div class="diagram-header">
+              <span class="mono-title" id="dual-preview-title">l0_hexagonal_rings_mermaid.mmd (Central Theme)</span>
+              <span class="pill keep" style="font-family: var(--font-mono); font-size: 0.72rem;">WCAG AAA ≥ 7:1</span>
+            </div>
+            <div class="diagram-canvas" style="min-height: 430px;" id="dual-preview-canvas">
+              <div class="mermaid-live-stage" id="dual-mermaid-stage" data-mermaid-src="---
+config:
+  layout: elk
+  elk:
+    mergeEdges: false
+    nodePlacementStrategy: BRANDES_KOEPF
+  flowchart:
+    defaultRenderer: elk
+    curve: linear
+---
+flowchart TD
+  classDef default fill:transparent,stroke:#64748b,stroke-width:1.5px
+  subgraph n0[&quot;archigram&quot;]
+    subgraph n1[&quot;entrypoints&quot;]
+      n3[&quot;CLI Data Plane (entrypoints.cli)&quot;]
+      n10[&quot;MCP Control Plane (entrypoints.mcp)&quot;]
+    end
+    subgraph n2[&quot;features&quot;]
+      n5[&quot;Digest Slice&quot;]
+      n6[&quot;Emitter Slices (Mermaid, D2, PlantUML)&quot;]
+      n7[&quot;Ingestor Slices (DOT, SCIP, OTLP, Python)&quot;]
+      n8[&quot;5-Gate Linter Slices&quot;]
+      n9[&quot;Reducer Slices (Structural + Trace)&quot;]
+    end
+    n4[&quot;Domain Core (IR, Spec, Style Policy)&quot;]
+    n11[&quot;Ports &amp; Contracts (archigram.ports)&quot;]
+  end
+  style n0 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  style n1 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  style n2 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  n3 --&gt;|&quot;calls&quot;| n7
+  n3 --&gt;|&quot;calls&quot;| n10
+  n10 --&gt;|&quot;calls&quot;| n8
+  n8 -.-&gt;|&quot;implements&quot;| n11
+  n7 -.-&gt;|&quot;implements&quot;| n11
+  n9 --&gt;|&quot;calls&quot;| n4
+  n6 --&gt;|&quot;composes&quot;| n4
+  n11 -.-&gt;|&quot;imports&quot;| n4
+  linkStyle 0,1,2,5 stroke:#3b82f6,stroke-width:1.75px
+  linkStyle 3,4 stroke:#a855f7,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 6 stroke:#14b8a6,stroke-width:1.75px
+  linkStyle 7 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5"></div>
+              <img
+                id="dual-svg-stage"
+                data-dual-svg
+                src="./architecture/diagrams/l2c_oop_syntax_validators_d2.d2.svg"
+                alt="Dual-mode compiled SVG preview"
+                style="display: none; cursor: zoom-in;"
+                data-zoom-src="./architecture/diagrams/l2c_oop_syntax_validators_d2.d2.svg"
+                data-zoom-title="L2c OOP Syntax Validators (Dual-Mode D2 Class SVG)"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. ARCHITECTURE DOCS MATRIX -->
     <section id="docs">
       <div class="wide-wrap">
-        <div class="section-kicker">05 · Self-Dogfooded Documentation</div>
+        <div class="section-kicker">06 · Self-Dogfooded Documentation</div>
         <h2>Explore All Four Zoom Levels &amp; Benchmarks</h2>
         <p style="max-width: 740px; color: var(--ink-muted);">
           Every diagram in this repository is compiled from ArchiGram’s own source tree and verified
@@ -1226,14 +1441,15 @@
     </div>
   </div>
 
+  <script src="./mermaid-theme.js"></script>
   <script>
     (function () {
       const TRIAGE_DATA = {
         structural: {
-          rawSummary: "Raw: 334 nodes / 484 edges (50,186 Mermaid chars — 10× over 5k limit)",
-          curatedSummary: "Curated: 17 nodes / 12 edges (1,887 Mermaid chars · 5-Gate PASSED)",
+          rawSummary: "Raw: 342 nodes / 495 edges (51,814 Mermaid chars — 10× over 5k limit)",
+          curatedSummary: "Curated: 17 nodes / 12 edges (1,643 Mermaid chars · 5-Gate PASSED)",
           pills: [
-            { cls: "remove", text: "[REMOVE] 302" },
+            { cls: "remove", text: "[REMOVE] 310" },
             { cls: "bypass", text: "[BYPASS] 1" },
             { cls: "collapse", text: "[COLLAPSE] 20" },
             { cls: "keep", text: "[KEEP] 11" }
@@ -1241,9 +1457,9 @@
           stages: {
             "1": {
               label: "Stage 1 · Raw AST Graph",
-              meta: "334 nodes · 50,186 chars",
+              meta: "342 nodes · 51,814 chars",
               src: "./architecture/diagrams/showcase_cli_triage.1_original.d2.svg",
-              caption: "Unedited deterministic Python AST extraction of src/archigram (334 symbols, 484 edges). Honest, complete, and completely unreadable at a glance."
+              caption: "Unedited deterministic Python AST extraction of src/archigram (342 symbols, 495 edges). Honest, complete, and completely unreadable at a glance."
             },
             "2": {
               label: "Stage 2 · Triage Overlay",
@@ -1253,7 +1469,7 @@
             },
             "3": {
               label: "Stage 3 · 5-Gate Curated View",
-              meta: "17 nodes · 1,887 chars",
+              meta: "17 nodes · 1,643 chars",
               src: "./architecture/diagrams/showcase_cli_triage.3_curated.d2.svg",
               caption: "Final compiled view after CLI-only scope, leaf-pruning, bypass, and partition-collapse rules—passing all 5 formal gates and fitting comfortably under 5,000 Mermaid chars."
             }
@@ -1273,29 +1489,29 @@
           ].join("\n")
         },
         trace: {
-          rawSummary: "Raw: 15 participants / 183 spans (9,460 Mermaid chars — exceeds 5k limit)",
-          curatedSummary: "Curated: 15 participants / 48 spans (3,866 Mermaid chars · 5-Gate PASSED)",
+          rawSummary: "Raw: 15 participants / 193 spans (9,957 Mermaid chars — exceeds 5k limit)",
+          curatedSummary: "Curated: 15 participants / 49 spans (3,721 Mermaid chars · 5-Gate PASSED)",
           pills: [
             { cls: "remove", text: "[REMOVE] 0" },
-            { cls: "collapse", text: "[FOLD R1–R6] 135" },
-            { cls: "keep", text: "[KEEP] 48" }
+            { cls: "collapse", text: "[FOLD R1–R6] 144" },
+            { cls: "keep", text: "[KEEP] 49" }
           ],
           stages: {
             "1": {
               label: "Stage 1 · Raw sys.monitoring Trace",
-              meta: "183 call events · 9,460 chars",
+              meta: "193 call events · 9,957 chars",
               src: "./architecture/diagrams/showcase_trace_triage.1_original.d2.svg",
-              caption: "Uncompacted Python sys.monitoring execution trace across compile_and_lint_pipeline and 3-turn run_propose_loop (183 call spans)."
+              caption: "Uncompacted Python sys.monitoring execution trace across compile_and_lint_pipeline and 3-turn run_propose_loop (193 call spans)."
             },
             "2": {
               label: "Stage 2 · Loop & Fan-Out Triage",
-              meta: "135 Spans Marked for R1–R6 Folding",
+              meta: "144 Spans Marked for R1–R6 Folding",
               src: "./architecture/diagrams/showcase_trace_triage.2_triage.d2.svg",
-              caption: "Triage projection highlighting the 135 repetitive loop and fan-out call spans folded by deterministic R1–R6 + Series-Parallel poset rules vs. 48 representative spans."
+              caption: "Triage projection highlighting the 144 repetitive loop and fan-out call spans folded by deterministic R1–R6 + Series-Parallel poset rules vs. 49 representative spans."
             },
             "3": {
               label: "Stage 3 · Compacted Sequence",
-              meta: "48 spans · 3,866 chars",
+              meta: "49 spans · 3,721 chars",
               src: "./architecture/diagrams/showcase_trace_triage.3_curated.d2.svg",
               caption: "Compacted interaction trace preserving 100% of backing provenance IDs, causal happens-before order, and async fire-and-forget semantics."
             }
@@ -1342,6 +1558,118 @@
         }
       };
 
+      const DUAL_SVG_VIEWS = {
+        d2class: {
+          title: "l2c_oop_syntax_validators_d2.d2.svg (D2 shape: class)",
+          src: "./architecture/diagrams/l2c_oop_syntax_validators_d2.d2.svg"
+        },
+        dot: {
+          title: "l0_hexagonal_rings_dot.dot.svg (Graphviz DOT Dual-Mode)",
+          src: "./architecture/diagrams/l0_hexagonal_rings_dot.dot.svg"
+        }
+      };
+
+      // Theme & Dual-Mode SVG Controller
+      let activeThemeChoice = "auto";
+      try {
+        const saved = localStorage.getItem("archigram-theme");
+        if (saved === "light" || saved === "dark" || saved === "auto") {
+          activeThemeChoice = saved;
+        }
+      } catch (_) {}
+
+      const svgRawCache = new Map();
+      const svgBlobCache = new Map();
+
+      function effectiveColorMode() {
+        if (activeThemeChoice === "light" || activeThemeChoice === "dark") {
+          return activeThemeChoice;
+        }
+        return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      }
+
+      async function resolveSvgUrlForMode(canonicalSrc, choice) {
+        if (!canonicalSrc || choice === "auto" || !canonicalSrc.endsWith(".svg")) {
+          return canonicalSrc;
+        }
+        const key = canonicalSrc + "::" + choice;
+        if (svgBlobCache.has(key)) {
+          return svgBlobCache.get(key);
+        }
+        try {
+          let rawSvg = svgRawCache.get(canonicalSrc);
+          if (!rawSvg) {
+            const resp = await fetch(canonicalSrc);
+            if (!resp.ok) return canonicalSrc;
+            rawSvg = await resp.text();
+            svgRawCache.set(canonicalSrc, rawSvg);
+          }
+          const replacement = choice === "dark" ? "(min-width: 0px)" : "(max-width: 0px)";
+          const rewritten = rawSvg.replace(/\(prefers-color-scheme:\s*dark\)/gi, replacement);
+          const blobUrl = URL.createObjectURL(new Blob([rewritten], { type: "image/svg+xml" }));
+          svgBlobCache.set(key, blobUrl);
+          return blobUrl;
+        } catch (_) {
+          return canonicalSrc;
+        }
+      }
+
+      function syncAllDualModeSvgs() {
+        document.querySelectorAll("img[data-dual-svg]").forEach((img) => {
+          let canonical = img.getAttribute("data-canonical-src");
+          if (!canonical) {
+            canonical = img.getAttribute("src") || "";
+            img.setAttribute("data-canonical-src", canonical);
+          }
+          resolveSvgUrlForMode(canonical, activeThemeChoice).then((resolvedUrl) => {
+            if (img.getAttribute("data-canonical-src") === canonical) {
+              img.src = resolvedUrl;
+            }
+          });
+        });
+      }
+
+      function renderCentralMermaid() {
+        if (window.ArchiGramMermaidTheme && window.__mermaidInstance) {
+          window.ArchiGramMermaidTheme
+            .renderAll(window.__mermaidInstance, "[data-mermaid-src]", effectiveColorMode())
+            .catch(() => {});
+        }
+      }
+      window.__renderCentralMermaid = renderCentralMermaid;
+
+      function applyThemeChoice(choice, persist) {
+        activeThemeChoice = choice;
+        const root = document.documentElement;
+        if (choice === "light" || choice === "dark") {
+          root.setAttribute("data-theme", choice);
+        } else {
+          root.removeAttribute("data-theme");
+        }
+        document.querySelectorAll("[data-theme-choice]").forEach((btn) => {
+          btn.setAttribute("aria-pressed", String(btn.getAttribute("data-theme-choice") === choice));
+        });
+        if (persist) {
+          try {
+            localStorage.setItem("archigram-theme", choice);
+          } catch (_) {}
+        }
+        syncAllDualModeSvgs();
+        renderCentralMermaid();
+      }
+
+      document.querySelectorAll("[data-theme-choice]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          applyThemeChoice(btn.getAttribute("data-theme-choice") || "auto", true);
+        });
+      });
+
+      window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+        if (activeThemeChoice === "auto") {
+          renderCentralMermaid();
+        }
+      });
+
       let activeDataset = "structural";
       let activeStage = "compare";
 
@@ -1375,6 +1703,8 @@
                     <span>${st.meta}</span>
                   </div>
                   <img
+                    data-dual-svg
+                    data-canonical-src="${st.src}"
                     src="${st.src}"
                     alt="${st.label}"
                     data-zoom-src="${st.src}"
@@ -1395,6 +1725,8 @@
           viewportEl.innerHTML = `
             <img
               class="triage-single-img"
+              data-dual-svg
+              data-canonical-src="${st.src}"
               src="${st.src}"
               alt="${st.label}"
               data-zoom-src="${st.src}"
@@ -1403,6 +1735,7 @@
             <p class="stage-caption">${st.caption}</p>
           `;
         }
+        syncAllDualModeSvgs();
       }
 
       document.querySelectorAll("[data-dataset]").forEach((btn) => {
@@ -1441,14 +1774,47 @@
             b.setAttribute("aria-selected", String(b === btn))
           );
           animFileEl.textContent = item.file;
+          animImgEl.setAttribute("data-canonical-src", item.src);
           animImgEl.src = item.src;
           animImgEl.alt = item.title;
           animCanvasEl.setAttribute("data-zoom-src", item.src);
           animCanvasEl.setAttribute("data-zoom-title", item.title);
           animZoomBtn.setAttribute("data-zoom-src", item.src);
           animZoomBtn.setAttribute("data-zoom-title", item.title);
+          syncAllDualModeSvgs();
         });
       });
+
+      // Central Dual-Mode Governance tab switcher
+      const dualTitleEl = document.getElementById("dual-preview-title");
+      const dualMmdEl = document.getElementById("dual-mermaid-stage");
+      const dualSvgEl = document.getElementById("dual-svg-stage");
+
+      document.querySelectorAll("[data-dual-tab]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const tab = btn.getAttribute("data-dual-tab");
+          document.querySelectorAll("[data-dual-tab]").forEach((b) =>
+            b.setAttribute("aria-selected", String(b === btn))
+          );
+          if (tab === "mermaid") {
+            dualTitleEl.textContent = "l0_hexagonal_rings_mermaid.mmd (Central Theme)";
+            dualMmdEl.style.display = "flex";
+            dualSvgEl.style.display = "none";
+            renderCentralMermaid();
+          } else {
+            const view = DUAL_SVG_VIEWS[tab];
+            dualTitleEl.textContent = view.title;
+            dualMmdEl.style.display = "none";
+            dualSvgEl.style.display = "block";
+            dualSvgEl.setAttribute("data-canonical-src", view.src);
+            dualSvgEl.setAttribute("data-zoom-src", view.src);
+            dualSvgEl.setAttribute("data-zoom-title", view.title);
+            syncAllDualModeSvgs();
+          }
+        });
+      });
+
+      applyThemeChoice(activeThemeChoice, false);
 
       // Copy button
       document.querySelectorAll("[data-copy-target]").forEach((btn) => {
@@ -1484,13 +1850,15 @@
       }
 
       function openLightbox(src, title) {
-        lbImg.src = src;
         lbTitle.textContent = title || "Diagram Inspector";
         scale = 1;
         panX = 0;
         panY = 0;
         applyTransform();
         lb.classList.add("open");
+        resolveSvgUrlForMode(src, activeThemeChoice).then((resolved) => {
+          lbImg.src = resolved;
+        });
       }
 
       function closeLightbox() {
@@ -1561,6 +1929,29 @@
         }
       });
     })();
+  </script>
+  <script type="module">
+    try {
+      const [{ default: mermaid }, { default: elkLayouts }] = await Promise.all([
+        import("https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs"),
+        import("https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0/dist/mermaid-layout-elk.esm.min.mjs"),
+      ]);
+      mermaid.registerLayoutLoaders(elkLayouts);
+      window.__mermaidInstance = mermaid;
+      if (typeof window.__renderCentralMermaid === "function") {
+        window.__renderCentralMermaid();
+      }
+    } catch (_) {
+      try {
+        const { default: mermaid } = await import(
+          "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs"
+        );
+        window.__mermaidInstance = mermaid;
+        if (typeof window.__renderCentralMermaid === "function") {
+          window.__renderCentralMermaid();
+        }
+      } catch (__) {}
+    }
   </script>
 </body>
 </html>

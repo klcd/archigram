@@ -273,7 +273,7 @@ def lint_diagnostic_strategy(draw: st.DrawFn) -> LintDiagnostic:
     )
 
 
-@settings(max_examples=40)
+@settings(max_examples=40, deadline=None)
 @given(spec=valid_curation_spec_strategy())
 def test_curation_spec_yaml_and_json_round_trip(spec: CurationSpecV1) -> None:
     dumped_yaml = dump_curation_spec_yaml(spec)

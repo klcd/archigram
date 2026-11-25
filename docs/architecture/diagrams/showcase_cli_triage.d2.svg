@@ -133,4 +133,10 @@
 <rect x="1206" y="303" width="56" height="21" fill="black"></rect>
 <rect x="517" y="1094" width="56" height="21" fill="black"></rect>
 <rect x="336" y="1152" width="56" height="21" fill="black"></rect>
-</mask></svg></svg>
+</mask></svg><style type="text/css"><![CDATA[
+.appendix-icon path[fill="white"]{fill:#f8fafc;stroke:#94a3b8;}
+@media screen and (prefers-color-scheme:dark){
+.appendix-icon path[fill="white"]{fill:#1e293b !important;stroke:#64748b !important;}
+.appendix-icon path[stroke="#2E3346"]{stroke:#cbd5e1 !important;}
+}
+]]></style></svg>

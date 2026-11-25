@@ -403,7 +403,8 @@ def test_sequence_diagram_par_loop_and_end_aliasing_invariants(
 
     assert first == second
     assert first.startswith(f"{MERMAID_SEQUENCE_FRONTMATTER}\nsequenceDiagram\n")
-    assert "actorBkg: transparent" in first
+    assert "mirrorActors: false" in first
+    assert "actorBkg: transparent" not in first
     assert MermaidSyntaxValidator().validate(first).valid
     _assert_no_unescaped_semicolons_in_quoted_labels(first)
     _assert_balanced_mermaid_blocks(first)

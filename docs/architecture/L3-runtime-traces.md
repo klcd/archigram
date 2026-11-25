@@ -47,15 +47,9 @@ Raw execution captures **180 observed events** across **15 participants**. Apply
 ```mermaid
 ---
 config:
-  themeVariables:
-    actorBkg: transparent
-    actorBorder: '#64748b'
-    actorLineColor: '#64748b'
-    signalColor: '#3b82f6'
-    activationBkgColor: transparent
-    activationBorderColor: '#64748b'
-    noteBkgColor: transparent
-    noteBorderColor: '#64748b'
+  sequence:
+    mirrorActors: false
+    messageAlign: center
 ---
 sequenceDiagram
   participant p0 as "diagnostics"
@@ -76,6 +70,8 @@ sequenceDiagram
   p4->>+p4: compile_and_lint_pipeline
   p4->>+p14: StructuralTopologicalReducer.reduce
   p14-->>-p4: return
+  p4->>+p8: MermaidEmitter.__init__
+  p8-->>-p4: return
   p4->>+p8: MermaidEmitter.emit
   p8-->>-p4: return
   p4->>+p14: StructuralTopologicalReducer.reduce
@@ -273,7 +269,7 @@ steps: {
     }
   }
   step_2: {
-    "archigram.entrypoints.cli.pipeline" -> "archigram.features.emit_mermaid.emitter": "MermaidEmitter.emit" {
+    "archigram.entrypoints.cli.pipeline" -> "archigram.features.emit_mermaid.emitter": "MermaidEmitter.__init__ (x2)" {
       style.stroke: "#3b82f6"
       style.animated: true
     }

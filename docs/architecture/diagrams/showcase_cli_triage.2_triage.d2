@@ -357,12 +357,42 @@ archigram: "[KEEP] archigram" {
         style.stroke: "#ef4444"
         style.stroke-dash: 5
       }
+      "archigram.domain.style.MermaidThemeConfig": "[REMOVE] MermaidThemeConfig" {
+        style.fill: transparent
+        style.stroke: "#ef4444"
+        style.stroke-dash: 5
+      }
+      "archigram.domain.style.MermaidWebModePalette": "[REMOVE] MermaidWebModePalette" {
+        style.fill: transparent
+        style.stroke: "#ef4444"
+        style.stroke-dash: 5
+      }
       "archigram.domain.style.UmlArrowheadKind": "[REMOVE] UmlArrowheadKind" {
         style.fill: transparent
         style.stroke: "#ef4444"
         style.stroke-dash: 5
       }
+      "archigram.domain.style.contrast_ratio": "[REMOVE] contrast_ratio" {
+        style.fill: transparent
+        style.stroke: "#ef4444"
+        style.stroke-dash: 5
+      }
+      "archigram.domain.style.dump_mermaid_theme_yaml": "[REMOVE] dump_mermaid_theme_yaml" {
+        style.fill: transparent
+        style.stroke: "#ef4444"
+        style.stroke-dash: 5
+      }
+      "archigram.domain.style.parse_mermaid_theme_yaml": "[REMOVE] parse_mermaid_theme_yaml" {
+        style.fill: transparent
+        style.stroke: "#ef4444"
+        style.stroke-dash: 5
+      }
       "archigram.domain.style.relative_luminance": "[REMOVE] relative_luminance" {
+        style.fill: transparent
+        style.stroke: "#ef4444"
+        style.stroke-dash: 5
+      }
+      "archigram.domain.style.render_mermaid_web_theme_js": "[REMOVE] render_mermaid_web_theme_js" {
         style.fill: transparent
         style.stroke: "#ef4444"
         style.stroke-dash: 5
@@ -633,12 +663,22 @@ archigram: "[KEEP] archigram" {
           style.stroke: "#ef4444"
           style.stroke-dash: 5
         }
+        "archigram.entrypoints.cli.pipeline.inject_svg_dual_mode_style": "[REMOVE] inject_svg_dual_mode_style" {
+          style.fill: transparent
+          style.stroke: "#ef4444"
+          style.stroke-dash: 5
+        }
         "archigram.entrypoints.cli.pipeline.load_canonical_ir": "[REMOVE] load_canonical_ir" {
           style.fill: transparent
           style.stroke: "#ef4444"
           style.stroke-dash: 5
         }
         "archigram.entrypoints.cli.pipeline.load_curation_spec": "[REMOVE] load_curation_spec" {
+          style.fill: transparent
+          style.stroke: "#ef4444"
+          style.stroke-dash: 5
+        }
+        "archigram.entrypoints.cli.pipeline.load_mermaid_theme": "[REMOVE] load_mermaid_theme" {
           style.fill: transparent
           style.stroke: "#ef4444"
           style.stroke-dash: 5
@@ -1864,6 +1904,26 @@ archigram."archigram.domain"."archigram.domain.style"."archigram.domain.style.Ed
   style.stroke: "#ef4444"
   style.stroke-dash: 5
 }
+archigram."archigram.domain"."archigram.domain.style"."archigram.domain.style.MermaidThemeConfig" -> archigram."archigram.domain"."archigram.domain.style"."archigram.domain.style.MermaidWebModePalette": "[remove] composes" {
+  style.stroke: "#ef4444"
+  style.stroke-dash: 5
+}
+archigram."archigram.domain"."archigram.domain.style"."archigram.domain.style.MermaidThemeConfig" -> archigram."archigram.domain"."archigram.domain.style"."archigram.domain.style.relative_luminance": "[remove] calls" {
+  style.stroke: "#ef4444"
+  style.stroke-dash: 5
+}
+archigram."archigram.domain"."archigram.domain.style"."archigram.domain.style.MermaidWebModePalette" -> archigram."archigram.domain"."archigram.domain.style"."archigram.domain.style.contrast_ratio": "[remove] calls" {
+  style.stroke: "#ef4444"
+  style.stroke-dash: 5
+}
+archigram."archigram.domain"."archigram.domain.style"."archigram.domain.style.contrast_ratio" -> archigram."archigram.domain"."archigram.domain.style"."archigram.domain.style.relative_luminance": "[remove] calls" {
+  style.stroke: "#ef4444"
+  style.stroke-dash: 5
+}
+archigram."archigram.domain"."archigram.domain.style"."archigram.domain.style.parse_mermaid_theme_yaml" -> archigram."archigram.domain"."archigram.domain.style"."archigram.domain.style.MermaidThemeConfig": "[remove] calls" {
+  style.stroke: "#ef4444"
+  style.stroke-dash: 5
+}
 archigram."archigram.entrypoints"."archigram.entrypoints.cli" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.app": "[merge] imports" {
   style.stroke: "#8b5cf6"
   style.stroke-dash: 5
@@ -1936,6 +1996,10 @@ archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypo
   style.stroke: "#ef4444"
   style.stroke-dash: 5
 }
+archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.app"."archigram.entrypoints.cli.app.execute_apply" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.load_mermaid_theme": "[remove] calls" {
+  style.stroke: "#ef4444"
+  style.stroke-dash: 5
+}
 archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.app"."archigram.entrypoints.cli.app.execute_apply" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.sync_compiled_artifacts": "[remove] calls" {
   style.stroke: "#ef4444"
   style.stroke-dash: 5
@@ -1961,6 +2025,10 @@ archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypo
   style.stroke-dash: 5
 }
 archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.app"."archigram.entrypoints.cli.app.execute_lint" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.load_curation_spec": "[remove] calls" {
+  style.stroke: "#ef4444"
+  style.stroke-dash: 5
+}
+archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.app"."archigram.entrypoints.cli.app.execute_lint" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.load_mermaid_theme": "[remove] calls" {
   style.stroke: "#ef4444"
   style.stroke-dash: 5
 }
@@ -2272,6 +2340,10 @@ archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypo
   style.stroke: "#ef4444"
   style.stroke-dash: 5
 }
+archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.emit_view_source" -> archigram."archigram.features"."archigram.features.emit_mermaid"."archigram.features.emit_mermaid.emitter"."archigram.features.emit_mermaid.emitter.MermaidEmitter": "[remove] calls" {
+  style.stroke: "#ef4444"
+  style.stroke-dash: 5
+}
 archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.load_canonical_ir" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.InputFormat": "[remove] calls" {
   style.stroke: "#ef4444"
   style.stroke-dash: 5
@@ -2281,6 +2353,14 @@ archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypo
   style.stroke-dash: 5
 }
 archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.load_curation_spec" -> archigram."archigram.domain"."archigram.domain.spec"."archigram.domain.spec.parse_curation_spec_yaml": "[remove] calls" {
+  style.stroke: "#ef4444"
+  style.stroke-dash: 5
+}
+archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.load_mermaid_theme" -> archigram."archigram.domain"."archigram.domain.style"."archigram.domain.style.parse_mermaid_theme_yaml": "[remove] calls" {
+  style.stroke: "#ef4444"
+  style.stroke-dash: 5
+}
+archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.render_companion_svg" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.inject_svg_dual_mode_style": "[remove] calls" {
   style.stroke: "#ef4444"
   style.stroke-dash: 5
 }
@@ -2401,6 +2481,10 @@ archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypo
   style.stroke-dash: 5
 }
 archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.execute_triage" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.load_curation_spec": "[remove] calls" {
+  style.stroke: "#ef4444"
+  style.stroke-dash: 5
+}
+archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.execute_triage" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.load_mermaid_theme": "[remove] calls" {
   style.stroke: "#ef4444"
   style.stroke-dash: 5
 }

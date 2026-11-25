@@ -21,6 +21,7 @@ skinparam ArtifactBorderColor #64748b
 start
 :pipeline: compile_and_lint_pipeline;
 :reducer: StructuralTopologicalReducer.reduce;
+:emit_mermaid.emitter: MermaidEmitter.__init__;
 :emit_mermaid.emitter: MermaidEmitter.emit;
 :reducer: StructuralTopologicalReducer.reduce;
 :emit_d2.emitter: D2Emitter.emit;
@@ -36,7 +37,6 @@ start
 :validators: Gate5SyntaxHarness.validate [loop x3;
 :diagnostics: LintReport.from_diagnostics;
 :propose_loop: run_propose_loop;
-:generator: GraphDigestGenerator.to_compact_mark;
-:+30 compacted actions;
+:+31 compacted actions;
 stop
 @enduml

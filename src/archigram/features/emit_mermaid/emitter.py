@@ -19,12 +19,9 @@ from archigram.domain.ir import (
     TraceParticipant,
 )
 from archigram.domain.style import (
-    DEFAULT_STROKE_WIDTH_PX,
-    MERMAID_DEFAULT_CLASSDEF,
-    MERMAID_SEQUENCE_FRONTMATTER,
-    MERMAID_STRUCTURAL_FRONTMATTER,
-    MERMAID_SUBGRAPH_STYLE_ATTRS,
+    DEFAULT_MERMAID_THEME,
     LinePattern,
+    MermaidThemeConfig,
     resolve_edge_visual_style,
 )
 
@@ -226,7 +223,10 @@ def _emit_class_edge(edge: IREdge, aliases: dict[str, str]) -> str:
     return f"  {src} --> {tgt} : {label}"
 
 
-def _emit_class_diagram(ir: StructuralGraphIR) -> str:
+def _emit_class_diagram(
+    ir: StructuralGraphIR,
+    theme: MermaidThemeConfig = DEFAULT_MERMAID_THEME,
+) -> str:
     """Emit a deterministic Mermaid OOP classDiagram compatible with Gitea and Mermaid v10+."""
     parent_ids = {n.parent_id for n in ir.nodes.values() if n.parent_id is not None}
     incident_ids = {e.source for e in ir.edges} | {e.target for e in ir.edges}
@@ -241,7 +241,7 @@ def _emit_class_diagram(ir: StructuralGraphIR) -> str:
     ] or sorted(ir.nodes)
     aliases = build_alias_map(visible_ids, prefix="c")
     lines: list[str] = [
-        MERMAID_STRUCTURAL_FRONTMATTER,
+        theme.structural_frontmatter(),
         "classDiagram",
     ]
     for sym_id in visible_ids:
@@ -299,6 +299,7 @@ def _emit_flowchart_edge_and_style(
     edge_idx: int,
     aliases: dict[str, str],
     animate_override: str | None = None,
+    theme: MermaidThemeConfig = DEFAULT_MERMAID_THEME,
 ) -> tuple[list[str], str]:
     """Emit flowchart edge line(s) (opt-in v11.4+ animation) and stroke style spec."""
     src = aliases[edge.source]
@@ -307,16 +308,17 @@ def _emit_flowchart_edge_and_style(
     visual = resolve_edge_visual_style(edge.relation, edge.sync_kind)
     if visual.line_pattern is LinePattern.BOLD:
         arrow = "==>"
-        style_spec = f"stroke:{visual.stroke_hex},stroke-width:2.5px"
+        style_spec = f"stroke:{visual.stroke_hex},stroke-width:{theme.bold_edge_stroke_width_px}"
     elif visual.line_pattern is LinePattern.DASHED:
         arrow = "-.->"
         style_spec = (
             f"stroke:{visual.stroke_hex},"
-            f"stroke-width:{DEFAULT_STROKE_WIDTH_PX},stroke-dasharray:5 5"
+            f"stroke-width:{theme.edge_stroke_width_px},"
+            f"stroke-dasharray:{theme.dashed_edge_array}"
         )
     else:
         arrow = "-->"
-        style_spec = f"stroke:{visual.stroke_hex},stroke-width:{DEFAULT_STROKE_WIDTH_PX}"
+        style_spec = f"stroke:{visual.stroke_hex},stroke-width:{theme.edge_stroke_width_px}"
     if animate_override == "true":
         edge_id = f"e{edge_idx}"
         return [
@@ -326,22 +328,26 @@ def _emit_flowchart_edge_and_style(
     return [f'  {src} {arrow}|"{label}"| {tgt}'], style_spec
 
 
-def _emit_flowchart(ir: StructuralGraphIR) -> str:
+def _emit_flowchart(
+    ir: StructuralGraphIR,
+    theme: MermaidThemeConfig = DEFAULT_MERMAID_THEME,
+) -> str:
     """Emit a deterministic ELK orthogonal flowchart TD diagram."""
     sorted_ids = sorted(ir.nodes)
     aliases = build_alias_map(sorted_ids, prefix="n")
     roots, children = _build_children_map(ir.nodes)
     animate_override = ir.metadata.get("animate_edges")
+    subgraph_style = theme.subgraph_style_attrs()
     lines: list[str] = [
-        MERMAID_STRUCTURAL_FRONTMATTER,
+        theme.structural_frontmatter(),
         "flowchart TD",
-        f"  {MERMAID_DEFAULT_CLASSDEF}",
+        f"  {theme.default_classdef()}",
     ]
     for root_id in roots:
         lines.extend(_emit_flowchart_subtree(root_id, ir.nodes, children, aliases, depth=1))
     for sym_id in sorted_ids:
         if children[sym_id]:
-            lines.append(f"  style {aliases[sym_id]} {MERMAID_SUBGRAPH_STYLE_ATTRS}")
+            lines.append(f"  style {aliases[sym_id]} {subgraph_style}")
     style_specs: list[str] = []
     for edge_idx, edge in enumerate(sorted(ir.edges, key=lambda item: item.edge_id)):
         edge_lines, style_spec = _emit_flowchart_edge_and_style(
@@ -349,6 +355,7 @@ def _emit_flowchart(ir: StructuralGraphIR) -> str:
             edge_idx,
             aliases,
             animate_override,
+            theme,
         )
         lines.extend(edge_lines)
         style_specs.append(style_spec)
@@ -509,11 +516,14 @@ def _format_participant_line(participant: TraceParticipant, alias: str) -> str:
     return f'  participant {alias} as "{label}"'
 
 
-def _emit_sequence_diagram(ir: InteractionTraceIR) -> str:
+def _emit_sequence_diagram(
+    ir: InteractionTraceIR,
+    theme: MermaidThemeConfig = DEFAULT_MERMAID_THEME,
+) -> str:
     """Emit a deterministic Mermaid v12 sequenceDiagram with par/loop fragments and async arrows."""
     sorted_pids = sorted(ir.participants)
     aliases = build_alias_map(sorted_pids, prefix="p")
-    lines: list[str] = [MERMAID_SEQUENCE_FRONTMATTER, "sequenceDiagram"]
+    lines: list[str] = [theme.sequence_frontmatter(), "sequenceDiagram"]
     for pid in sorted_pids:
         lines.append(_format_participant_line(ir.participants[pid], aliases[pid]))
 
@@ -526,14 +536,18 @@ def _emit_sequence_diagram(ir: InteractionTraceIR) -> str:
     return "\n".join(lines) + "\n"
 
 
-def _dispatch_mermaid_variant(ir: CanonicalIR, variant: str) -> str | None:
+def _dispatch_mermaid_variant(
+    ir: CanonicalIR,
+    variant: str,
+    theme: MermaidThemeConfig = DEFAULT_MERMAID_THEME,
+) -> str | None:
     """Dispatch non-default UML 2.5 projection variants for MermaidEmitter."""
     from archigram.features.emit_mermaid import uml_variants as uv
 
     if variant == "package":
-        return uv.emit_mermaid_package(ir)
+        return uv.emit_mermaid_package(ir, theme)
     if variant == "deployment":
-        return uv.emit_mermaid_deployment(ir)
+        return uv.emit_mermaid_deployment(ir, theme)
     if isinstance(ir, StructuralGraphIR):
         structural_map = {
             "state": uv.emit_mermaid_state_structural,
@@ -542,7 +556,7 @@ def _dispatch_mermaid_variant(ir: CanonicalIR, variant: str) -> str | None:
             "use_case": uv.emit_mermaid_use_case_structural,
         }
         fn_s = structural_map.get(variant)
-        return fn_s(ir) if fn_s is not None else None
+        return fn_s(ir, theme) if fn_s is not None else None
     trace_map = {
         "state": uv.emit_mermaid_state_trace,
         "communication": uv.emit_mermaid_communication_trace,
@@ -550,11 +564,19 @@ def _dispatch_mermaid_variant(ir: CanonicalIR, variant: str) -> str | None:
         "use_case": uv.emit_mermaid_use_case_trace,
     }
     fn_t = trace_map.get(variant)
-    return fn_t(ir) if fn_t is not None else None
+    return fn_t(ir, theme) if fn_t is not None else None
 
 
 class MermaidEmitter:
     """Deterministic Mermaid emitter implementing DiagramEmitterPort."""
+
+    def __init__(self, theme: MermaidThemeConfig = DEFAULT_MERMAID_THEME) -> None:
+        self._theme = theme
+
+    @property
+    def theme(self) -> MermaidThemeConfig:
+        """Return the central MermaidThemeConfig governing emitted frontmatter and styles."""
+        return self._theme
 
     @property
     def target_format(self) -> str:
@@ -564,11 +586,11 @@ class MermaidEmitter:
     def emit(self, ir: CanonicalIR) -> str:
         """Emit deterministic Mermaid syntax from a StructuralGraphIR or InteractionTraceIR."""
         variant = ir.metadata.get("diagram_variant", "auto")
-        dispatched = _dispatch_mermaid_variant(ir, variant)
+        dispatched = _dispatch_mermaid_variant(ir, variant, self._theme)
         if dispatched is not None:
             return dispatched
         if isinstance(ir, StructuralGraphIR):
             if _is_class_diagram_mode(ir):
-                return _emit_class_diagram(ir)
-            return _emit_flowchart(ir)
-        return _emit_sequence_diagram(ir)
+                return _emit_class_diagram(ir, self._theme)
+            return _emit_flowchart(ir, self._theme)
+        return _emit_sequence_diagram(ir, self._theme)
