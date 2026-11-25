@@ -12,6 +12,7 @@ from pydantic import ValidationError
 
 from archigram.entrypoints.cli.curate_cli import curate_app
 from archigram.entrypoints.cli.diff_report import PrDiffSummary, compute_pr_regression_diff
+from archigram.entrypoints.cli.markdown_sync import sync_markdown_views
 from archigram.entrypoints.cli.pipeline import (
     ApplyCheckReport,
     ApplySyncOutcome,
@@ -149,6 +150,7 @@ def execute_apply(options: ApplyOptions) -> ApplySyncOutcome:
         options.out_dir,
         check_only=options.check_only,
         sync_md_target=options.sync_md,
+        markdown_syncer=sync_markdown_views,
     )
 
 

@@ -867,6 +867,15 @@ archigram: "archigram" {
           style.fill: transparent
           style.stroke: "#64748b"
         }
+        "archigram.entrypoints.cli.pipeline.MarkdownSyncOutcomeLike": "MarkdownSyncOutcomeLike" {
+          shape: class
+          "+property synced_files()": "tuple[Path, ...]"
+          "+property drifted_files()": "tuple[Path, ...]"
+        }
+        "archigram.entrypoints.cli.pipeline.MarkdownSyncer": "MarkdownSyncer" {
+          style.fill: transparent
+          style.stroke: "#64748b"
+        }
         "archigram.entrypoints.cli.pipeline.PipelineCompilationResult": "PipelineCompilationResult" {
           shape: class
           "+observed_ir": "CanonicalIR"
@@ -2492,6 +2501,10 @@ archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypo
   style.stroke-dash: 5
 }
 archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.app" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.diff_report": "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.app" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.markdown_sync": "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }

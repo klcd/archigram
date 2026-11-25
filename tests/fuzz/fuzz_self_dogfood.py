@@ -178,6 +178,7 @@ def test_self_hosted_docs_cover_every_renderer_variant_and_companion_svg(
 ) -> None:
     """Self-hosted docs showcase every renderer across structural/OOP/trace + stamped SVGs."""
     from archigram.domain.spec import DiagramVariant
+    from archigram.entrypoints.cli.markdown_sync import sync_markdown_views
     from archigram.entrypoints.cli.pipeline import sync_compiled_artifacts
 
     diag_spec = _cached_diagram_spec()
@@ -198,7 +199,11 @@ def test_self_hosted_docs_cover_every_renderer_variant_and_companion_svg(
 
     diag_res = compile_and_lint_pipeline(_cached_self_ir(), diag_spec)
     diag_sync = sync_compiled_artifacts(
-        diag_res, _DIAGRAMS_DIR, check_only=True, sync_md_target=_DOCS_ARCH
+        diag_res,
+        _DIAGRAMS_DIR,
+        check_only=True,
+        sync_md_target=_DOCS_ARCH,
+        markdown_syncer=sync_markdown_views,
     )
     assert diag_sync.is_clean, (
         f"Structural drift/missing: {diag_sync.drifted_files} / {diag_sync.missing_files}"
@@ -206,7 +211,11 @@ def test_self_hosted_docs_cover_every_renderer_variant_and_companion_svg(
 
     trace_res = compile_and_lint_pipeline(_cached_trace_snapshot(), trace_spec)
     trace_sync = sync_compiled_artifacts(
-        trace_res, _DIAGRAMS_DIR, check_only=True, sync_md_target=_DOCS_ARCH
+        trace_res,
+        _DIAGRAMS_DIR,
+        check_only=True,
+        sync_md_target=_DOCS_ARCH,
+        markdown_syncer=sync_markdown_views,
     )
     assert trace_sync.is_clean, (
         f"Trace drift/missing: {trace_sync.drifted_files} / {trace_sync.missing_files}"

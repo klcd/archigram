@@ -683,6 +683,16 @@ archigram: "[KEEP] archigram" {
           style.stroke: "#ef4444"
           style.stroke-dash: 5
         }
+        "archigram.entrypoints.cli.pipeline.MarkdownSyncOutcomeLike": "[REMOVE] MarkdownSyncOutcomeLike" {
+          style.fill: transparent
+          style.stroke: "#ef4444"
+          style.stroke-dash: 5
+        }
+        "archigram.entrypoints.cli.pipeline.MarkdownSyncer": "[REMOVE] MarkdownSyncer" {
+          style.fill: transparent
+          style.stroke: "#ef4444"
+          style.stroke-dash: 5
+        }
         "archigram.entrypoints.cli.pipeline.PipelineCompilationResult": "[REMOVE] PipelineCompilationResult" {
           style.fill: transparent
           style.stroke: "#ef4444"
@@ -2034,6 +2044,10 @@ archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypo
   style.stroke-dash: 5
 }
 archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.app" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.diff_report": "[merge] imports" {
+  style.stroke: "#8b5cf6"
+  style.stroke-dash: 5
+}
+archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.app" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.markdown_sync": "[merge] imports" {
   style.stroke: "#8b5cf6"
   style.stroke-dash: 5
 }

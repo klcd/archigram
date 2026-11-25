@@ -11,7 +11,7 @@ import tempfile
 from dataclasses import dataclass, field
 from enum import StrEnum
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Protocol
 
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 
@@ -75,6 +75,28 @@ if TYPE_CHECKING:
     from archigram.ports.contracts import DiagramEmitterPort
 
 _CANONICAL_IR_ADAPTER: TypeAdapter[CanonicalIR] = TypeAdapter(CanonicalIR)
+
+
+class MarkdownSyncOutcomeLike(Protocol):
+    """Structural view of a Markdown sync outcome consumed by `sync_compiled_artifacts`."""
+
+    @property
+    def synced_files(self) -> tuple[Path, ...]: ...
+
+    @property
+    def drifted_files(self) -> tuple[Path, ...]: ...
+
+
+class MarkdownSyncer(Protocol):
+    """Injected inline-Markdown synchronizer (supplied by the CLI layer, not imported here)."""
+
+    def __call__(
+        self,
+        compiled_views: Mapping[str, CompiledViewArtifact],
+        sync_target: Path,
+        *,
+        check_only: bool = False,
+    ) -> MarkdownSyncOutcomeLike: ...
 
 
 class InputFormat(StrEnum):
@@ -827,10 +849,12 @@ def sync_compiled_artifacts(
     *,
     check_only: bool = False,
     sync_md_target: Path | None = None,
+    markdown_syncer: MarkdownSyncer | None = None,
 ) -> ApplySyncOutcome:
     """Write compiled views to `out_dir` or verify byte-for-byte parity when `check_only=True`."""
-    from archigram.entrypoints.cli.markdown_sync import sync_markdown_views
-
+    if sync_md_target is not None and markdown_syncer is None:
+        msg = "sync_md_target requires an injected markdown_syncer"
+        raise ValueError(msg)
     written: list[Path] = []
     drifted: list[Path] = []
     missing: list[Path] = []
@@ -869,8 +893,8 @@ def sync_compiled_artifacts(
                 missing=missing,
             )
 
-    if sync_md_target is not None:
-        md_outcome = sync_markdown_views(
+    if sync_md_target is not None and markdown_syncer is not None:
+        md_outcome = markdown_syncer(
             compilation.views,
             sync_md_target,
             check_only=check_only,
