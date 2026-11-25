@@ -392,6 +392,7 @@ def propose_cmd(
             input_path=str(input_path),
             out_spec_path=str(out_spec),
             max_turns=max_turns,
+            ir_loader=load_canonical_ir,
         )
     else:
         import tempfile
@@ -402,6 +403,7 @@ def propose_cmd(
                 input_path=str(input_path),
                 out_spec_path=str(tmp_out),
                 max_turns=max_turns,
+                ir_loader=load_canonical_ir,
             )
             if exit_code == 0 and tmp_out.is_file():
                 typer.echo(tmp_out.read_text(encoding="utf-8"), nl=False)

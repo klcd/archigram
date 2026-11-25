@@ -40,6 +40,7 @@ from archigram.domain.spec import (
     ViewInvariants,
     dump_curation_spec_yaml,
 )
+from archigram.entrypoints.cli.pipeline import load_canonical_ir
 from archigram.entrypoints.mcp import (
     CuratedViewsPreviewReport,
     DeterministicHeuristicProposer,
@@ -516,7 +517,9 @@ def test_run_propose_cli_round_trip(fixture: LayeredStructuralFixture) -> None:
         out_file = tmp_path / "diagram-views.yaml"
         in_file.write_text(fixture.ir.model_dump_json(), encoding="utf-8")
 
-        exit_code = run_propose_cli(str(in_file), str(out_file), max_turns=3)
+        exit_code = run_propose_cli(
+            str(in_file), str(out_file), max_turns=3, ir_loader=load_canonical_ir
+        )
         assert exit_code == 0
         assert out_file.is_file()
 
