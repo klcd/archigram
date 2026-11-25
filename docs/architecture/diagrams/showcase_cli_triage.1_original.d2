@@ -548,7 +548,7 @@ archigram: "archigram" {
         }
         "archigram.entrypoints.cli.app.DiffOptions": "DiffOptions" {
           shape: class
-          "+base_path": "Path"
+          "+base_path": "Path | None"
           "+head_path": "Path"
           "+spec_path": "Path"
           "+input_format": "InputFormat"
@@ -678,6 +678,26 @@ archigram: "archigram" {
       "archigram.entrypoints.cli.diff_report": "diff_report" {
         style.fill: transparent
         style.stroke: "#64748b"
+        "archigram.entrypoints.cli.diff_report.DeclaredRelationshipChange": "DeclaredRelationshipChange" {
+          shape: class
+          "+view_id": "str"
+          "+kind": "str"
+          "+status": "RelationshipStatus"
+          "+code": "str"
+          "+label": "str"
+          "+from_node": "str | None"
+          "+to_node": "str | None"
+          "+detail": "str"
+          "+removed_edges": "tuple[str, ...]"
+          "+added_edges": "tuple[str, ...]"
+        }
+        "archigram.entrypoints.cli.diff_report.EdgeChurnSummary": "EdgeChurnSummary" {
+          shape: class
+          "+edges_added": "int"
+          "+edges_removed": "int"
+          "+declared_edges_changed": "int"
+          "+bulk_edges_changed": "int"
+        }
         "archigram.entrypoints.cli.diff_report.PrDiffSummary": "PrDiffSummary" {
           shape: class
           "+passed": "bool"
@@ -693,6 +713,16 @@ archigram: "archigram" {
           "+new_warnings": "tuple[LintDiagnostic, ...]"
           "+view_deltas": "tuple[ViewRegressionDelta, ...]"
           "+markdown_report": "str"
+          "+base_available": "bool"
+          "+base_unavailable_reason": "str | None"
+          "+declared_changes": "tuple[DeclaredRelationshipChange, ...]"
+          "+affected_view_ids": "tuple[str, ...]"
+          "+edge_churn": "EdgeChurnSummary"
+          "+pre_existing_error_count": "int"
+        }
+        "archigram.entrypoints.cli.diff_report.RelationshipStatus": "RelationshipStatus" {
+          style.fill: transparent
+          style.stroke: "#64748b"
         }
         "archigram.entrypoints.cli.diff_report.ViewRegressionDelta": "ViewRegressionDelta" {
           shape: class
@@ -712,14 +742,43 @@ archigram: "archigram" {
           "+base_edge_budget_pct": "float"
           "+head_edge_budget_pct": "float"
           "+newly_severed_reachability": "tuple[str, ...]"
+          "+newly_broken_reachability": "tuple[str, ...]"
+          "+pre_existing_reachability_failures": "tuple[str, ...]"
+          "+head_reachability_failures": "tuple[str, ...]"
           "+restored_reachability": "tuple[str, ...]"
           "+newly_dropped_protected_nodes": "tuple[str, ...]"
           "+restored_protected_nodes": "tuple[str, ...]"
           "+base_error_count": "int"
           "+head_error_count": "int"
           "+new_error_count": "int"
+          "+pre_existing_error_count": "int"
           "+resolved_error_count": "int"
           "+has_regression": "bool"
+        }
+        "archigram.entrypoints.cli.diff_report._DeclaredFailure": "_DeclaredFailure" {
+          shape: class
+          "+view_id": "str"
+          "+kind": "str"
+          "+label": "str"
+          "+code": "str"
+          "+from_node": "str | None"
+          "+to_node": "str | None"
+          "+via": "tuple[str, ...]"
+          "+offending": "tuple[str, ...]"
+          "+property key()": "tuple[str, str, str]"
+        }
+        "archigram.entrypoints.cli.diff_report._ReportData": "_ReportData" {
+          shape: class
+          "+passed": "bool"
+          "+base_report": "LintReport | None"
+          "+head_report": "LintReport"
+          "+base_unavailable_reason": "str | None"
+          "+new_errors": "tuple[LintDiagnostic, ...]"
+          "+resolved_errors": "tuple[LintDiagnostic, ...]"
+          "+view_deltas": "tuple[ViewRegressionDelta, ...]"
+          "+declared_changes": "tuple[DeclaredRelationshipChange, ...]"
+          "+affected_view_ids": "tuple[str, ...]"
+          "+edge_churn": "EdgeChurnSummary"
         }
         "archigram.entrypoints.cli.diff_report.compute_pr_regression_diff": "compute_pr_regression_diff" {
           style.fill: transparent
@@ -2393,6 +2452,10 @@ archigram."archigram.entrypoints"."archigram.entrypoints.cli" -> archigram."arch
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }
+archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.app" -> archigram."archigram.domain"."archigram.domain.ir": "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
 archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.app" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.curate_cli": "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
@@ -2618,7 +2681,28 @@ archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypo
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }
+archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.diff_report"."archigram.entrypoints.cli.diff_report.DeclaredRelationshipChange" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.diff_report"."archigram.entrypoints.cli.diff_report.RelationshipStatus": "composes" {
+  style.stroke: "#14b8a6"
+  source-arrowhead: {
+    shape: diamond
+    style.filled: true
+  }
+}
 archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.diff_report"."archigram.entrypoints.cli.diff_report.PrDiffSummary" -> archigram."archigram.domain"."archigram.domain.diagnostics"."archigram.domain.diagnostics.LintDiagnostic": "composes" {
+  style.stroke: "#14b8a6"
+  source-arrowhead: {
+    shape: diamond
+    style.filled: true
+  }
+}
+archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.diff_report"."archigram.entrypoints.cli.diff_report.PrDiffSummary" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.diff_report"."archigram.entrypoints.cli.diff_report.DeclaredRelationshipChange": "composes" {
+  style.stroke: "#14b8a6"
+  source-arrowhead: {
+    shape: diamond
+    style.filled: true
+  }
+}
+archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.diff_report"."archigram.entrypoints.cli.diff_report.PrDiffSummary" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.diff_report"."archigram.entrypoints.cli.diff_report.EdgeChurnSummary": "composes" {
   style.stroke: "#14b8a6"
   source-arrowhead: {
     shape: diamond
@@ -2632,7 +2716,46 @@ archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypo
     style.filled: true
   }
 }
+archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.diff_report"."archigram.entrypoints.cli.diff_report._ReportData" -> archigram."archigram.domain"."archigram.domain.diagnostics"."archigram.domain.diagnostics.LintDiagnostic": "composes" {
+  style.stroke: "#14b8a6"
+  source-arrowhead: {
+    shape: diamond
+    style.filled: true
+  }
+}
+archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.diff_report"."archigram.entrypoints.cli.diff_report._ReportData" -> archigram."archigram.domain"."archigram.domain.diagnostics"."archigram.domain.diagnostics.LintReport": "composes" {
+  style.stroke: "#14b8a6"
+  source-arrowhead: {
+    shape: diamond
+    style.filled: true
+  }
+}
+archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.diff_report"."archigram.entrypoints.cli.diff_report._ReportData" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.diff_report"."archigram.entrypoints.cli.diff_report.DeclaredRelationshipChange": "composes" {
+  style.stroke: "#14b8a6"
+  source-arrowhead: {
+    shape: diamond
+    style.filled: true
+  }
+}
+archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.diff_report"."archigram.entrypoints.cli.diff_report._ReportData" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.diff_report"."archigram.entrypoints.cli.diff_report.EdgeChurnSummary": "composes" {
+  style.stroke: "#14b8a6"
+  source-arrowhead: {
+    shape: diamond
+    style.filled: true
+  }
+}
+archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.diff_report"."archigram.entrypoints.cli.diff_report._ReportData" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.diff_report"."archigram.entrypoints.cli.diff_report.ViewRegressionDelta": "composes" {
+  style.stroke: "#14b8a6"
+  source-arrowhead: {
+    shape: diamond
+    style.filled: true
+  }
+}
 archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.diff_report"."archigram.entrypoints.cli.diff_report.compute_pr_regression_diff" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.diff_report"."archigram.entrypoints.cli.diff_report.PrDiffSummary": "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.diff_report"."archigram.entrypoints.cli.diff_report.compute_pr_regression_diff" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.diff_report"."archigram.entrypoints.cli.diff_report._ReportData": "calls" {
   style.stroke: "#3b82f6"
   style.animated: true
 }

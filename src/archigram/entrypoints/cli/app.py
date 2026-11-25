@@ -5,7 +5,7 @@ from __future__ import annotations
 import importlib
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated
 
 import typer
 from pydantic import ValidationError
@@ -27,6 +27,9 @@ from archigram.entrypoints.cli.pipeline import (
     sync_compiled_artifacts,
 )
 from archigram.entrypoints.cli.triage import TriageOptions, TriageOutcome, execute_triage
+
+if TYPE_CHECKING:
+    from archigram.domain.ir import CanonicalIR
 
 EXIT_CLEAN = 0
 EXIT_LINT_OR_DRIFT = 1
@@ -69,7 +72,7 @@ class LintOptions:
 class DiffOptions:
     """Configuration options for `archigram diff`."""
 
-    base_path: Path
+    base_path: Path | None
     head_path: Path
     spec_path: Path
     input_format: InputFormat = InputFormat.AUTO
@@ -157,12 +160,29 @@ def execute_lint(options: LintOptions) -> PipelineCompilationResult:
     return compile_and_lint_pipeline(observed_ir, spec, mermaid_theme=theme)
 
 
+def _load_optional_base(
+    base_path: Path | None,
+    input_format: InputFormat,
+) -> tuple[CanonicalIR | None, str | None]:
+    """Load the baseline IR, or return `(None, reason)` when it is omitted or unusable."""
+    if base_path is None:
+        return None, "--base was not provided"
+    try:
+        return load_canonical_ir(base_path, input_format), None
+    except (OSError, ValueError, SyntaxError) as exc:
+        return None, f"base input '{base_path}' could not be loaded ({type(exc).__name__}: {exc})"
+
+
 def execute_diff(options: DiffOptions) -> PrDiffSummary:
-    """Run deterministic baseline-vs-PR `diff` pipeline without Typer framing."""
-    base_ir = load_canonical_ir(options.base_path, options.input_format)
+    """Run deterministic baseline-vs-PR `diff` pipeline without Typer framing.
+
+    `head` and `spec` must load (errors propagate -> usage error). An omitted or unreadable base
+    degrades to head-only Gate 1-5 validation reported via `base_available=False`.
+    """
     head_ir = load_canonical_ir(options.head_path, options.input_format)
     spec = load_curation_spec(options.spec_path)
-    return compute_pr_regression_diff(base_ir, head_ir, spec)
+    base_ir, reason = _load_optional_base(options.base_path, options.input_format)
+    return compute_pr_regression_diff(base_ir, head_ir, spec, base_unavailable_reason=reason)
 
 
 @app.command("apply")
@@ -271,10 +291,6 @@ def lint_cmd(
 
 @app.command("diff")
 def diff_cmd(
-    base: Annotated[
-        Path,
-        typer.Option("--base", "--base-input", help="Baseline input topology/trace file."),
-    ],
     head: Annotated[
         Path,
         typer.Option("--head", "--head-input", help="PR head input topology/trace file."),
@@ -283,6 +299,17 @@ def diff_cmd(
         Path,
         typer.Option("--spec", "-s", help="Path to CurationSpecV1 YAML (diagram-views.yaml)."),
     ],
+    base: Annotated[
+        Path | None,
+        typer.Option(
+            "--base",
+            "--base-input",
+            help=(
+                "Baseline input topology/trace file. If omitted or unreadable, only head is "
+                "validated (exit status reflects head Gates 1-5)."
+            ),
+        ),
+    ] = None,
     input_format: Annotated[
         InputFormat,
         typer.Option(
@@ -309,6 +336,12 @@ def diff_cmd(
         typer.echo(f"Input/Usage Error: {exc}", err=True)
         raise typer.Exit(code=EXIT_USAGE_ERROR) from exc
 
+    if not summary.base_available:
+        typer.echo(
+            f"Warning: base comparison unavailable ({summary.base_unavailable_reason}); "
+            "validated head only.",
+            err=True,
+        )
     if output_json:
         typer.echo(summary.model_dump_json(indent=2))
     else:
