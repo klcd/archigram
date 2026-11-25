@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import ast
 import hashlib
+import re
+import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -124,6 +126,51 @@ def _find_top_package_dir(start_dir: Path, boundary: Path | None) -> Path | None
     return current
 
 
+def _normalize_dist_name(name: str) -> str:
+    """PEP 503-style normalization mapped to an importable identifier."""
+    return re.sub(r"[-_.]+", "_", name.strip()).lower()
+
+
+def _declared_import_names(data: dict[str, object]) -> list[str]:
+    """Collect explicitly declared top-level import names from build-backend tables."""
+    tool = data.get("tool")
+    if not isinstance(tool, dict):
+        return []
+    hatch: object = tool.get("hatch", {})
+    wheel: object = {}
+    if isinstance(hatch, dict):
+        build: object = hatch.get("build", {})
+        targets: object = build.get("targets", {}) if isinstance(build, dict) else {}
+        wheel = targets.get("wheel", {}) if isinstance(targets, dict) else {}
+    pkgs: object = wheel.get("packages", []) if isinstance(wheel, dict) else []
+    return [Path(str(p)).name for p in pkgs] if isinstance(pkgs, list) else []
+
+
+def _pyproject_root_package(pkg_dir: Path) -> str | None:
+    """Derive the root package ID from a pyproject.toml beside or above ``pkg_dir``.
+
+    Returns None when no pyproject is found, when ``pkg_dir`` is already a declared
+    package of the project, or when no name can be derived (caller keeps the basename).
+    """
+    for candidate_dir in (pkg_dir, pkg_dir.parent):
+        try:
+            text = (candidate_dir / "pyproject.toml").read_text(encoding="utf-8")
+            data: dict[str, object] = tomllib.loads(text)
+        except (OSError, tomllib.TOMLDecodeError, UnicodeDecodeError):
+            continue
+        declared = _declared_import_names(data)
+        if pkg_dir.name in declared:
+            return None
+        if len(declared) == 1:
+            return declared[0]
+        project = data.get("project")
+        raw_name = project.get("name") if isinstance(project, dict) else None
+        if isinstance(raw_name, str) and raw_name.strip():
+            name = _normalize_dist_name(raw_name)
+            return name if name.isidentifier() and name != pkg_dir.name else None
+    return None
+
+
 def _parts_to_module_id(rel_path: Path, fallback: str) -> str:
     """Convert a relative .py path into a canonical dotted module identifier."""
     parts = list(rel_path.with_suffix("").parts)
@@ -133,11 +180,16 @@ def _parts_to_module_id(rel_path: Path, fallback: str) -> str:
     return ".".join(cleaned) if cleaned else fallback
 
 
-def _resolve_dir_module_id(file_path: Path, root_dir: Path, root_has_init: bool) -> str:
+def _resolve_dir_module_id(
+    file_path: Path, root_dir: Path, root_has_init: bool, root_alias: str | None = None
+) -> str:
     """Resolve canonical dotted module name for a file inside a scanned directory."""
     if root_has_init:
         top_pkg = _find_top_package_dir(root_dir, None)
         base = top_pkg.parent if top_pkg is not None else root_dir.parent
+        if root_alias is not None and top_pkg == root_dir:
+            rel = file_path.relative_to(root_dir)
+            return _parts_to_module_id(Path(root_alias) / rel, root_alias)
     else:
         top_pkg = (
             _find_top_package_dir(file_path.parent, root_dir)
@@ -177,12 +229,13 @@ def _load_directory_sources(root_dir: Path) -> tuple[str, list[_SourceFile]]:
     """Load and parse all .py files in a directory with collision-safe dotted module names."""
     py_files = _discover_py_files(root_dir)
     root_has_init = (root_dir / "__init__.py").is_file()
+    root_alias = _pyproject_root_package(root_dir) if root_has_init else None
     raw_items: list[tuple[Path, str, str, bool]] = []
     seen_counts: dict[str, int] = {}
 
     for path in py_files:
         rel_posix = path.relative_to(root_dir).as_posix()
-        mod_id = _resolve_dir_module_id(path, root_dir, root_has_init)
+        mod_id = _resolve_dir_module_id(path, root_dir, root_has_init, root_alias)
         is_pkg = path.name == "__init__.py"
         seen_counts[mod_id] = seen_counts.get(mod_id, 0) + 1
         raw_items.append((path, rel_posix, mod_id, is_pkg))
