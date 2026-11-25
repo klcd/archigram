@@ -42,8 +42,14 @@ n_5_feature_digest_52876d *--[#14b8a6] n_4_domain_core_f195b2 : composes
 n_5_feature_digest_52876d ..>[#64748b] n_4_domain_core_f195b2 : imports
 n_6_feature_emitters_75a4c0 *--[#14b8a6] n_4_domain_core_f195b2 : composes
 n_6_feature_emitters_75a4c0 ..>[#64748b] n_4_domain_core_f195b2 : imports
+n_7_feature_ingestor_73234e -->[#3b82f6] n_4_domain_core_f195b2 : calls
+n_7_feature_ingestor_73234e *--[#14b8a6] n_4_domain_core_f195b2 : composes
+n_7_feature_ingestor_73234e ..>[#64748b] n_4_domain_core_f195b2 : imports
 n_11_ports_contracts_d0accd <|..[#a855f7] n_7_feature_ingestor_73234e : implements
 n_7_feature_ingestor_73234e ..>[#64748b] n_11_ports_contracts_d0accd : imports
+n_8_feature_linters_57c819 -->[#3b82f6] n_4_domain_core_f195b2 : calls
+n_8_feature_linters_57c819 *--[#14b8a6] n_4_domain_core_f195b2 : composes
+n_8_feature_linters_57c819 ..>[#64748b] n_4_domain_core_f195b2 : imports
 n_8_feature_linters_57c819 -->[#3b82f6] n_11_ports_contracts_d0accd : calls
 n_8_feature_linters_57c819 *--[#14b8a6] n_11_ports_contracts_d0accd : composes
 n_11_ports_contracts_d0accd <|..[#a855f7] n_8_feature_linters_57c819 : implements
@@ -56,5 +62,4 @@ n_10_mcp_controlplane_ff4d3b ..>[#64748b] n_6_feature_emitters_75a4c0 : imports
 n_10_mcp_controlplane_ff4d3b -->[#3b82f6] n_8_feature_linters_57c819 : calls
 n_10_mcp_controlplane_ff4d3b ..>[#64748b] n_8_feature_linters_57c819 : imports
 n_10_mcp_controlplane_ff4d3b ..>[#64748b] n_9_feature_reducers_8a2858 : imports
-n_11_ports_contracts_d0accd ..>[#64748b] n_4_domain_core_f195b2 : imports
 @enduml

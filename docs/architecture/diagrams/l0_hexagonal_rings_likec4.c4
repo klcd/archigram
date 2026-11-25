@@ -145,8 +145,14 @@ model {
   archigram.archigram_features.feature_digest -[imports]-> archigram.domain_core 'imports'
   archigram.archigram_features.feature_emitters -[composes]-> archigram.domain_core 'composes'
   archigram.archigram_features.feature_emitters -[imports]-> archigram.domain_core 'imports'
+  archigram.archigram_features.feature_ingestors -[calls]-> archigram.domain_core 'calls'
+  archigram.archigram_features.feature_ingestors -[composes]-> archigram.domain_core 'composes'
+  archigram.archigram_features.feature_ingestors -[imports]-> archigram.domain_core 'imports'
   archigram.archigram_features.feature_ingestors -[implements]-> archigram.ports_contracts 'implements'
   archigram.archigram_features.feature_ingestors -[imports]-> archigram.ports_contracts 'imports'
+  archigram.archigram_features.feature_linters -[calls]-> archigram.domain_core 'calls'
+  archigram.archigram_features.feature_linters -[composes]-> archigram.domain_core 'composes'
+  archigram.archigram_features.feature_linters -[imports]-> archigram.domain_core 'imports'
   archigram.archigram_features.feature_linters -[calls]-> archigram.ports_contracts 'calls'
   archigram.archigram_features.feature_linters -[composes]-> archigram.ports_contracts 'composes'
   archigram.archigram_features.feature_linters -[implements]-> archigram.ports_contracts 'implements'
@@ -154,7 +160,6 @@ model {
   archigram.archigram_features.feature_reducers -[calls]-> archigram.domain_core 'calls'
   archigram.archigram_features.feature_reducers -[composes]-> archigram.domain_core 'composes'
   archigram.archigram_features.feature_reducers -[imports]-> archigram.domain_core 'imports'
-  archigram.ports_contracts -[imports]-> archigram.domain_core 'imports'
 }
 
 views {

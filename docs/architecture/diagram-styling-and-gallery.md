@@ -95,12 +95,17 @@ flowchart TD
   style n1 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   style n2 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   n3 -.->|"imports"| n0
+  n7 -->|"composes"| n4
+  n8 -->|"composes"| n4
+  n7 -->|"calls"| n4
   n5 -.->|"imports"| n4
   n5 -->|"composes"| n4
   n9 -.->|"imports"| n4
   n9 -->|"calls"| n4
-  n11 -.->|"imports"| n4
   n9 -->|"composes"| n4
+  n7 -.->|"imports"| n4
+  n8 -.->|"imports"| n4
+  n8 -->|"calls"| n4
   n6 -.->|"imports"| n4
   n6 -->|"composes"| n4
   n10 -.->|"imports"| n5
@@ -118,10 +123,10 @@ flowchart TD
   n7 -.->|"imports"| n11
   n8 -->|"composes"| n11
   n8 -->|"calls"| n11
-  linkStyle 0,1,3,5,7,9,10,12,13,15,17,19,21 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 2,6,8,22 stroke:#14b8a6,stroke-width:1.75px
-  linkStyle 4,11,14,16,23 stroke:#3b82f6,stroke-width:1.75px
-  linkStyle 18,20 stroke:#a855f7,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 0,4,6,9,10,12,14,15,17,18,20,22,24,26 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 1,2,5,8,13,27 stroke:#14b8a6,stroke-width:1.75px
+  linkStyle 3,7,11,16,19,21,28 stroke:#3b82f6,stroke-width:1.75px
+  linkStyle 23,25 stroke:#a855f7,stroke-width:1.75px,stroke-dasharray:5 5
 ```
 <!-- archigram:end l0_hexagonal_rings_mermaid -->
 
@@ -246,6 +251,21 @@ archigram."archigram.features".feature_emitters -> archigram.domain_core: "impor
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }
+archigram."archigram.features".feature_ingestors -> archigram.domain_core: "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.features".feature_ingestors -> archigram.domain_core: "composes" {
+  style.stroke: "#14b8a6"
+  source-arrowhead: {
+    shape: diamond
+    style.filled: true
+  }
+}
+archigram."archigram.features".feature_ingestors -> archigram.domain_core: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
 archigram."archigram.features".feature_ingestors -> archigram.ports_contracts: "implements" {
   style.stroke: "#a855f7"
   style.stroke-dash: 5
@@ -255,6 +275,21 @@ archigram."archigram.features".feature_ingestors -> archigram.ports_contracts: "
   }
 }
 archigram."archigram.features".feature_ingestors -> archigram.ports_contracts: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.features".feature_linters -> archigram.domain_core: "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.features".feature_linters -> archigram.domain_core: "composes" {
+  style.stroke: "#14b8a6"
+  source-arrowhead: {
+    shape: diamond
+    style.filled: true
+  }
+}
+archigram."archigram.features".feature_linters -> archigram.domain_core: "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }
@@ -316,10 +351,6 @@ archigram."archigram.entrypoints".mcp_controlplane -> archigram."archigram.featu
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }
-archigram.ports_contracts -> archigram.domain_core: "imports" {
-  style.stroke: "#64748b"
-  style.stroke-dash: 5
-}
 ```
 <!-- archigram:end l0_hexagonal_rings_d2 -->
 
@@ -374,8 +405,14 @@ n_5_feature_digest_52876d *--[#14b8a6] n_4_domain_core_f195b2 : composes
 n_5_feature_digest_52876d ..>[#64748b] n_4_domain_core_f195b2 : imports
 n_6_feature_emitters_75a4c0 *--[#14b8a6] n_4_domain_core_f195b2 : composes
 n_6_feature_emitters_75a4c0 ..>[#64748b] n_4_domain_core_f195b2 : imports
+n_7_feature_ingestor_73234e -->[#3b82f6] n_4_domain_core_f195b2 : calls
+n_7_feature_ingestor_73234e *--[#14b8a6] n_4_domain_core_f195b2 : composes
+n_7_feature_ingestor_73234e ..>[#64748b] n_4_domain_core_f195b2 : imports
 n_11_ports_contracts_d0accd <|..[#a855f7] n_7_feature_ingestor_73234e : implements
 n_7_feature_ingestor_73234e ..>[#64748b] n_11_ports_contracts_d0accd : imports
+n_8_feature_linters_57c819 -->[#3b82f6] n_4_domain_core_f195b2 : calls
+n_8_feature_linters_57c819 *--[#14b8a6] n_4_domain_core_f195b2 : composes
+n_8_feature_linters_57c819 ..>[#64748b] n_4_domain_core_f195b2 : imports
 n_8_feature_linters_57c819 -->[#3b82f6] n_11_ports_contracts_d0accd : calls
 n_8_feature_linters_57c819 *--[#14b8a6] n_11_ports_contracts_d0accd : composes
 n_11_ports_contracts_d0accd <|..[#a855f7] n_8_feature_linters_57c819 : implements
@@ -388,7 +425,6 @@ n_10_mcp_controlplane_ff4d3b ..>[#64748b] n_6_feature_emitters_75a4c0 : imports
 n_10_mcp_controlplane_ff4d3b -->[#3b82f6] n_8_feature_linters_57c819 : calls
 n_10_mcp_controlplane_ff4d3b ..>[#64748b] n_8_feature_linters_57c819 : imports
 n_10_mcp_controlplane_ff4d3b ..>[#64748b] n_9_feature_reducers_8a2858 : imports
-n_11_ports_contracts_d0accd ..>[#64748b] n_4_domain_core_f195b2 : imports
 @enduml
 ```
 <!-- archigram:end l0_hexagonal_rings_puml -->
@@ -545,8 +581,14 @@ model {
   archigram.archigram_features.feature_digest -[imports]-> archigram.domain_core 'imports'
   archigram.archigram_features.feature_emitters -[composes]-> archigram.domain_core 'composes'
   archigram.archigram_features.feature_emitters -[imports]-> archigram.domain_core 'imports'
+  archigram.archigram_features.feature_ingestors -[calls]-> archigram.domain_core 'calls'
+  archigram.archigram_features.feature_ingestors -[composes]-> archigram.domain_core 'composes'
+  archigram.archigram_features.feature_ingestors -[imports]-> archigram.domain_core 'imports'
   archigram.archigram_features.feature_ingestors -[implements]-> archigram.ports_contracts 'implements'
   archigram.archigram_features.feature_ingestors -[imports]-> archigram.ports_contracts 'imports'
+  archigram.archigram_features.feature_linters -[calls]-> archigram.domain_core 'calls'
+  archigram.archigram_features.feature_linters -[composes]-> archigram.domain_core 'composes'
+  archigram.archigram_features.feature_linters -[imports]-> archigram.domain_core 'imports'
   archigram.archigram_features.feature_linters -[calls]-> archigram.ports_contracts 'calls'
   archigram.archigram_features.feature_linters -[composes]-> archigram.ports_contracts 'composes'
   archigram.archigram_features.feature_linters -[implements]-> archigram.ports_contracts 'implements'
@@ -554,7 +596,6 @@ model {
   archigram.archigram_features.feature_reducers -[calls]-> archigram.domain_core 'calls'
   archigram.archigram_features.feature_reducers -[composes]-> archigram.domain_core 'composes'
   archigram.archigram_features.feature_reducers -[imports]-> archigram.domain_core 'imports'
-  archigram.ports_contracts -[imports]-> archigram.domain_core 'imports'
 }
 
 views {
@@ -625,8 +666,14 @@ digraph "archigram" {
   "feature_digest" -> "domain_core" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
   "feature_emitters" -> "domain_core" [xlabel="composes", _rel_kind="composes", _sync_kind="sync", style="solid", color="#14b8a6", arrowhead="diamond"];
   "feature_emitters" -> "domain_core" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
+  "feature_ingestors" -> "domain_core" [xlabel="calls", _rel_kind="calls", _sync_kind="sync", style="solid", color="#3b82f6", arrowhead="vee"];
+  "feature_ingestors" -> "domain_core" [xlabel="composes", _rel_kind="composes", _sync_kind="sync", style="solid", color="#14b8a6", arrowhead="diamond"];
+  "feature_ingestors" -> "domain_core" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
   "feature_ingestors" -> "ports_contracts" [xlabel="implements", _rel_kind="implements", _sync_kind="sync", style="dashed", color="#a855f7", arrowhead="empty"];
   "feature_ingestors" -> "ports_contracts" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
+  "feature_linters" -> "domain_core" [xlabel="calls", _rel_kind="calls", _sync_kind="sync", style="solid", color="#3b82f6", arrowhead="vee"];
+  "feature_linters" -> "domain_core" [xlabel="composes", _rel_kind="composes", _sync_kind="sync", style="solid", color="#14b8a6", arrowhead="diamond"];
+  "feature_linters" -> "domain_core" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
   "feature_linters" -> "ports_contracts" [xlabel="calls", _rel_kind="calls", _sync_kind="sync", style="solid", color="#3b82f6", arrowhead="vee"];
   "feature_linters" -> "ports_contracts" [xlabel="composes", _rel_kind="composes", _sync_kind="sync", style="solid", color="#14b8a6", arrowhead="diamond"];
   "feature_linters" -> "ports_contracts" [xlabel="implements", _rel_kind="implements", _sync_kind="sync", style="dashed", color="#a855f7", arrowhead="empty"];
@@ -639,7 +686,6 @@ digraph "archigram" {
   "mcp_controlplane" -> "feature_linters" [xlabel="calls", _rel_kind="calls", _sync_kind="sync", style="solid", color="#3b82f6", arrowhead="vee"];
   "mcp_controlplane" -> "feature_linters" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
   "mcp_controlplane" -> "feature_reducers" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
-  "ports_contracts" -> "domain_core" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
 }
 ```
 <!-- archigram:end l0_hexagonal_rings_dot -->

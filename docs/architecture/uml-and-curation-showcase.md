@@ -95,13 +95,13 @@ flowchart TD
   classDef default fill:transparent,stroke:#64748b,stroke-width:1.5px
   subgraph n0["archigram"]
     subgraph n1["domain"]
-      n12["Domain Core (Canonical IR, Spec, Diagnostics)"]
-      n13["Canonical Dual-Mode Style Policy (domain.style)"]
+      n11["Domain Core (Canonical IR, Spec, Diagnostics)"]
+      n12["Canonical Dual-Mode Style Policy (domain.style)"]
     end
     subgraph n2["entrypoints"]
       subgraph n3["cli"]
         n4["pipeline"]
-        n11["CLI Commands (app, triage, diff, sync)"]
+        n10["CLI Commands (app, triage, diff, sync)"]
       end
     end
     subgraph n5["features"]
@@ -109,26 +109,25 @@ flowchart TD
       n7["emit_likec4"]
       n8["emit_mermaid"]
       n9["emit_plantuml"]
-      n14["Ingestor Slices (5 Extractors)"]
-      n15["5-Gate Linter Slices"]
-      n16["Reducer Slices (Graph & Trace)"]
+      n13["Ingestor Slices (5 Extractors)"]
+      n14["5-Gate Linter Slices"]
+      n15["Reducer Slices (Graph & Trace)"]
     end
-    n10["ports"]
   end
   style n0 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   style n1 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   style n2 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   style n3 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   style n5 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
-  n3 -.->|"imports"| n11
-  n11 -.->|"imports"| n0
-  n11 -.->|"imports"| n4
-  n12 -.->|"imports"| n1
+  n3 -.->|"imports"| n10
+  n10 -.->|"imports"| n0
+  n10 -.->|"imports"| n4
+  n11 -.->|"imports"| n1
+  n4 -.->|"imports"| n12
+  n12 -.->|"imports"| n11
   n4 -.->|"imports"| n13
-  n13 -.->|"imports"| n12
   n4 -.->|"imports"| n14
   n4 -.->|"imports"| n15
-  n4 -.->|"imports"| n16
   n4 -.->|"imports"| n6
   n4 -.->|"imports"| n7
   n4 -.->|"imports"| n8
@@ -356,10 +355,15 @@ flowchart TD
   n10 -.->|"<<import>>"| n5
   n5 -.->|"<<import>>"| n4
   n9 -.->|"<<import>>"| n4
+  n8 -.->|"<<import>>"| n4
+  n7 -.->|"<<import>>"| n4
   n9 -.->|"<<import>>"| n4
+  n7 -.->|"<<import>>"| n4
+  n8 -.->|"<<import>>"| n4
   n5 -.->|"<<import>>"| n4
-  n11 -.->|"<<import>>"| n4
+  n8 -.->|"<<import>>"| n4
   n9 -.->|"<<import>>"| n4
+  n7 -.->|"<<import>>"| n4
   n6 -.->|"<<import>>"| n4
   n6 -.->|"<<import>>"| n4
   n10 -.->|"<<import>>"| n6
@@ -376,7 +380,7 @@ flowchart TD
   n7 -.->|"<<import>>"| n11
   n8 -.->|"<<import>>"| n11
   n10 -.->|"<<import>>"| n9
-  linkStyle 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
 ```
 <!-- archigram:end showcase_uml_package_mermaid -->
 
@@ -422,14 +426,19 @@ flowchart LR
   style n2 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   n3 -.->|"<<deploy>>"| n0
   n10 -.->|"<<deploy>>"| n5
+  n8 -.->|"<<deploy>>"| n4
+  n7 -.->|"<<deploy>>"| n4
   n5 -.->|"<<deploy>>"| n4
   n9 -.->|"<<deploy>>"| n4
+  n7 -.->|"<<deploy>>"| n4
   n5 -.->|"<<deploy>>"| n4
   n6 -.->|"<<deploy>>"| n4
   n9 -.->|"<<deploy>>"| n4
   n6 -.->|"<<deploy>>"| n4
+  n8 -.->|"<<deploy>>"| n4
   n9 -.->|"<<deploy>>"| n4
-  n11 -.->|"<<deploy>>"| n4
+  n7 -.->|"<<deploy>>"| n4
+  n8 -.->|"<<deploy>>"| n4
   n10 -.->|"<<deploy>>"| n6
   n3 -.->|"<<deploy>>"| n7
   n3 -.->|"<<deploy>>"| n7
@@ -444,7 +453,7 @@ flowchart LR
   n7 -.->|"<<deploy>>"| n11
   n8 -.->|"<<deploy>>"| n11
   n10 -.->|"<<deploy>>"| n9
-  linkStyle 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23 stroke:#3b82f6,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28 stroke:#3b82f6,stroke-width:1.75px,stroke-dasharray:5 5
 ```
 <!-- archigram:end showcase_uml_deployment_mermaid -->
 

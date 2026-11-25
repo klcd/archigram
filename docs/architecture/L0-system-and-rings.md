@@ -65,12 +65,17 @@ flowchart TD
   style n1 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   style n2 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   n3 -.->|"imports"| n0
+  n7 -->|"composes"| n4
+  n8 -->|"composes"| n4
+  n7 -->|"calls"| n4
   n5 -.->|"imports"| n4
   n5 -->|"composes"| n4
   n9 -.->|"imports"| n4
   n9 -->|"calls"| n4
-  n11 -.->|"imports"| n4
   n9 -->|"composes"| n4
+  n7 -.->|"imports"| n4
+  n8 -.->|"imports"| n4
+  n8 -->|"calls"| n4
   n6 -.->|"imports"| n4
   n6 -->|"composes"| n4
   n10 -.->|"imports"| n5
@@ -88,10 +93,10 @@ flowchart TD
   n7 -.->|"imports"| n11
   n8 -->|"composes"| n11
   n8 -->|"calls"| n11
-  linkStyle 0,1,3,5,7,9,10,12,13,15,17,19,21 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 2,6,8,22 stroke:#14b8a6,stroke-width:1.75px
-  linkStyle 4,11,14,16,23 stroke:#3b82f6,stroke-width:1.75px
-  linkStyle 18,20 stroke:#a855f7,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 0,4,6,9,10,12,14,15,17,18,20,22,24,26 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 1,2,5,8,13,27 stroke:#14b8a6,stroke-width:1.75px
+  linkStyle 3,7,11,16,19,21,28 stroke:#3b82f6,stroke-width:1.75px
+  linkStyle 23,25 stroke:#a855f7,stroke-width:1.75px,stroke-dasharray:5 5
 ```
 <!-- archigram:end l0_hexagonal_rings_mermaid -->
 

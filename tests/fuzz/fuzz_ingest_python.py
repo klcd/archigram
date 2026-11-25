@@ -543,3 +543,51 @@ def test_fuzz_ast_ingestor_function_local_imports_yield_edges(
         EdgeRelation.IMPORTS,
     ) in eager_edges
     assert lazy_edges == eager_edges
+
+
+@settings(max_examples=25, deadline=None)
+@given(
+    pkg_name=_LOWER_IDENT,
+    mod_a=_LOWER_IDENT,
+    mod_b=_LOWER_IDENT,
+    guard=st.sampled_from(["TYPE_CHECKING", "typing.TYPE_CHECKING", "t.TYPE_CHECKING"]),
+    negated=st.booleans(),
+    with_else=st.booleans(),
+)
+def test_fuzz_ast_ingestor_type_checking_imports_are_not_runtime_edges(
+    pkg_name: str,
+    mod_a: str,
+    mod_b: str,
+    guard: str,
+    negated: bool,
+    with_else: bool,
+) -> None:
+    """Imports under a TYPE_CHECKING guard yield no edge; runtime/else-branch imports still do."""
+    if mod_a == mod_b:
+        mod_b += "x"
+    mod_c = mod_a + mod_b
+    type_only = f"    from {pkg_name} import {mod_b}"
+    runtime_else = f"    from {pkg_name} import {mod_c}"
+    cond = f"not {guard}" if negated else guard
+    lines = ["import typing", "import typing as t", "from typing import TYPE_CHECKING"]
+    lines += [f"if {cond}:", runtime_else if negated else type_only]
+    if with_else:
+        lines += ["else:", type_only if negated else runtime_else]
+    source = "\n".join(lines) + "\n"
+    files = [
+        (f"{pkg_name}/__init__.py", ""),
+        (f"{pkg_name}/{mod_a}.py", source),
+        (f"{pkg_name}/{mod_b}.py", "X = 1\n"),
+        (f"{pkg_name}/{mod_c}.py", "X = 1\n"),
+    ]
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        _write_tree(Path(tmp_dir), files, add_ignored_noise=False)
+        ir = PythonAstStructuralIngestor().ingest(Path(tmp_dir))
+    targets = {
+        e.target
+        for e in ir.edges
+        if e.source == f"{pkg_name}.{mod_a}" and e.relation is EdgeRelation.IMPORTS
+    }
+    assert f"{pkg_name}.{mod_b}" not in targets
+    runtime_expected = negated or with_else
+    assert (f"{pkg_name}.{mod_c}" in targets) is runtime_expected

@@ -37,7 +37,7 @@ archigram: "archigram" {
       cli_commands: "CLI Commands (app, triage, diff, sync)" {
         style.fill: transparent
         style.stroke: "#64748b"
-        tooltip: "Derived via fold_cli_callers (5 backing nodes: archigram.entrypoints.cli.app, archigram.entrypoints.cli.diff_report, archigram.entrypoints.cli.markdown_sync, archigram.entrypoints.cli.self_trace, archigram.entrypoints.cli.triage)"
+        tooltip: "Derived via fold_cli_callers (4 backing nodes: archigram.entrypoints.cli.app, archigram.entrypoints.cli.diff_report, archigram.entrypoints.cli.self_trace, archigram.entrypoints.cli.triage)"
       }
     }
   }
@@ -75,10 +75,6 @@ archigram: "archigram" {
       style.stroke: "#64748b"
       tooltip: "Derived via fold_reducers (2 backing nodes: archigram.features.reduce_structural, archigram.features.reduce_trace)"
     }
-  }
-  "archigram.ports": "ports" {
-    style.fill: transparent
-    style.stroke: "#64748b"
   }
 }
 

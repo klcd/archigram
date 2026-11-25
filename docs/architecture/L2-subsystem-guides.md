@@ -57,11 +57,8 @@ flowchart TD
   style n0 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   style n1 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   style n2 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
-  n8 -.->|"imports"| n4
-  n8 -.->|"imports"| n2
-  n8 -.->|"imports"| n7
   n2 -.->|"imports"| n1
-  linkStyle 0,1,2,3 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 0 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
 ```
 <!-- archigram:end l2a_domain_and_ports_mermaid -->
 
@@ -209,16 +206,17 @@ flowchart TD
   n6 -.->|"imports"| n1
   n8 -.->|"imports"| n6
   n7 -.->|"imports"| n6
-  n12 -.->|"imports"| n6
   n9 -.->|"imports"| n6
   n11 -.->|"imports"| n7
+  n4 -.->|"imports"| n7
+  n4 -.->|"imports"| n8
   n11 -.->|"imports"| n8
+  n4 -.->|"imports"| n9
   n11 -.->|"imports"| n9
   n11 -.->|"imports"| n10
-  n4 -.->|"imports"| n11
-  n12 -.->|"imports"| n5
+  n4 -.->|"imports"| n10
   n10 -.->|"imports"| n12
-  linkStyle 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
 ```
 <!-- archigram:end l2c_five_gate_linter_mermaid -->
 
@@ -370,7 +368,6 @@ flowchart TD
   n7 -.->|"imports"| n0
   n8 -.->|"imports"| n10
   n7 -.->|"imports"| n8
-  n9 -.->|"imports"| n10
   n7 -.->|"imports"| n9
   n4 -.->|"imports"| n10
   n11 -.->|"imports"| n10
@@ -384,6 +381,7 @@ flowchart TD
   n18 -.->|"imports"| n17
   n5 -.->|"imports"| n18
   n12 -.->|"imports"| n19
+  n9 -.->|"imports"| n19
   n3 -.->|"imports"| n19
   n10 -.->|"imports"| n19
   n17 -.->|"imports"| n16

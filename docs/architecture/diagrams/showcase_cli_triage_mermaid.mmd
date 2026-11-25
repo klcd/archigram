@@ -12,13 +12,13 @@ flowchart TD
   classDef default fill:transparent,stroke:#64748b,stroke-width:1.5px
   subgraph n0["archigram"]
     subgraph n1["domain"]
-      n12["Domain Core (Canonical IR, Spec, Diagnostics)"]
-      n13["Canonical Dual-Mode Style Policy (domain.style)"]
+      n11["Domain Core (Canonical IR, Spec, Diagnostics)"]
+      n12["Canonical Dual-Mode Style Policy (domain.style)"]
     end
     subgraph n2["entrypoints"]
       subgraph n3["cli"]
         n4["pipeline"]
-        n11["CLI Commands (app, triage, diff, sync)"]
+        n10["CLI Commands (app, triage, diff, sync)"]
       end
     end
     subgraph n5["features"]
@@ -26,26 +26,25 @@ flowchart TD
       n7["emit_likec4"]
       n8["emit_mermaid"]
       n9["emit_plantuml"]
-      n14["Ingestor Slices (5 Extractors)"]
-      n15["5-Gate Linter Slices"]
-      n16["Reducer Slices (Graph & Trace)"]
+      n13["Ingestor Slices (5 Extractors)"]
+      n14["5-Gate Linter Slices"]
+      n15["Reducer Slices (Graph & Trace)"]
     end
-    n10["ports"]
   end
   style n0 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   style n1 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   style n2 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   style n3 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   style n5 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
-  n3 -.->|"imports"| n11
-  n11 -.->|"imports"| n0
-  n11 -.->|"imports"| n4
-  n12 -.->|"imports"| n1
+  n3 -.->|"imports"| n10
+  n10 -.->|"imports"| n0
+  n10 -.->|"imports"| n4
+  n11 -.->|"imports"| n1
+  n4 -.->|"imports"| n12
+  n12 -.->|"imports"| n11
   n4 -.->|"imports"| n13
-  n13 -.->|"imports"| n12
   n4 -.->|"imports"| n14
   n4 -.->|"imports"| n15
-  n4 -.->|"imports"| n16
   n4 -.->|"imports"| n6
   n4 -.->|"imports"| n7
   n4 -.->|"imports"| n8

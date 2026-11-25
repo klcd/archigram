@@ -107,6 +107,21 @@ archigram."archigram.features".feature_emitters -> archigram.domain_core: "impor
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }
+archigram."archigram.features".feature_ingestors -> archigram.domain_core: "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.features".feature_ingestors -> archigram.domain_core: "composes" {
+  style.stroke: "#14b8a6"
+  source-arrowhead: {
+    shape: diamond
+    style.filled: true
+  }
+}
+archigram."archigram.features".feature_ingestors -> archigram.domain_core: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
 archigram."archigram.features".feature_ingestors -> archigram.ports_contracts: "implements" {
   style.stroke: "#a855f7"
   style.stroke-dash: 5
@@ -116,6 +131,21 @@ archigram."archigram.features".feature_ingestors -> archigram.ports_contracts: "
   }
 }
 archigram."archigram.features".feature_ingestors -> archigram.ports_contracts: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.features".feature_linters -> archigram.domain_core: "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.features".feature_linters -> archigram.domain_core: "composes" {
+  style.stroke: "#14b8a6"
+  source-arrowhead: {
+    shape: diamond
+    style.filled: true
+  }
+}
+archigram."archigram.features".feature_linters -> archigram.domain_core: "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }
@@ -174,10 +204,6 @@ archigram."archigram.entrypoints".mcp_controlplane -> archigram."archigram.featu
   style.stroke-dash: 5
 }
 archigram."archigram.entrypoints".mcp_controlplane -> archigram."archigram.features".feature_reducers: "imports" {
-  style.stroke: "#64748b"
-  style.stroke-dash: 5
-}
-archigram.ports_contracts -> archigram.domain_core: "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }

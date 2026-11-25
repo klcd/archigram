@@ -565,15 +565,38 @@ def _extract_file_nodes(
     return extracted, local_defs
 
 
+def _is_type_checking_name(node: ast.expr) -> bool:
+    """Return True for ``TYPE_CHECKING`` and ``<alias>.TYPE_CHECKING`` references."""
+    if isinstance(node, ast.Name):
+        return node.id == "TYPE_CHECKING"
+    return isinstance(node, ast.Attribute) and node.attr == "TYPE_CHECKING"
+
+
+def _runtime_if_branches(stmt: ast.If) -> list[ast.stmt]:
+    """Return the runtime-reachable branches of an ``if``, dropping TYPE_CHECKING-only ones."""
+    test = stmt.test
+    if _is_type_checking_name(test):
+        return stmt.orelse
+    if (
+        isinstance(test, ast.UnaryOp)
+        and isinstance(test.op, ast.Not)
+        and _is_type_checking_name(test.operand)
+    ):
+        return stmt.body
+    return [*stmt.body, *stmt.orelse]
+
+
 def _iter_module_imports(stmts: list[ast.stmt]) -> list[ast.Import | ast.ImportFrom]:
-    """Collect imports, incl. conditional blocks and function-local (lazy) ones."""
+    """Collect runtime imports, incl. conditional and function-local (lazy) ones.
+
+    Imports guarded by ``if TYPE_CHECKING:`` are type-only and are skipped.
+    """
     found: list[ast.Import | ast.ImportFrom] = []
     for stmt in stmts:
         if isinstance(stmt, (ast.Import, ast.ImportFrom)):
             found.append(stmt)
         elif isinstance(stmt, ast.If):
-            found.extend(_iter_module_imports(stmt.body))
-            found.extend(_iter_module_imports(stmt.orelse))
+            found.extend(_iter_module_imports(_runtime_if_branches(stmt)))
         elif isinstance(stmt, ast.Try):
             found.extend(_iter_module_imports(stmt.body))
             for handler in stmt.handlers:

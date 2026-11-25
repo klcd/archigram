@@ -252,6 +252,21 @@ archigram."archigram.entrypoints".entrypoints_mcp -> archigram."archigram.featur
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }
+archigram."archigram.features".ingest_class -> archigram.domain: "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.features".ingest_class -> archigram.domain: "composes" {
+  style.stroke: "#14b8a6"
+  source-arrowhead: {
+    shape: diamond
+    style.filled: true
+  }
+}
+archigram."archigram.features".ingest_class -> archigram.domain: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
 archigram."archigram.features".ingest_class -> archigram.ports: "implements" {
   style.stroke: "#a855f7"
   style.stroke-dash: 5
@@ -261,6 +276,21 @@ archigram."archigram.features".ingest_class -> archigram.ports: "implements" {
   }
 }
 archigram."archigram.features".ingest_class -> archigram.ports: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.features".ingest_dot -> archigram.domain: "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.features".ingest_dot -> archigram.domain: "composes" {
+  style.stroke: "#14b8a6"
+  source-arrowhead: {
+    shape: diamond
+    style.filled: true
+  }
+}
+archigram."archigram.features".ingest_dot -> archigram.domain: "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }
@@ -276,6 +306,21 @@ archigram."archigram.features".ingest_dot -> archigram.ports: "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }
+archigram."archigram.features".ingest_otel -> archigram.domain: "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.features".ingest_otel -> archigram.domain: "composes" {
+  style.stroke: "#14b8a6"
+  source-arrowhead: {
+    shape: diamond
+    style.filled: true
+  }
+}
+archigram."archigram.features".ingest_otel -> archigram.domain: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
 archigram."archigram.features".ingest_otel -> archigram.ports: "implements" {
   style.stroke: "#a855f7"
   style.stroke-dash: 5
@@ -288,6 +333,21 @@ archigram."archigram.features".ingest_otel -> archigram.ports: "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }
+archigram."archigram.features".ingest_python -> archigram.domain: "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.features".ingest_python -> archigram.domain: "composes" {
+  style.stroke: "#14b8a6"
+  source-arrowhead: {
+    shape: diamond
+    style.filled: true
+  }
+}
+archigram."archigram.features".ingest_python -> archigram.domain: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
 archigram."archigram.features".ingest_python -> archigram.ports: "implements" {
   style.stroke: "#a855f7"
   style.stroke-dash: 5
@@ -297,6 +357,21 @@ archigram."archigram.features".ingest_python -> archigram.ports: "implements" {
   }
 }
 archigram."archigram.features".ingest_python -> archigram.ports: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.features".ingest_scip -> archigram.domain: "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.features".ingest_scip -> archigram.domain: "composes" {
+  style.stroke: "#14b8a6"
+  source-arrowhead: {
+    shape: diamond
+    style.filled: true
+  }
+}
+archigram."archigram.features".ingest_scip -> archigram.domain: "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }
@@ -363,10 +438,6 @@ archigram."archigram.features".lint_topology -> archigram.domain: "composes" {
   }
 }
 archigram."archigram.features".lint_topology -> archigram.domain: "imports" {
-  style.stroke: "#64748b"
-  style.stroke-dash: 5
-}
-archigram.ports -> archigram.domain: "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }
