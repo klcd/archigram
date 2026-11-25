@@ -2075,6 +2075,24 @@ archigram: "archigram" {
           style.fill: transparent
           style.stroke: "#64748b"
         }
+        "archigram.features.reduce_trace.compactor._ContractionGuard": "_ContractionGuard" {
+          shape: class
+          "+__init__(events: dict[str, TraceEvent])": "None"
+          "+property has_links()": "bool"
+          "+touches(event_id: str)": "bool"
+          "+allows(candidate: dict[str, str], scope: Iterable[str])": "bool"
+          "+commit(scope: Iterable[str])": "None"
+        }
+        "archigram.features.reduce_trace.compactor._LoopFoldContext": "_LoopFoldContext" {
+          shape: class
+          "+working": "dict[str, TraceEvent]"
+          "+children_map": "dict[str | None, list[TraceEvent]]"
+          "+hashes": "dict[str, str]"
+          "+config": "TraceCompactionConfig"
+          "+guard": "_ContractionGuard"
+          "+touched_subtrees": "set[str]"
+          "+refresh()": "None"
+        }
         "archigram.features.reduce_trace.compactor.build_fragment_tree_for_siblings": "build_fragment_tree_for_siblings" {
           style.fill: transparent
           style.stroke: "#64748b"
@@ -4591,6 +4609,27 @@ archigram."archigram.features"."archigram.features.reduce_trace"."archigram.feat
   style.animated: true
 }
 archigram."archigram.features"."archigram.features.reduce_trace"."archigram.features.reduce_trace.compactor"."archigram.features.reduce_trace.compactor.TraceFragment" -> archigram."archigram.features"."archigram.features.reduce_trace"."archigram.features.reduce_trace.compactor"."archigram.features.reduce_trace.compactor.TraceFragmentKind": "composes" {
+  style.stroke: "#14b8a6"
+  source-arrowhead: {
+    shape: diamond
+    style.filled: true
+  }
+}
+archigram."archigram.features"."archigram.features.reduce_trace"."archigram.features.reduce_trace.compactor"."archigram.features.reduce_trace.compactor._LoopFoldContext" -> archigram."archigram.domain"."archigram.domain.ir"."archigram.domain.ir.TraceEvent": "composes" {
+  style.stroke: "#14b8a6"
+  source-arrowhead: {
+    shape: diamond
+    style.filled: true
+  }
+}
+archigram."archigram.features"."archigram.features.reduce_trace"."archigram.features.reduce_trace.compactor"."archigram.features.reduce_trace.compactor._LoopFoldContext" -> archigram."archigram.domain"."archigram.domain.spec"."archigram.domain.spec.TraceCompactionConfig": "composes" {
+  style.stroke: "#14b8a6"
+  source-arrowhead: {
+    shape: diamond
+    style.filled: true
+  }
+}
+archigram."archigram.features"."archigram.features.reduce_trace"."archigram.features.reduce_trace.compactor"."archigram.features.reduce_trace.compactor._LoopFoldContext" -> archigram."archigram.features"."archigram.features.reduce_trace"."archigram.features.reduce_trace.compactor"."archigram.features.reduce_trace.compactor._ContractionGuard": "composes" {
   style.stroke: "#14b8a6"
   source-arrowhead: {
     shape: diamond

@@ -52,6 +52,7 @@ digraph "archigram" {
   "feature_linters" -> "ports_contracts" [xlabel="implements", _rel_kind="implements", _sync_kind="sync", style="dashed", color="#a855f7", arrowhead="empty"];
   "feature_linters" -> "ports_contracts" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
   "feature_reducers" -> "domain_core" [xlabel="calls", _rel_kind="calls", _sync_kind="sync", style="solid", color="#3b82f6", arrowhead="vee"];
+  "feature_reducers" -> "domain_core" [xlabel="composes", _rel_kind="composes", _sync_kind="sync", style="solid", color="#14b8a6", arrowhead="diamond"];
   "feature_reducers" -> "domain_core" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
   "mcp_controlplane" -> "feature_digest" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
   "mcp_controlplane" -> "feature_emitters" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];

@@ -1723,6 +1723,16 @@ archigram: "[KEEP] archigram" {
           style.stroke: "#ef4444"
           style.stroke-dash: 5
         }
+        "archigram.features.reduce_trace.compactor._ContractionGuard": "[REMOVE] _ContractionGuard" {
+          style.fill: transparent
+          style.stroke: "#ef4444"
+          style.stroke-dash: 5
+        }
+        "archigram.features.reduce_trace.compactor._LoopFoldContext": "[REMOVE] _LoopFoldContext" {
+          style.fill: transparent
+          style.stroke: "#ef4444"
+          style.stroke-dash: 5
+        }
         "archigram.features.reduce_trace.compactor.build_fragment_tree_for_siblings": "[REMOVE] build_fragment_tree_for_siblings" {
           style.fill: transparent
           style.stroke: "#ef4444"
@@ -3827,6 +3837,18 @@ archigram."archigram.features"."archigram.features.reduce_trace"."archigram.feat
   style.stroke-dash: 5
 }
 archigram."archigram.features"."archigram.features.reduce_trace"."archigram.features.reduce_trace.compactor"."archigram.features.reduce_trace.compactor.TraceFragment" -> archigram."archigram.features"."archigram.features.reduce_trace"."archigram.features.reduce_trace.compactor"."archigram.features.reduce_trace.compactor.TraceFragmentKind": "[remove] composes" {
+  style.stroke: "#ef4444"
+  style.stroke-dash: 5
+}
+archigram."archigram.features"."archigram.features.reduce_trace"."archigram.features.reduce_trace.compactor"."archigram.features.reduce_trace.compactor._LoopFoldContext" -> archigram."archigram.domain"."archigram.domain.ir"."archigram.domain.ir.TraceEvent": "[remove] composes" {
+  style.stroke: "#ef4444"
+  style.stroke-dash: 5
+}
+archigram."archigram.features"."archigram.features.reduce_trace"."archigram.features.reduce_trace.compactor"."archigram.features.reduce_trace.compactor._LoopFoldContext" -> archigram."archigram.domain"."archigram.domain.spec"."archigram.domain.spec.TraceCompactionConfig": "[remove] composes" {
+  style.stroke: "#ef4444"
+  style.stroke-dash: 5
+}
+archigram."archigram.features"."archigram.features.reduce_trace"."archigram.features.reduce_trace.compactor"."archigram.features.reduce_trace.compactor._LoopFoldContext" -> archigram."archigram.features"."archigram.features.reduce_trace"."archigram.features.reduce_trace.compactor"."archigram.features.reduce_trace.compactor._ContractionGuard": "[remove] composes" {
   style.stroke: "#ef4444"
   style.stroke-dash: 5
 }

@@ -90,6 +90,7 @@ flowchart TD
   n10 -.->|"imports"| n3
   n19 -.->|"imports"| n4
   n7 -.->|"imports"| n4
+  n22 -->|"composes"| n4
   n3 -.->|"imports"| n4
   n17 -->|"calls"| n4
   n5 -.->|"imports"| n4
@@ -142,10 +143,10 @@ flowchart TD
   n18 -->|"composes"| n20
   n10 -.->|"imports"| n21
   n10 -.->|"imports"| n22
-  linkStyle 0,1,2,3,5,11,12,15,16,17,18,20,22,23,24,25,26,27,28,30,31,32,34,35,36,37,39,41,42,46,47,48,53,54 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 4,7,8,10,21,29,33,38,50 stroke:#3b82f6,stroke-width:1.75px
-  linkStyle 6,9,13,14,19,52 stroke:#14b8a6,stroke-width:1.75px
-  linkStyle 40,43,44,45,49,51 stroke:#a855f7,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 0,1,2,4,6,12,13,16,17,18,19,21,23,24,25,26,27,28,29,31,32,33,35,36,37,38,40,42,43,47,48,49,54,55 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 3,7,10,14,15,20,53 stroke:#14b8a6,stroke-width:1.75px
+  linkStyle 5,8,9,11,22,30,34,39,51 stroke:#3b82f6,stroke-width:1.75px
+  linkStyle 41,44,45,46,50,52 stroke:#a855f7,stroke-width:1.75px,stroke-dasharray:5 5
 ```
 <!-- archigram:end l1_feature_slices_mermaid -->
 

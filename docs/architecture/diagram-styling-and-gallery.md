@@ -99,6 +99,7 @@ flowchart TD
   n9 -.->|"imports"| n4
   n9 -->|"calls"| n4
   n11 -.->|"imports"| n4
+  n9 -->|"composes"| n4
   n6 -.->|"imports"| n4
   n6 -->|"composes"| n4
   n10 -.->|"imports"| n5
@@ -116,10 +117,10 @@ flowchart TD
   n7 -.->|"imports"| n11
   n8 -->|"composes"| n11
   n8 -->|"calls"| n11
-  linkStyle 0,2,4,5,7,8,10,11,13,15,17,19 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 1,6,20 stroke:#14b8a6,stroke-width:1.75px
-  linkStyle 3,9,12,14,21 stroke:#3b82f6,stroke-width:1.75px
-  linkStyle 16,18 stroke:#a855f7,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 0,2,4,6,8,9,11,12,14,16,18,20 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 1,5,7,21 stroke:#14b8a6,stroke-width:1.75px
+  linkStyle 3,10,13,15,22 stroke:#3b82f6,stroke-width:1.75px
+  linkStyle 17,19 stroke:#a855f7,stroke-width:1.75px,stroke-dasharray:5 5
 ```
 <!-- archigram:end l0_hexagonal_rings_mermaid -->
 
@@ -187,7 +188,7 @@ archigram: "archigram" {
     feature_reducers: "Reducer Slices" {
       style.fill: transparent
       style.stroke: "#64748b"
-      tooltip: "Derived via l0_d2_feature_reducers (19 backing nodes: archigram.features.reduce_structural, archigram.features.reduce_structural.reducer, archigram.features.reduce_structural.reducer.CycleInducedError, archigram.features.reduce_structural.reducer.StructuralTopologicalReducer, archigram.features.reduce_structural.reducer.apply_structural_rule, ...)"
+      tooltip: "Derived via l0_d2_feature_reducers (21 backing nodes: archigram.features.reduce_structural, archigram.features.reduce_structural.reducer, archigram.features.reduce_structural.reducer.CycleInducedError, archigram.features.reduce_structural.reducer.StructuralTopologicalReducer, archigram.features.reduce_structural.reducer.apply_structural_rule, ...)"
     }
   }
   domain_core: "Domain Core" {
@@ -279,6 +280,13 @@ archigram."archigram.features".feature_reducers -> archigram.domain_core: "calls
   style.stroke: "#3b82f6"
   style.animated: true
 }
+archigram."archigram.features".feature_reducers -> archigram.domain_core: "composes" {
+  style.stroke: "#14b8a6"
+  source-arrowhead: {
+    shape: diamond
+    style.filled: true
+  }
+}
 archigram."archigram.features".feature_reducers -> archigram.domain_core: "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
@@ -367,6 +375,7 @@ n_8_feature_linters_57c819 *--[#14b8a6] n_11_ports_contracts_d0accd : composes
 n_11_ports_contracts_d0accd <|..[#a855f7] n_8_feature_linters_57c819 : implements
 n_8_feature_linters_57c819 ..>[#64748b] n_11_ports_contracts_d0accd : imports
 n_9_feature_reducers_8a2858 -->[#3b82f6] n_4_domain_core_f195b2 : calls
+n_9_feature_reducers_8a2858 *--[#14b8a6] n_4_domain_core_f195b2 : composes
 n_9_feature_reducers_8a2858 ..>[#64748b] n_4_domain_core_f195b2 : imports
 n_10_mcp_controlplane_ff4d3b ..>[#64748b] n_5_feature_digest_52876d : imports
 n_10_mcp_controlplane_ff4d3b ..>[#64748b] n_6_feature_emitters_75a4c0 : imports
@@ -537,6 +546,7 @@ model {
   archigram.archigram_features.feature_linters -[implements]-> archigram.ports_contracts 'implements'
   archigram.archigram_features.feature_linters -[imports]-> archigram.ports_contracts 'imports'
   archigram.archigram_features.feature_reducers -[calls]-> archigram.domain_core 'calls'
+  archigram.archigram_features.feature_reducers -[composes]-> archigram.domain_core 'composes'
   archigram.archigram_features.feature_reducers -[imports]-> archigram.domain_core 'imports'
   archigram.ports_contracts -[imports]-> archigram.domain_core 'imports'
 }
@@ -615,6 +625,7 @@ digraph "archigram" {
   "feature_linters" -> "ports_contracts" [xlabel="implements", _rel_kind="implements", _sync_kind="sync", style="dashed", color="#a855f7", arrowhead="empty"];
   "feature_linters" -> "ports_contracts" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
   "feature_reducers" -> "domain_core" [xlabel="calls", _rel_kind="calls", _sync_kind="sync", style="solid", color="#3b82f6", arrowhead="vee"];
+  "feature_reducers" -> "domain_core" [xlabel="composes", _rel_kind="composes", _sync_kind="sync", style="solid", color="#14b8a6", arrowhead="diamond"];
   "feature_reducers" -> "domain_core" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
   "mcp_controlplane" -> "feature_digest" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
   "mcp_controlplane" -> "feature_emitters" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];

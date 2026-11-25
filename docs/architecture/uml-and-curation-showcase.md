@@ -354,6 +354,7 @@ flowchart TD
   n10 -.->|"<<import>>"| n5
   n5 -.->|"<<import>>"| n4
   n9 -.->|"<<import>>"| n4
+  n9 -.->|"<<import>>"| n4
   n5 -.->|"<<import>>"| n4
   n11 -.->|"<<import>>"| n4
   n9 -.->|"<<import>>"| n4
@@ -373,7 +374,7 @@ flowchart TD
   n7 -.->|"<<import>>"| n11
   n8 -.->|"<<import>>"| n11
   n10 -.->|"<<import>>"| n9
-  linkStyle 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
 ```
 <!-- archigram:end showcase_uml_package_mermaid -->
 
@@ -422,6 +423,7 @@ flowchart LR
   n9 -.->|"<<deploy>>"| n4
   n5 -.->|"<<deploy>>"| n4
   n6 -.->|"<<deploy>>"| n4
+  n9 -.->|"<<deploy>>"| n4
   n6 -.->|"<<deploy>>"| n4
   n9 -.->|"<<deploy>>"| n4
   n11 -.->|"<<deploy>>"| n4
@@ -439,7 +441,7 @@ flowchart LR
   n7 -.->|"<<deploy>>"| n11
   n8 -.->|"<<deploy>>"| n11
   n10 -.->|"<<deploy>>"| n9
-  linkStyle 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21 stroke:#3b82f6,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22 stroke:#3b82f6,stroke-width:1.75px,stroke-dasharray:5 5
 ```
 <!-- archigram:end showcase_uml_deployment_mermaid -->
 

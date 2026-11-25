@@ -105,7 +105,7 @@ archigram: "archigram" {
     reduce_trace: "reduce_trace" {
       style.fill: transparent
       style.stroke: "#64748b"
-      tooltip: "Derived via l1_d2_reduce_trace (8 backing nodes: archigram.features.reduce_trace, archigram.features.reduce_trace.compactor, archigram.features.reduce_trace.compactor.TraceCompactionEngine, archigram.features.reduce_trace.compactor.TraceFragment, archigram.features.reduce_trace.compactor.TraceFragmentKind, ...)"
+      tooltip: "Derived via l1_d2_reduce_trace (10 backing nodes: archigram.features.reduce_trace, archigram.features.reduce_trace.compactor, archigram.features.reduce_trace.compactor.TraceCompactionEngine, archigram.features.reduce_trace.compactor.TraceFragment, archigram.features.reduce_trace.compactor.TraceFragmentKind, ...)"
     }
   }
   domain: "domain" {
@@ -377,6 +377,13 @@ archigram."archigram.features".reduce_structural -> archigram.domain: "imports" 
 archigram."archigram.features".reduce_trace -> archigram.domain: "calls" {
   style.stroke: "#3b82f6"
   style.animated: true
+}
+archigram."archigram.features".reduce_trace -> archigram.domain: "composes" {
+  style.stroke: "#14b8a6"
+  source-arrowhead: {
+    shape: diamond
+    style.filled: true
+  }
 }
 archigram."archigram.features".reduce_trace -> archigram.domain: "imports" {
   style.stroke: "#64748b"

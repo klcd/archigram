@@ -50,7 +50,7 @@ archigram: "archigram" {
     feature_reducers: "Reducer Slices" {
       style.fill: transparent
       style.stroke: "#64748b"
-      tooltip: "Derived via l0_d2_feature_reducers (19 backing nodes: archigram.features.reduce_structural, archigram.features.reduce_structural.reducer, archigram.features.reduce_structural.reducer.CycleInducedError, archigram.features.reduce_structural.reducer.StructuralTopologicalReducer, archigram.features.reduce_structural.reducer.apply_structural_rule, ...)"
+      tooltip: "Derived via l0_d2_feature_reducers (21 backing nodes: archigram.features.reduce_structural, archigram.features.reduce_structural.reducer, archigram.features.reduce_structural.reducer.CycleInducedError, archigram.features.reduce_structural.reducer.StructuralTopologicalReducer, archigram.features.reduce_structural.reducer.apply_structural_rule, ...)"
     }
   }
   domain_core: "Domain Core" {
@@ -141,6 +141,13 @@ archigram."archigram.features".feature_linters -> archigram.ports_contracts: "im
 archigram."archigram.features".feature_reducers -> archigram.domain_core: "calls" {
   style.stroke: "#3b82f6"
   style.animated: true
+}
+archigram."archigram.features".feature_reducers -> archigram.domain_core: "composes" {
+  style.stroke: "#14b8a6"
+  source-arrowhead: {
+    shape: diamond
+    style.filled: true
+  }
 }
 archigram."archigram.features".feature_reducers -> archigram.domain_core: "imports" {
   style.stroke: "#64748b"
