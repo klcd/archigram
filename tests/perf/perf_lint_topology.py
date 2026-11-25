@@ -407,3 +407,55 @@ def test_gate3_post_collapse_bypass_fanout_benchmark(benchmark: Any) -> None:
     spec = CurationSpecV1(global_abstractions=(), views=(view,))
     report = benchmark(_GATE.check, observed, spec, {"v": curated})
     assert any(d.code == "BICLIQUE_FANOUT_EXCEEDED" for d in report.diagnostics)
+
+
+def _build_severed_attribution_fixture() -> tuple[
+    StructuralGraphIR, CurationSpecV1, StructuralGraphIR
+]:
+    ids = [f"svc/n{idx}" for idx in range(300)]
+    nodes = {
+        nid: IRNode(symbol_id=nid, label=nid, kind=NodeKind.MODULE, provenance=_OBS_PROV)
+        for nid in ids
+    }
+    edges = tuple(
+        IREdge(
+            edge_id=f"e{idx}",
+            source=ids[idx],
+            target=ids[idx + 1],
+            relation=EdgeRelation.CALLS,
+            sync_kind=SyncKind.SYNC,
+            provenance=_OBS_PROV,
+        )
+        for idx in range(len(ids) - 1)
+    )
+    cut = ids[150]
+    curated = StructuralGraphIR(
+        nodes={k: v for k, v in nodes.items() if k != cut},
+        edges=tuple(e for e in edges if cut not in {e.source, e.target}),
+    )
+    view = DiagramViewSpec(
+        id="arch-view",
+        title="Architecture View",
+        ir_mode=IRMode.STRUCTURAL_GRAPH,
+        target_renderer=TargetRenderer.MERMAID,
+        rules=(
+            CollapsePartitionRule(
+                id="fold-rule", target_node_id="fold/all", label="Fold", member_globs=("fold/*",)
+            ),
+            BypassVerticesRule(id="bypass-cut", node_id_globs=(cut,)),
+        ),
+        invariants=ViewInvariants(
+            preserve_reachability=(ReachabilityAssertion(from_node=ids[0], to_node=ids[-1]),)
+        ),
+    )
+    return StructuralGraphIR(nodes=nodes, edges=edges), CurationSpecV1(views=(view,)), curated
+
+
+_OBS_SEV, _SPEC_SEV, _CUR_SEV = _build_severed_attribution_fixture()
+
+
+def test_gate3_severed_reachability_attribution_benchmark(benchmark: Any) -> None:
+    report = benchmark(_GATE.check, _OBS_SEV, _SPEC_SEV, {"arch-view": _CUR_SEV})
+    (diag,) = [d for d in report.diagnostics if d.code == "REACHABILITY_SEVERED"]
+    assert "bypass-cut" in diag.message
+    assert "fold-rule" not in diag.message

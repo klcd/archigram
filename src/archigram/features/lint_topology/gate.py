@@ -334,8 +334,13 @@ def _rules_removing_symbol(
     symbol_id: str,
     rules: tuple[GlobalAbstractionRule, ...],
 ) -> dict[str, str]:
-    """Map rule id -> note for rules whose globs match a symbol absent from the curated view."""
+    """Map rule id -> note for the rules that dropped a symbol absent from the curated view.
+
+    A matching bypass_vertices/prune rule is the causal drop; collapse globs matching the
+    same symbol are not co-attributed.
+    """
     hits: dict[str, str] = {}
+    dropping_hits: dict[str, str] = {}
     for rule in rules:
         if isinstance(rule, CollapsePartitionRule):
             matched = symbol_id not in rule.exclude_ids and _matches_globs(
@@ -345,7 +350,9 @@ def _rules_removing_symbol(
             matched = _matches_globs(symbol_id, rule.node_id_globs)
         if matched:
             hits[rule.id] = _rule_removal_note(rule)
-    return hits
+            if not isinstance(rule, CollapsePartitionRule):
+                dropping_hits[rule.id] = hits[rule.id]
+    return dropping_hits or hits
 
 
 def _rules_collapsing_hop(
@@ -409,12 +416,20 @@ def _attribution_message(attribution: _Attribution) -> str:
     return f" Cause: {'; '.join(parts)}." if parts else ""
 
 
-def _severed_repair_hint(bottlenecks: tuple[str, ...], attribution: _Attribution) -> str:
+def _severed_repair_hint(
+    bottlenecks: tuple[str, ...],
+    attribution: _Attribution,
+    sever: _SeverContext,
+) -> str:
     joined = ", ".join(bottlenecks)
-    hint = (
-        "Preserve path connectivity by adding a bypass_vertices rule across intermediate "
-        f"bottleneck(s) ({joined}) or widening the view k_hop_neighborhood."
-    )
+    bypass_ids = {r.id for r in sever.rules if isinstance(r, BypassVerticesRule)}
+    if bypass_ids.intersection(attribution.rule_ids):
+        hint = f"Bottleneck(s) ({joined}) were dropped by an existing bypass_vertices rule."
+    else:
+        hint = (
+            "Preserve path connectivity by adding a bypass_vertices rule across intermediate "
+            f"bottleneck(s) ({joined}) or widening the view k_hop_neighborhood."
+        )
     if attribution.rule_ids:
         hint += (
             f" Narrow or remove rule(s) {', '.join(attribution.rule_ids)} so they no longer "
@@ -462,7 +477,7 @@ def _severed_diagnostic(
             f"{' -> '.join(witness_path)}; bottleneck symbol(s): {', '.join(bottlenecks)}."
             f"{_attribution_message(attribution)}"
         ),
-        repair_hint=_severed_repair_hint(bottlenecks, attribution),
+        repair_hint=_severed_repair_hint(bottlenecks, attribution, sever),
     )
 
 

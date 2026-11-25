@@ -1244,3 +1244,56 @@ def test_resolver_keeps_bypass_drop_over_later_collapse_glob(tag: str, bypass_fi
         assert mid not in resolver
     else:
         assert resolver[mid] == sup
+
+
+@settings(max_examples=40, deadline=None)
+@given(chain_len=st.integers(min_value=3, max_value=10), cut_offset=st.integers(0, 50))
+def test_severed_reachability_attributes_only_causal_bypass_rule(
+    chain_len: int,
+    cut_offset: int,
+) -> None:
+    node_ids = [f"svc/n{idx}" for idx in range(chain_len)]
+    side_ids = ["fold/a", "fold/b"]
+    obs_nodes = {nid: _obs_node(nid) for nid in (*node_ids, *side_ids)}
+    obs_edges = tuple(
+        _obs_edge(f"e{idx}", node_ids[idx], node_ids[idx + 1]) for idx in range(chain_len - 1)
+    )
+    observed = StructuralGraphIR(nodes=obs_nodes, edges=obs_edges)
+
+    cut_node = node_ids[1 + (cut_offset % (chain_len - 2))]
+    cur_nodes = {
+        nid: node for nid, node in obs_nodes.items() if nid != cut_node and nid not in side_ids
+    }
+    cur_nodes["fold/all"] = _derived_supernode("fold/all", "fold-rule", tuple(side_ids))
+    cur_edges = tuple(e for e in obs_edges if cut_node not in {e.source, e.target})
+    curated = StructuralGraphIR(nodes=cur_nodes, edges=cur_edges)
+
+    bypass = BypassVerticesRule(id="bypass-cut", node_id_globs=(cut_node,))
+    fold = CollapsePartitionRule(
+        id="fold-rule", target_node_id="fold/all", label="Fold", member_globs=("fold/*",)
+    )
+    invariants = ViewInvariants(
+        preserve_reachability=(ReachabilityAssertion(from_node=node_ids[0], to_node=node_ids[-1]),)
+    )
+    gate = TopologicalInvariantGate()
+
+    caused = gate.check(
+        observed,
+        _structural_spec(rules=(fold, bypass), invariants=invariants),
+        {"arch-view": curated},
+    )
+    (diag,) = [d for d in caused.diagnostics if d.code == "REACHABILITY_SEVERED"]
+    assert "bypass-cut" in diag.message
+    assert "fold-rule" not in diag.message
+    assert diag.repair_hint is not None
+    assert "bypass-cut" in diag.repair_hint
+    assert "adding a bypass_vertices" not in diag.repair_hint
+
+    uncaused = gate.check(
+        observed,
+        _structural_spec(invariants=invariants),
+        {"arch-view": curated},
+    )
+    (plain,) = [d for d in uncaused.diagnostics if d.code == "REACHABILITY_SEVERED"]
+    assert plain.repair_hint is not None
+    assert "adding a bypass_vertices" in plain.repair_hint
