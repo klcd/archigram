@@ -1,6 +1,7 @@
 # ArchiGram
 
 [![Verify (8 Gates)](https://github.com/klcd/archigram/actions/workflows/verify.yml/badge.svg)](https://github.com/klcd/archigram/actions/workflows/verify.yml)
+[![Website: Essay & Interactive Showcase](https://img.shields.io/badge/website-why%20archigram%20%2B%20live%20showcase-0f766e)](https://klcd.github.io/archigram/)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-3776ab?logo=python&logoColor=white)](pyproject.toml)
 [![Architecture: Hexagonal + 16 Independent Slices](https://img.shields.io/badge/architecture-hexagonal%20%2B%20feature--sliced-10b981)](docs/architecture/README.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-64748b)](LICENSE)

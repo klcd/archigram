@@ -1,0 +1,1566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ArchiGram — Architecture Diagrams Should Be Compiled, Not Drawn</title>
+  <meta
+    name="description"
+    content="Why ArchiGram exists: deterministic AST & runtime trace extraction, CLI-only declarative curation, 5-gate formal verification, and self-contained animated architecture diagrams."
+  />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #faf9f5;
+      --bg-elevated: #ffffff;
+      --bg-subtle: #f2f0e8;
+      --bg-code: #141821;
+      --fg-code: #e6edf3;
+      --ink: #0f172a;
+      --ink-muted: #475569;
+      --ink-faint: #64748b;
+      --border: #e2dfd5;
+      --border-strong: #cbc6b8;
+      --accent: #0f766e;
+      --accent-soft: rgba(15, 118, 110, 0.1);
+      --crimson: #dc2626;
+      --crimson-soft: rgba(220, 38, 38, 0.1);
+      --amber: #d97706;
+      --amber-soft: rgba(217, 119, 6, 0.12);
+      --violet: #7c3aed;
+      --violet-soft: rgba(124, 58, 237, 0.1);
+      --emerald: #059669;
+      --emerald-soft: rgba(5, 150, 105, 0.12);
+      --grid-line: rgba(15, 23, 42, 0.045);
+      --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+      --shadow-md: 0 12px 32px -12px rgba(15, 23, 42, 0.12);
+      --font-serif: "Instrument Serif", Georgia, Cambria, "Times New Roman", serif;
+      --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0b0f19;
+        --bg-elevated: #111827;
+        --bg-subtle: #161f33;
+        --bg-code: #070a12;
+        --fg-code: #e2e8f0;
+        --ink: #f1f5f9;
+        --ink-muted: #94a3b8;
+        --ink-faint: #64748b;
+        --border: #1e293b;
+        --border-strong: #334155;
+        --accent: #2dd4bf;
+        --accent-soft: rgba(45, 212, 191, 0.12);
+        --crimson: #f87171;
+        --crimson-soft: rgba(248, 113, 113, 0.14);
+        --amber: #fbbf24;
+        --amber-soft: rgba(251, 191, 36, 0.14);
+        --violet: #a78bfa;
+        --violet-soft: rgba(167, 139, 250, 0.14);
+        --emerald: #34d399;
+        --emerald-soft: rgba(52, 211, 153, 0.14);
+        --grid-line: rgba(148, 163, 184, 0.06);
+        --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+        --shadow-md: 0 16px 40px -12px rgba(0, 0, 0, 0.55);
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      background-color: var(--bg);
+      background-image:
+        linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+      background-size: 36px 36px;
+      color: var(--ink);
+      font-family: var(--font-sans);
+      font-size: 17px;
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      text-decoration-thickness: 1px;
+    }
+
+    a:hover {
+      text-decoration-thickness: 2px;
+    }
+
+    code {
+      font-family: var(--font-mono);
+      font-size: 0.86em;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      padding: 0.12em 0.38em;
+      border-radius: 5px;
+    }
+
+    pre code {
+      background: none;
+      border: 0;
+      padding: 0;
+      font-size: 0.85rem;
+    }
+
+    /* Top bar */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      background: color-mix(in srgb, var(--bg) 86%, transparent);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .topbar-inner {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 0.6rem;
+      text-decoration: none;
+      color: var(--ink);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-mark {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      font-size: 0.9rem;
+    }
+
+    .nav-links a {
+      color: var(--ink-muted);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .nav-links a:hover {
+      color: var(--ink);
+    }
+
+    .nav-cta {
+      padding: 0.38rem 0.8rem;
+      border-radius: 6px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-elevated);
+      color: var(--ink) !important;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+    }
+
+    /* Layout containers */
+    .prose-wrap {
+      max-width: 740px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    .wide-wrap {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    /* Hero */
+    .hero {
+      padding: 4.5rem 0 2.75rem;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      margin-bottom: 1rem;
+    }
+
+    h1 {
+      font-family: var(--font-serif);
+      font-weight: 400;
+      font-size: clamp(2.6rem, 5.4vw, 4.15rem);
+      line-height: 1.06;
+      letter-spacing: -0.02em;
+      margin: 0 0 1.25rem;
+    }
+
+    h1 em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .lede {
+      font-size: 1.2rem;
+      line-height: 1.6;
+      color: var(--ink-muted);
+      margin: 0 0 1.75rem;
+    }
+
+    .install-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      background: var(--bg-code);
+      color: var(--fg-code);
+      padding: 0.75rem 1rem;
+      border-radius: 10px;
+      border: 1px solid var(--border-strong);
+      box-shadow: var(--shadow-sm);
+      font-family: var(--font-mono);
+      font-size: 0.84rem;
+      overflow-x: auto;
+    }
+
+    .install-bar .prompt {
+      color: #2dd4bf;
+      user-select: none;
+      margin-right: 0.5rem;
+    }
+
+    .copy-btn {
+      flex-shrink: 0;
+      background: rgba(255, 255, 255, 0.09);
+      color: var(--fg-code);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 6px;
+      padding: 0.35rem 0.7rem;
+      font-family: var(--font-mono);
+      font-size: 0.76rem;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    .copy-btn:hover {
+      background: rgba(255, 255, 255, 0.18);
+    }
+
+    /* Section headings */
+    section {
+      padding: 3rem 0;
+    }
+
+    .section-kicker {
+      font-family: var(--font-mono);
+      font-size: 0.76rem;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: var(--ink-faint);
+      margin-bottom: 0.4rem;
+    }
+
+    h2 {
+      font-family: var(--font-serif);
+      font-weight: 400;
+      font-size: clamp(2rem, 3.6vw, 2.75rem);
+      line-height: 1.14;
+      margin: 0 0 1.1rem;
+    }
+
+    h3 {
+      font-size: 1.12rem;
+      font-weight: 700;
+      margin: 0 0 0.45rem;
+      letter-spacing: -0.01em;
+    }
+
+    p {
+      margin: 0 0 1.2rem;
+    }
+
+    /* Trilemma cards */
+    .trilemma-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+      gap: 1.15rem;
+      margin: 2rem 0 2.5rem;
+    }
+
+    .card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.35rem 1.4rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .card-num {
+      font-family: var(--font-mono);
+      font-size: 0.76rem;
+      font-weight: 600;
+      padding: 0.18rem 0.5rem;
+      border-radius: 999px;
+      display: inline-block;
+      margin-bottom: 0.75rem;
+    }
+
+    .card-num.rot {
+      background: var(--amber-soft);
+      color: var(--amber);
+    }
+
+    .card-num.hairball {
+      background: var(--crimson-soft);
+      color: var(--crimson);
+    }
+
+    .card-num.hallucination {
+      background: var(--violet-soft);
+      color: var(--violet);
+    }
+
+    .card p {
+      font-size: 0.95rem;
+      color: var(--ink-muted);
+      margin: 0;
+    }
+
+    /* Thesis split */
+    .thesis-split {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 2rem;
+      align-items: start;
+      margin-top: 2rem;
+    }
+
+    @media (max-width: 920px) {
+      .thesis-split {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .callout {
+      border-left: 3px solid var(--accent);
+      background: var(--bg-elevated);
+      padding: 1.1rem 1.3rem;
+      border-radius: 0 10px 10px 0;
+      border-top: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      margin: 1.5rem 0;
+    }
+
+    .callout strong {
+      color: var(--ink);
+    }
+
+    .gate-list {
+      list-style: none;
+      padding: 0;
+      margin: 1.25rem 0 0;
+      display: grid;
+      gap: 0.65rem;
+    }
+
+    .gate-list li {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 0.75rem 0.95rem;
+      font-size: 0.93rem;
+      display: flex;
+      gap: 0.75rem;
+      align-items: baseline;
+    }
+
+    .gate-badge {
+      font-family: var(--font-mono);
+      font-size: 0.74rem;
+      font-weight: 600;
+      color: var(--accent);
+      background: var(--accent-soft);
+      padding: 0.12rem 0.45rem;
+      border-radius: 5px;
+      flex-shrink: 0;
+    }
+
+    .diagram-frame {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-strong);
+      border-radius: 14px;
+      box-shadow: var(--shadow-md);
+      overflow: hidden;
+    }
+
+    .diagram-header {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      font-size: 0.82rem;
+      color: var(--ink-muted);
+    }
+
+    .diagram-header .mono-title {
+      font-family: var(--font-mono);
+      font-weight: 500;
+      color: var(--ink);
+    }
+
+    .diagram-canvas {
+      padding: 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 320px;
+      position: relative;
+      cursor: zoom-in;
+    }
+
+    .diagram-canvas img {
+      max-width: 100%;
+      max-height: 620px;
+      width: auto;
+      height: auto;
+      display: block;
+    }
+
+    .zoom-hint {
+      font-family: var(--font-mono);
+      font-size: 0.74rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: 5px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-elevated);
+      color: var(--ink-muted);
+      cursor: pointer;
+    }
+
+    .zoom-hint:hover {
+      color: var(--ink);
+      border-color: var(--accent);
+    }
+
+    /* Interactive Triage Explorer */
+    .workbench {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-strong);
+      border-radius: 16px;
+      box-shadow: var(--shadow-md);
+      overflow: hidden;
+      margin-top: 1.75rem;
+    }
+
+    .workbench-toolbar {
+      padding: 1rem 1.25rem;
+      background: var(--bg-subtle);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .seg-group {
+      display: inline-flex;
+      background: var(--bg);
+      border: 1px solid var(--border-strong);
+      border-radius: 9px;
+      padding: 0.2rem;
+      gap: 0.2rem;
+      flex-wrap: wrap;
+    }
+
+    .seg-btn {
+      border: 0;
+      background: transparent;
+      color: var(--ink-muted);
+      font-family: var(--font-sans);
+      font-size: 0.84rem;
+      font-weight: 600;
+      padding: 0.42rem 0.8rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.14s ease;
+    }
+
+    .seg-btn:hover {
+      color: var(--ink);
+    }
+
+    .seg-btn[aria-pressed="true"],
+    .seg-btn[aria-selected="true"] {
+      background: var(--bg-elevated);
+      color: var(--ink);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .metrics-strip {
+      padding: 0.75rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.85rem;
+      flex-wrap: wrap;
+      font-family: var(--font-mono);
+      font-size: 0.79rem;
+    }
+
+    .pill-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      padding: 0.18rem 0.55rem;
+      border-radius: 999px;
+      font-weight: 500;
+      border: 1px solid transparent;
+    }
+
+    .pill.remove {
+      background: var(--crimson-soft);
+      color: var(--crimson);
+    }
+
+    .pill.bypass {
+      background: var(--amber-soft);
+      color: var(--amber);
+    }
+
+    .pill.collapse {
+      background: var(--violet-soft);
+      color: var(--violet);
+    }
+
+    .pill.keep {
+      background: var(--emerald-soft);
+      color: var(--emerald);
+    }
+
+    .pill.neutral {
+      background: var(--bg-subtle);
+      color: var(--ink-muted);
+      border-color: var(--border);
+    }
+
+    .triage-stage-view {
+      padding: 1.5rem;
+      min-height: 430px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+    }
+
+    .triage-single-img {
+      max-width: 100%;
+      max-height: 540px;
+      width: auto;
+      height: auto;
+      cursor: zoom-in;
+    }
+
+    .triage-filmstrip {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      width: 100%;
+    }
+
+    @media (max-width: 900px) {
+      .triage-filmstrip {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .film-card {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--bg);
+      padding: 0.85rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .film-card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: var(--font-mono);
+      font-size: 0.76rem;
+      color: var(--ink-muted);
+    }
+
+    .film-card img {
+      width: 100%;
+      height: 250px;
+      object-fit: contain;
+      cursor: zoom-in;
+    }
+
+    .stage-caption {
+      max-width: 760px;
+      text-align: center;
+      font-size: 0.94rem;
+      color: var(--ink-muted);
+      margin: 0;
+    }
+
+    .cli-drawer {
+      background: var(--bg-code);
+      color: var(--fg-code);
+      padding: 1rem 1.25rem;
+      border-top: 1px solid var(--border);
+      overflow-x: auto;
+    }
+
+    .cli-drawer pre {
+      margin: 0;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      line-height: 1.6;
+    }
+
+    .cli-comment {
+      color: #64748b;
+    }
+
+    /* Animated section */
+    .anim-grid {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 1.25rem;
+      margin-top: 1.75rem;
+      align-items: start;
+    }
+
+    @media (max-width: 900px) {
+      .anim-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .anim-selector {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .anim-tab {
+      text-align: left;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      padding: 0.9rem 1rem;
+      cursor: pointer;
+      color: var(--ink);
+      font-family: var(--font-sans);
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .anim-tab:hover {
+      border-color: var(--border-strong);
+    }
+
+    .anim-tab[aria-selected="true"] {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent);
+      background: color-mix(in srgb, var(--bg-elevated) 92%, var(--accent));
+    }
+
+    .anim-tab-tag {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--accent);
+      display: block;
+      margin-bottom: 0.2rem;
+    }
+
+    .anim-tab-title {
+      font-weight: 600;
+      font-size: 0.95rem;
+      display: block;
+      margin-bottom: 0.25rem;
+    }
+
+    .anim-tab-desc {
+      font-size: 0.83rem;
+      color: var(--ink-muted);
+      line-height: 1.45;
+      display: block;
+    }
+
+    /* Docs matrix footer */
+    .docs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+
+    .doc-link-card {
+      display: block;
+      text-decoration: none;
+      color: var(--ink);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      padding: 1.1rem 1.2rem;
+      transition: transform 0.14s ease, border-color 0.14s ease;
+    }
+
+    .doc-link-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--accent);
+    }
+
+    .doc-link-card .lvl {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--accent);
+      margin-bottom: 0.3rem;
+      display: block;
+    }
+
+    .doc-link-card p {
+      font-size: 0.87rem;
+      color: var(--ink-muted);
+      margin: 0.35rem 0 0;
+    }
+
+    footer {
+      border-top: 1px solid var(--border);
+      margin-top: 4rem;
+      padding: 2.25rem 1.5rem;
+      font-size: 0.88rem;
+      color: var(--ink-muted);
+    }
+
+    .footer-inner {
+      max-width: 1180px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    /* Fullscreen Zoom/Pan Lightbox */
+    .lightbox {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: color-mix(in srgb, var(--bg) 94%, transparent);
+      backdrop-filter: blur(8px);
+      display: none;
+      flex-direction: column;
+    }
+
+    .lightbox.open {
+      display: flex;
+    }
+
+    .lightbox-bar {
+      padding: 0.75rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-elevated);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+    }
+
+    .lightbox-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+
+    .lb-btn {
+      background: var(--bg-subtle);
+      color: var(--ink);
+      border: 1px solid var(--border-strong);
+      border-radius: 6px;
+      padding: 0.32rem 0.65rem;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      cursor: pointer;
+    }
+
+    .lb-btn:hover {
+      border-color: var(--accent);
+    }
+
+    .lightbox-stage {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      cursor: grab;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .lightbox-stage.dragging {
+      cursor: grabbing;
+    }
+
+    .lightbox-stage img {
+      max-width: 92vw;
+      max-height: 84vh;
+      transform-origin: center center;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a href="#" class="brand">
+        <span class="brand-mark">IR → 5 GATES → SVG</span>
+        <span>ArchiGram</span>
+      </a>
+      <nav class="nav-links" aria-label="Primary">
+        <a href="#why">Why ArchiGram</a>
+        <a href="#triage">3-Stage Triage</a>
+        <a href="#animated">Animated Traces</a>
+        <a href="#docs">L0–L3 Docs</a>
+        <a href="https://github.com/klcd/archigram" class="nav-cta">GitHub ↗</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- 1. EDITORIAL HERO -->
+    <section class="hero">
+      <div class="prose-wrap">
+        <div class="eyebrow">Project Purpose &amp; Architecture Manifesto</div>
+        <h1>Architecture diagrams should be <em>compiled</em>, not drawn.</h1>
+        <p class="lede">
+          ArchiGram is a deterministic compiler and 5-gate formal linter that turns real ASTs and
+          runtime execution traces into readable, zero-drift architecture diagrams—restricting
+          humans and LLMs to auditable CLI curation instead of pixel-pushing or hallucinated syntax.
+        </p>
+        <div class="install-bar" role="region" aria-label="Quick install">
+          <div>
+            <span class="prompt">$</span><span id="install-cmd">uvx --from git+https://github.com/klcd/archigram archigram --help</span>
+          </div>
+          <button class="copy-btn" type="button" data-copy-target="install-cmd">Copy</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. ESSAY: HAIRBALL VS HALLUCINATION -->
+    <section id="why">
+      <div class="prose-wrap">
+        <div class="section-kicker">01 · The Problem</div>
+        <h2>The Hairball vs. Hallucination Trilemma</h2>
+        <p>
+          Every engineering team wants architecture diagrams that stay truthful as code evolves
+          <em>and</em> fit inside human working memory. In practice, existing tools force a choice
+          between three broken failure modes:
+        </p>
+      </div>
+
+      <div class="wide-wrap">
+        <div class="trilemma-grid">
+          <article class="card">
+            <span class="card-num rot">Failure Mode 1 · Manual Drift</span>
+            <h3>Hand-drawn boxes silently rot</h3>
+            <p>
+              Diagrams sketched in Excalidraw, Miro, or hand-written Markdown have zero causal link
+              to the repository. Within days of a refactor, arrows point to deleted modules, omit
+              newly introduced couplings, and turn documentation into folklore.
+            </p>
+          </article>
+          <article class="card">
+            <span class="card-num hairball">Failure Mode 2 · Raw Auto-Dumps</span>
+            <h3>Naive extractors emit unreadable hairballs</h3>
+            <p>
+              Raw AST, dependency, and OpenTelemetry visualizers swing to the opposite extreme:
+              dumping <code>334</code> symbols or <code>1,000</code> spans onto a single canvas. The
+              output exceeds both human cognition and platform caps like Gitea’s
+              <code>5,000</code>-character Mermaid limit.
+            </p>
+          </article>
+          <article class="card">
+            <span class="card-num hallucination">Failure Mode 3 · Freehand LLMs</span>
+            <h3>Unbounded LLMs hallucinate edges &amp; syntax</h3>
+            <p>
+              Asking an LLM to write raw Mermaid, D2, or PlantUML invents nonexistent classes,
+              silently severs real dependency paths while “summarizing,” trips over renderer parser
+              quirks, and produces non-deterministic diffs on every run.
+            </p>
+          </article>
+        </div>
+      </div>
+
+      <div class="wide-wrap">
+        <div class="thesis-split">
+          <div>
+            <div class="section-kicker">02 · The ArchiGram Thesis</div>
+            <h2>Separate the Data Plane from the Control Plane</h2>
+            <p>
+              ArchiGram resolves the trilemma through one strict architectural rule:
+              <strong>only deterministic programs may observe topology, and LLMs may only curate it
+              through a verified CLI/YAML spec.</strong>
+            </p>
+            <div class="callout">
+              <strong>The Curation Rule:</strong> Neither humans nor AI agents ever author raw
+              Mermaid, D2, or PlantUML. A deterministic extractor builds a cryptographically
+              stamped <code>CanonicalIR</code>, and the agent invokes CLI commands
+              (<code>archigram curate ...</code>) to prune leaves, collapse cohesive partitions, or
+              fold loops—verified by five mathematical gates before emission.
+            </div>
+            <ul class="gate-list">
+              <li>
+                <span class="gate-badge">Gate 1</span>
+                <span><strong>Symbol Grounding:</strong> 100% of referenced IDs and globs must resolve against observed AST or trace symbols—zero hallucinated nodes.</span>
+              </li>
+              <li>
+                <span class="gate-badge">Gate 2</span>
+                <span><strong>Protected Boundaries:</strong> Security, domain, or API boundary nodes marked protected can never be pruned or hidden.</span>
+              </li>
+              <li>
+                <span class="gate-badge">Gate 3</span>
+                <span><strong>Topology &amp; Poset Preservation:</strong> Preserves transitive reachability, cycle discipline, and async happens-before partial order—emitting concrete witness paths on violation.</span>
+              </li>
+              <li>
+                <span class="gate-badge">Gate 4</span>
+                <span><strong>Cognitive Budgets:</strong> Enforces explicit node, edge, and parallel-branch bounds (typically <code>10–25</code> nodes per view).</span>
+              </li>
+              <li>
+                <span class="gate-badge">Gate 5</span>
+                <span><strong>Headless Syntax Verification:</strong> Validates emitted Mermaid (including <code>&lt; 5,000</code>-char Gitea budgets), D2, PlantUML, LikeC4, and DOT before writing disk artifacts.</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="diagram-frame">
+            <div class="diagram-header">
+              <span class="mono-title">l0_hexagonal_rings_d2.d2.svg (Self-Hosted L0)</span>
+              <button
+                class="zoom-hint"
+                type="button"
+                data-zoom-src="./architecture/diagrams/l0_hexagonal_rings_d2.d2.svg"
+                data-zoom-title="L0 System & Hexagonal Rings (Self-Hosted ArchiGram Architecture)"
+              >
+                Inspect ⤢
+              </button>
+            </div>
+            <div
+              class="diagram-canvas"
+              data-zoom-src="./architecture/diagrams/l0_hexagonal_rings_d2.d2.svg"
+              data-zoom-title="L0 System & Hexagonal Rings (Self-Hosted ArchiGram Architecture)"
+            >
+              <img
+                src="./architecture/diagrams/l0_hexagonal_rings_d2.d2.svg"
+                alt="ArchiGram L0 Hexagonal Architecture and Data vs Control Plane"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. INTERACTIVE 3-STAGE TRIAGE EXPLORER -->
+    <section id="triage">
+      <div class="wide-wrap">
+        <div class="section-kicker">03 · Program-First Extraction → CLI-Only Curation</div>
+        <h2>Interactive 3-Stage Triage: Before, What Gets Removed, and After</h2>
+        <p style="max-width: 780px; color: var(--ink-muted);">
+          When ArchiGram ingests its own <code>src/archigram</code> Python AST, the unedited graph
+          contains <code>334</code> symbols and <code>484</code> edges (<code>50,186</code> Mermaid
+          characters—over <code>10×</code> Gitea’s <code>5,000</code>-char parser limit). Instead of
+          letting an LLM redraw it by hand, <code>archigram triage</code> renders the exact
+          three-stage SVG audit trail computed from CLI rules. Click any diagram to zoom and pan.
+        </p>
+
+        <div class="workbench">
+          <div class="workbench-toolbar">
+            <div class="seg-group" role="tablist" aria-label="Triage dataset">
+              <button class="seg-btn" type="button" role="tab" data-dataset="structural" aria-selected="true">
+                Codebase AST (334 → 17 nodes)
+              </button>
+              <button class="seg-btn" type="button" role="tab" data-dataset="trace" aria-selected="false">
+                Runtime Trace (183 → 48 spans)
+              </button>
+            </div>
+
+            <div class="seg-group" role="tablist" aria-label="Triage stage">
+              <button class="seg-btn" type="button" role="tab" data-stage="compare" aria-selected="true">
+                All 3 Stages
+              </button>
+              <button class="seg-btn" type="button" role="tab" data-stage="1" aria-selected="false">
+                1 · Raw Original
+              </button>
+              <button class="seg-btn" type="button" role="tab" data-stage="2" aria-selected="false">
+                2 · Triage Overlay
+              </button>
+              <button class="seg-btn" type="button" role="tab" data-stage="3" aria-selected="false">
+                3 · Curated Result
+              </button>
+            </div>
+          </div>
+
+          <div class="metrics-strip" id="triage-metrics">
+            <!-- Populated dynamically -->
+          </div>
+
+          <div class="triage-stage-view" id="triage-viewport">
+            <!-- Populated dynamically -->
+          </div>
+
+          <div class="cli-drawer">
+            <pre id="triage-cli"></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. LIVE ANIMATED D2 RUNTIME & UML SHOWCASE -->
+    <section id="animated">
+      <div class="wide-wrap">
+        <div class="section-kicker">04 · Moving Architecture Diagrams</div>
+        <h2>Self-Contained Animated Runtime Traces &amp; UML 2.5 Flows</h2>
+        <p style="max-width: 780px; color: var(--ink-muted);">
+          Static boxes struggle to convey order of execution, concurrency fan-out, and state
+          transitions. ArchiGram captures live Python <code>sys.monitoring</code> or OpenTelemetry
+          traces, folds repeating loops and parallel branches via <code>R1–R6</code> +
+          Series-Parallel poset decomposition, and compiles pure CSS-animated <code>.d2.svg</code>
+          files that play natively inside Markdown, Gitea, GitHub, and browsers—with zero JavaScript
+          runtime.
+        </p>
+
+        <div class="anim-grid">
+          <div class="anim-selector" role="tablist" aria-label="Animated diagram views">
+            <button class="anim-tab" type="button" role="tab" data-anim="steps" aria-selected="true">
+              <span class="anim-tab-tag">D2 steps · 1,400ms Keyframe Playback</span>
+              <span class="anim-tab-title">Step-by-Step Pipeline &amp; Self-Repair</span>
+              <span class="anim-tab-desc">
+                Reveals each runtime stage sequentially: AST ingestion → deterministic reduction →
+                5-Gate validation → 3-turn MCP repair convergence.
+              </span>
+            </button>
+            <button class="anim-tab" type="button" role="tab" data-anim="sequence" aria-selected="false">
+              <span class="anim-tab-tag">sys.monitoring · R1–R6 Compacted</span>
+              <span class="anim-tab-title">Live Self-Hosted Sequence Trace</span>
+              <span class="anim-tab-desc">
+                183 raw Python call events compacted to 48 causal interactions across 15
+                participants with zero async-to-sync upgrade violations.
+              </span>
+            </button>
+            <button class="anim-tab" type="button" role="tab" data-anim="activity" aria-selected="false">
+              <span class="anim-tab-tag">UML 2.5 · Activity Swimlanes</span>
+              <span class="anim-tab-title">Animated Activity Swimlane Flow</span>
+              <span class="anim-tab-desc">
+                Projects the exact same runtime trace into caller/callee swimlanes with flowing
+                <code>stroke-dashoffset</code> call pulses.
+              </span>
+            </button>
+            <button class="anim-tab" type="button" role="tab" data-anim="communication" aria-selected="false">
+              <span class="anim-tab-tag">UML 2.5 · Numbered Collaboration</span>
+              <span class="anim-tab-title">Communication &amp; Message Graph</span>
+              <span class="anim-tab-desc">
+                Aggregates runtime interactions into numbered <code>1..N: signature()</code> edges
+                over participant topology.
+              </span>
+            </button>
+            <button class="anim-tab" type="button" role="tab" data-anim="state" aria-selected="false">
+              <span class="anim-tab-tag">UML 2.5 · Lifecycle Automaton</span>
+              <span class="anim-tab-title">Derived Participant State Machine</span>
+              <span class="anim-tab-desc">
+                Synthesizes a deterministic <code>[*] → state → [*]</code> transition graph directly
+                from observed runtime trace spans.
+              </span>
+            </button>
+          </div>
+
+          <div class="diagram-frame">
+            <div class="diagram-header">
+              <span class="mono-title" id="anim-filename">l3_runtime_pipeline_steps_d2.d2.svg</span>
+              <button
+                class="zoom-hint"
+                type="button"
+                id="anim-zoom-btn"
+                data-zoom-src="./architecture/diagrams/l3_runtime_pipeline_steps_d2.d2.svg"
+                data-zoom-title="Step-by-Step Pipeline & Self-Repair Playback"
+              >
+                Fullscreen Zoom ⤢
+              </button>
+            </div>
+            <div
+              class="diagram-canvas"
+              id="anim-canvas"
+              style="min-height: 480px;"
+              data-zoom-src="./architecture/diagrams/l3_runtime_pipeline_steps_d2.d2.svg"
+              data-zoom-title="Step-by-Step Pipeline & Self-Repair Playback"
+            >
+              <img
+                id="anim-img"
+                src="./architecture/diagrams/l3_runtime_pipeline_steps_d2.d2.svg"
+                alt="Step-by-Step Pipeline and Self-Repair Animated D2 SVG"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. ARCHITECTURE DOCS MATRIX -->
+    <section id="docs">
+      <div class="wide-wrap">
+        <div class="section-kicker">05 · Self-Dogfooded Documentation</div>
+        <h2>Explore All Four Zoom Levels &amp; Benchmarks</h2>
+        <p style="max-width: 740px; color: var(--ink-muted);">
+          Every diagram in this repository is compiled from ArchiGram’s own source tree and verified
+          on every push by 8 CI quality gates (<code>lint-imports</code>, <code>ruff</code> McCabe
+          <code>C901 ≤ 10</code>, strict <code>pyright</code>, Hypothesis fuzzing,
+          <code>pytest-benchmark</code>, and zero-drift <code>archigram apply --check</code>).
+        </p>
+
+        <div class="docs-grid">
+          <a class="doc-link-card" href="https://github.com/klcd/archigram/blob/main/docs/architecture/L0-system-and-rings.md">
+            <span class="lvl">LEVEL L0 · SYSTEM</span>
+            <h3>System &amp; Hexagonal Rings</h3>
+            <p>9 capability groups, inward dependency rules, and CLI Data Plane vs. MCP Control Plane.</p>
+          </a>
+          <a class="doc-link-card" href="https://github.com/klcd/archigram/blob/main/docs/architecture/L1-feature-slices.md">
+            <span class="lvl">LEVEL L1 · SLICES</span>
+            <h3>16 Independent Feature Slices</h3>
+            <p>Zero cross-slice imports enforced by import-linter across ingestors, reducers, gates, and emitters.</p>
+          </a>
+          <a class="doc-link-card" href="https://github.com/klcd/archigram/blob/main/docs/architecture/L2-subsystem-guides.md">
+            <span class="lvl">LEVEL L2 · SUBSYSTEMS</span>
+            <h3>K-Hop Subsystem Zooms</h3>
+            <p>Focused 9–18 node neighborhoods for Domain/Ports, Reducers, 5-Gate Linter, and CLI/MCP adapters.</p>
+          </a>
+          <a class="doc-link-card" href="https://github.com/klcd/archigram/blob/main/docs/architecture/uml-and-curation-showcase.md">
+            <span class="lvl">SHOWCASE · 14 UML TYPES</span>
+            <h3>UML 2.5 &amp; CLI Triage Guide</h3>
+            <p>Full 14-diagram UML 2.5 taxonomy across Mermaid (&lt; 5k chars), D2, and PlantUML.</p>
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <div>
+        <strong>ArchiGram</strong> · MIT License · Created by Cedric Klinkert
+      </div>
+      <div>
+        <a href="https://github.com/klcd/archigram">GitHub Mirror</a> ·
+        <a href="https://github.com/klcd/archigram/actions/workflows/verify.yml">8-Gate CI Status</a> ·
+        <a href="https://github.com/klcd/archigram/blob/main/docs/architecture/README.md">Architecture Index</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Fullscreen Zoom/Pan Inspector -->
+  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-labelledby="lb-title">
+    <div class="lightbox-bar">
+      <span id="lb-title">Diagram Inspector</span>
+      <div class="lightbox-controls">
+        <button class="lb-btn" type="button" id="lb-zoom-out">−</button>
+        <span id="lb-zoom-label">100%</span>
+        <button class="lb-btn" type="button" id="lb-zoom-in">+</button>
+        <button class="lb-btn" type="button" id="lb-zoom-reset">Reset</button>
+        <button class="lb-btn" type="button" id="lb-close">Close (Esc)</button>
+      </div>
+    </div>
+    <div class="lightbox-stage" id="lb-stage">
+      <img id="lb-img" src="" alt="Zoomable architecture diagram" />
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const TRIAGE_DATA = {
+        structural: {
+          rawSummary: "Raw: 334 nodes / 484 edges (50,186 Mermaid chars — 10× over 5k limit)",
+          curatedSummary: "Curated: 17 nodes / 12 edges (1,887 Mermaid chars · 5-Gate PASSED)",
+          pills: [
+            { cls: "remove", text: "[REMOVE] 302" },
+            { cls: "bypass", text: "[BYPASS] 1" },
+            { cls: "collapse", text: "[COLLAPSE] 20" },
+            { cls: "keep", text: "[KEEP] 11" }
+          ],
+          stages: {
+            "1": {
+              label: "Stage 1 · Raw AST Graph",
+              meta: "334 nodes · 50,186 chars",
+              src: "./architecture/diagrams/showcase_cli_triage.1_original.d2.svg",
+              caption: "Unedited deterministic Python AST extraction of src/archigram (334 symbols, 484 edges). Honest, complete, and completely unreadable at a glance."
+            },
+            "2": {
+              label: "Stage 2 · Triage Overlay",
+              meta: "Computed Action Map",
+              src: "./architecture/diagrams/showcase_cli_triage.2_triage.d2.svg",
+              caption: "Before removing a single node, archigram triage highlights every symbol on the raw graph: Crimson [REMOVE], Amber [BYPASS], Violet [COLLAPSE], and Emerald [KEEP]."
+            },
+            "3": {
+              label: "Stage 3 · 5-Gate Curated View",
+              meta: "17 nodes · 1,887 chars",
+              src: "./architecture/diagrams/showcase_cli_triage.3_curated.d2.svg",
+              caption: "Final compiled view after CLI-only scope, leaf-pruning, bypass, and partition-collapse rules—passing all 5 formal gates and fitting comfortably under 5,000 Mermaid chars."
+            }
+          },
+          cli: [
+            "# 1. Program extracts raw AST; LLM curates strictly via CLI mutations (never editing raw diagram text):",
+            "uv run archigram curate init showcase-structural-views.yaml -v showcase_cli_triage -t \"CLI Triage\" -r d2",
+            "uv run archigram curate set-scope-khop showcase-structural-views.yaml -v showcase_cli_triage \\",
+            "  -f archigram.entrypoints.cli.app -u 1 -d 2",
+            "uv run archigram curate bypass showcase-structural-views.yaml -v showcase_cli_triage --id bypass_main_shim -n archigram.entrypoints.cli.main",
+            "uv run archigram curate collapse showcase-structural-views.yaml -v showcase_cli_triage --id cli_commands \\",
+            "  -l \"CLI Command Modules\" -g \"archigram.entrypoints.cli.*\" -x archigram.entrypoints.cli.app",
+            "",
+            "# 2. Emit 3-stage SVG comparison (1_original -> 2_triage -> 3_curated) + verify 5 Gates:",
+            "uv run archigram triage src/archigram --spec docs/architecture/showcase-structural-views.yaml \\",
+            "  --view showcase_cli_triage --out-dir docs/architecture/diagrams --check"
+          ].join("\n")
+        },
+        trace: {
+          rawSummary: "Raw: 15 participants / 183 spans (9,460 Mermaid chars — exceeds 5k limit)",
+          curatedSummary: "Curated: 15 participants / 48 spans (3,866 Mermaid chars · 5-Gate PASSED)",
+          pills: [
+            { cls: "remove", text: "[REMOVE] 0" },
+            { cls: "collapse", text: "[FOLD R1–R6] 135" },
+            { cls: "keep", text: "[KEEP] 48" }
+          ],
+          stages: {
+            "1": {
+              label: "Stage 1 · Raw sys.monitoring Trace",
+              meta: "183 call events · 9,460 chars",
+              src: "./architecture/diagrams/showcase_trace_triage.1_original.d2.svg",
+              caption: "Uncompacted Python sys.monitoring execution trace across compile_and_lint_pipeline and 3-turn run_propose_loop (183 call spans)."
+            },
+            "2": {
+              label: "Stage 2 · Loop & Fan-Out Triage",
+              meta: "135 Spans Marked for R1–R6 Folding",
+              src: "./architecture/diagrams/showcase_trace_triage.2_triage.d2.svg",
+              caption: "Triage projection highlighting the 135 repetitive loop and fan-out call spans folded by deterministic R1–R6 + Series-Parallel poset rules vs. 48 representative spans."
+            },
+            "3": {
+              label: "Stage 3 · Compacted Sequence",
+              meta: "48 spans · 3,866 chars",
+              src: "./architecture/diagrams/showcase_trace_triage.3_curated.d2.svg",
+              caption: "Compacted interaction trace preserving 100% of backing provenance IDs, causal happens-before order, and async fire-and-forget semantics."
+            }
+          },
+          cli: [
+            "# 1. Configure deterministic R1–R6 + Series-Parallel trace compaction strictly via CLI:",
+            "uv run archigram curate init showcase-trace-views.yaml -v showcase_trace_triage \\",
+            "  -t \"Runtime Trace Triage\" --mode interaction_trace -r d2",
+            "uv run archigram curate set-trace-compaction showcase-trace-views.yaml -v showcase_trace_triage \\",
+            "  --fold-loops --fold-loop-with-opt --cut-recursion --fold-parallel-map --max-call-depth 6",
+            "",
+            "# 2. Render 3-stage trace triage SVGs and verify Gate 3 poset & SyncKind invariants:",
+            "uv run archigram triage docs/architecture/traces/pipeline-and-repair.ir.json \\",
+            "  --spec docs/architecture/showcase-trace-views.yaml --view showcase_trace_triage --out-dir docs/architecture/diagrams --check"
+          ].join("\n")
+        }
+      };
+
+      const ANIM_VIEWS = {
+        steps: {
+          file: "l3_runtime_pipeline_steps_d2.d2.svg",
+          src: "./architecture/diagrams/l3_runtime_pipeline_steps_d2.d2.svg",
+          title: "Step-by-Step Pipeline & Self-Repair Playback"
+        },
+        sequence: {
+          file: "l3_runtime_pipeline_d2.d2.svg",
+          src: "./architecture/diagrams/l3_runtime_pipeline_d2.d2.svg",
+          title: "Live Self-Hosted Sequence Trace (R1–R6 Compacted)"
+        },
+        activity: {
+          file: "showcase_uml_activity_d2.d2.svg",
+          src: "./architecture/diagrams/showcase_uml_activity_d2.d2.svg",
+          title: "Animated UML 2.5 Activity Swimlane Flow"
+        },
+        communication: {
+          file: "showcase_uml_communication_d2.d2.svg",
+          src: "./architecture/diagrams/showcase_uml_communication_d2.d2.svg",
+          title: "Animated UML 2.5 Communication & Message Graph"
+        },
+        state: {
+          file: "showcase_uml_state_d2.d2.svg",
+          src: "./architecture/diagrams/showcase_uml_state_d2.d2.svg",
+          title: "Animated UML 2.5 Derived State Machine"
+        }
+      };
+
+      let activeDataset = "structural";
+      let activeStage = "compare";
+
+      const metricsEl = document.getElementById("triage-metrics");
+      const viewportEl = document.getElementById("triage-viewport");
+      const cliEl = document.getElementById("triage-cli");
+
+      function renderTriage() {
+        const data = TRIAGE_DATA[activeDataset];
+        const pillsHtml = data.pills
+          .map((p) => `<span class="pill ${p.cls}">${p.text}</span>`)
+          .join("");
+        metricsEl.innerHTML = `
+          <div>
+            <span class="pill neutral">${data.rawSummary}</span>
+            <span style="margin: 0 0.35rem; color: var(--ink-faint);">→</span>
+            <span class="pill keep">${data.curatedSummary}</span>
+          </div>
+          <div class="pill-row">${pillsHtml}</div>
+        `;
+        cliEl.textContent = data.cli;
+
+        if (activeStage === "compare") {
+          const cards = ["1", "2", "3"]
+            .map((k) => {
+              const st = data.stages[k];
+              return `
+                <div class="film-card">
+                  <div class="film-card-head">
+                    <strong>${st.label}</strong>
+                    <span>${st.meta}</span>
+                  </div>
+                  <img
+                    src="${st.src}"
+                    alt="${st.label}"
+                    data-zoom-src="${st.src}"
+                    data-zoom-title="${st.label} (${st.meta})"
+                  />
+                </div>
+              `;
+            })
+            .join("");
+          viewportEl.innerHTML = `
+            <div class="triage-filmstrip">${cards}</div>
+            <p class="stage-caption">
+              Click any stage above to open the zoom/pan inspector—or select Stage 1, 2, or 3 in the toolbar for a full-size view.
+            </p>
+          `;
+        } else {
+          const st = data.stages[activeStage];
+          viewportEl.innerHTML = `
+            <img
+              class="triage-single-img"
+              src="${st.src}"
+              alt="${st.label}"
+              data-zoom-src="${st.src}"
+              data-zoom-title="${st.label} (${st.meta})"
+            />
+            <p class="stage-caption">${st.caption}</p>
+          `;
+        }
+      }
+
+      document.querySelectorAll("[data-dataset]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          activeDataset = btn.getAttribute("data-dataset");
+          document.querySelectorAll("[data-dataset]").forEach((b) =>
+            b.setAttribute("aria-selected", String(b === btn))
+          );
+          renderTriage();
+        });
+      });
+
+      document.querySelectorAll("[data-stage]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          activeStage = btn.getAttribute("data-stage");
+          document.querySelectorAll("[data-stage]").forEach((b) =>
+            b.setAttribute("aria-selected", String(b === btn))
+          );
+          renderTriage();
+        });
+      });
+
+      renderTriage();
+
+      // Animated view switcher
+      const animFileEl = document.getElementById("anim-filename");
+      const animImgEl = document.getElementById("anim-img");
+      const animCanvasEl = document.getElementById("anim-canvas");
+      const animZoomBtn = document.getElementById("anim-zoom-btn");
+
+      document.querySelectorAll("[data-anim]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const key = btn.getAttribute("data-anim");
+          const item = ANIM_VIEWS[key];
+          document.querySelectorAll("[data-anim]").forEach((b) =>
+            b.setAttribute("aria-selected", String(b === btn))
+          );
+          animFileEl.textContent = item.file;
+          animImgEl.src = item.src;
+          animImgEl.alt = item.title;
+          animCanvasEl.setAttribute("data-zoom-src", item.src);
+          animCanvasEl.setAttribute("data-zoom-title", item.title);
+          animZoomBtn.setAttribute("data-zoom-src", item.src);
+          animZoomBtn.setAttribute("data-zoom-title", item.title);
+        });
+      });
+
+      // Copy button
+      document.querySelectorAll("[data-copy-target]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const target = document.getElementById(btn.getAttribute("data-copy-target"));
+          if (!target || !navigator.clipboard) return;
+          navigator.clipboard.writeText(target.textContent.trim()).then(() => {
+            const prev = btn.textContent;
+            btn.textContent = "Copied!";
+            setTimeout(() => {
+              btn.textContent = prev;
+            }, 1400);
+          });
+        });
+      });
+
+      // Fullscreen Zoom/Pan Lightbox
+      const lb = document.getElementById("lightbox");
+      const lbImg = document.getElementById("lb-img");
+      const lbTitle = document.getElementById("lb-title");
+      const lbStage = document.getElementById("lb-stage");
+      const lbZoomLabel = document.getElementById("lb-zoom-label");
+      let scale = 1;
+      let panX = 0;
+      let panY = 0;
+      let dragging = false;
+      let startX = 0;
+      let startY = 0;
+
+      function applyTransform() {
+        lbImg.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+        lbZoomLabel.textContent = `${Math.round(scale * 100)}%`;
+      }
+
+      function openLightbox(src, title) {
+        lbImg.src = src;
+        lbTitle.textContent = title || "Diagram Inspector";
+        scale = 1;
+        panX = 0;
+        panY = 0;
+        applyTransform();
+        lb.classList.add("open");
+      }
+
+      function closeLightbox() {
+        lb.classList.remove("open");
+        lbImg.src = "";
+      }
+
+      document.addEventListener("click", (e) => {
+        const trigger = e.target.closest("[data-zoom-src]");
+        if (trigger) {
+          openLightbox(
+            trigger.getAttribute("data-zoom-src"),
+            trigger.getAttribute("data-zoom-title")
+          );
+        }
+      });
+
+      document.getElementById("lb-close").addEventListener("click", closeLightbox);
+      document.getElementById("lb-zoom-in").addEventListener("click", () => {
+        scale = Math.min(12, scale * 1.35);
+        applyTransform();
+      });
+      document.getElementById("lb-zoom-out").addEventListener("click", () => {
+        scale = Math.max(0.4, scale / 1.35);
+        applyTransform();
+      });
+      document.getElementById("lb-zoom-reset").addEventListener("click", () => {
+        scale = 1;
+        panX = 0;
+        panY = 0;
+        applyTransform();
+      });
+
+      lbStage.addEventListener(
+        "wheel",
+        (e) => {
+          e.preventDefault();
+          const factor = e.deltaY < 0 ? 1.18 : 1 / 1.18;
+          scale = Math.min(12, Math.max(0.4, scale * factor));
+          applyTransform();
+        },
+        { passive: false }
+      );
+
+      lbStage.addEventListener("pointerdown", (e) => {
+        if (e.target.closest("button")) return;
+        dragging = true;
+        startX = e.clientX - panX;
+        startY = e.clientY - panY;
+        lbStage.classList.add("dragging");
+      });
+
+      window.addEventListener("pointermove", (e) => {
+        if (!dragging) return;
+        panX = e.clientX - startX;
+        panY = e.clientY - startY;
+        applyTransform();
+      });
+
+      window.addEventListener("pointerup", () => {
+        dragging = false;
+        lbStage.classList.remove("dragging");
+      });
+
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && lb.classList.contains("open")) {
+          closeLightbox();
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
