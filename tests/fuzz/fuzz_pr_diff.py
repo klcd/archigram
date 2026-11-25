@@ -156,8 +156,6 @@ def _assert_view_deltas(
     summary: PrDiffSummary,
     status: RelationshipStatus,
     label: str,
-    *,
-    head_broken: bool,
 ) -> None:
     for delta in summary.view_deltas:
         newly = status is RelationshipStatus.NEWLY_BROKEN
@@ -167,7 +165,7 @@ def _assert_view_deltas(
         assert delta.pre_existing_reachability_failures == ((label,) if pre else ())
         restored = status is RelationshipStatus.RESTORED
         assert delta.restored_reachability == ((label,) if restored else ())
-        assert delta.has_regression is head_broken
+        assert delta.has_regression is newly
         if pre:
             assert delta.pre_existing_error_count >= 1
             assert delta.new_error_count == 0
@@ -198,8 +196,10 @@ def test_fuzz_pr_diff_newly_broken_vs_pre_existing_vs_restored(
     assert summary.markdown_report == again.markdown_report
     assert summary.base_available is True
     assert summary.base_unavailable_reason is None
-    assert summary.passed is (not head_broken)
-    assert summary.has_regressions is head_broken
+    # Only a newly broken relationship regresses; one already broken on base is pre-existing.
+    newly_broken = head_broken and not base_broken
+    assert summary.passed is (not newly_broken)
+    assert summary.has_regressions is newly_broken
 
     if base_broken is head_broken:
         expected_status = RelationshipStatus.PRE_EXISTING if head_broken else None
@@ -236,7 +236,7 @@ def test_fuzz_pr_diff_newly_broken_vs_pre_existing_vs_restored(
     for view_id in _VIEW_IDS:
         assert f"`{view_id}`" in md
 
-    _assert_view_deltas(summary, expected_status, label, head_broken=head_broken)
+    _assert_view_deltas(summary, expected_status, label)
     if expected_status is RelationshipStatus.NEWLY_BROKEN:
         assert summary.new_errors
         assert summary.new_errors[0].code in _DECLARED_CODES

@@ -586,7 +586,7 @@ def _build_view_delta(
     )
     base_err_count = sum(1 for d in base_view_diags if d.severity is DiagnosticSeverity.ERROR)
     head_err_count = sum(1 for d in head_view_diags if d.severity is DiagnosticSeverity.ERROR)
-    has_regression = bool(new_view_errs or newly_broken or newly_dropped or head_err_count > 0)
+    has_regression = bool(new_view_errs or newly_broken or newly_dropped)
 
     return ViewRegressionDelta(
         view_id=view.id,
@@ -849,6 +849,9 @@ def compute_pr_regression_diff(
 
     When ``base_ir`` is None only head validation runs: ``passed`` mirrors the head lint result,
     every head error is reported as new, and the summary records why the base was unavailable.
+
+    A regression is a diagnostic newly introduced on head; errors already present on base do not
+    fail the diff.
     """
     base_comp = compile_and_lint_pipeline(base_ir, spec) if base_ir is not None else None
     head_comp = compile_and_lint_pipeline(head_ir, spec)
@@ -871,7 +874,7 @@ def compute_pr_regression_diff(
     view_deltas = tuple(
         _build_view_delta(view, base_comp, head_comp, declared_changes) for view in spec.views
     )
-    has_regressions = bool(new_errors) or not head_comp.lint_report.passed
+    has_regressions = bool(new_errors)
     passed = not has_regressions
     reason = None if base_comp is not None else _clean_reason(base_unavailable_reason)
     edge_churn = _edge_churn(base_ir, head_ir, declared_changes)
