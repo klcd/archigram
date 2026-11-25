@@ -32,8 +32,10 @@ from archigram.domain.spec import (
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
+    from typing import Literal
 
     from archigram.domain.ir import CanonicalIR
+    from archigram.domain.spec import ReachabilityAssertion
 
 _VALID_RELATIONS: frozenset[str] = frozenset(rel.value for rel in EdgeRelation)
 _VALID_RELATIONS_STR: str = ", ".join(sorted(_VALID_RELATIONS))
@@ -303,15 +305,32 @@ def _check_view_grounding(
         if diag is not None:
             diagnostics.append(diag)
 
-    for reach in view.invariants.preserve_reachability:
-        d_from = _check_symbol_ref(reach.from_node, "preserve_reachability.from_node", True, ctx)
+    diagnostics.extend(
+        _check_reachability_grounding(view.invariants.preserve_reachability, "preserve", ctx)
+    )
+    diagnostics.extend(
+        _check_reachability_grounding(view.invariants.require_reachability, "require", ctx)
+    )
+
+    return diagnostics
+
+
+def _check_reachability_grounding(
+    assertions: tuple[ReachabilityAssertion, ...],
+    kind: Literal["preserve", "require"],
+    ctx: _RuleContext,
+) -> list[LintDiagnostic]:
+    """Ground endpoints and relation filters of preserve/require reachability assertions."""
+    diagnostics: list[LintDiagnostic] = []
+    field = f"{kind}_reachability"
+    for reach in assertions:
+        d_from = _check_symbol_ref(reach.from_node, f"{field}.from_node", True, ctx)
         if d_from is not None:
             diagnostics.append(d_from)
-        d_to = _check_symbol_ref(reach.to_node, "preserve_reachability.to_node", True, ctx)
+        d_to = _check_symbol_ref(reach.to_node, f"{field}.to_node", True, ctx)
         if d_to is not None:
             diagnostics.append(d_to)
-        diagnostics.extend(_check_relation_names(reach.via_relations, None, view.id))
-
+        diagnostics.extend(_check_relation_names(reach.via_relations, None, ctx.view_id))
     return diagnostics
 
 

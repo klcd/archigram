@@ -278,17 +278,14 @@ def _find_bottlenecks(
     return (witness_path[0], witness_path[-1])
 
 
-def _check_single_reachability(
+def _severed_diagnostic(
     assertion: ReachabilityAssertion,
-    obs_indexed: _IndexedDiGraph,
+    witness_path: tuple[str, ...],
     cur_indexed: _IndexedDiGraph,
     resolver: dict[str, str],
     view_id: str,
 ) -> LintDiagnostic | None:
-    witness_path = _shortest_path_ids(obs_indexed, assertion.from_node, assertion.to_node)
-    if witness_path is None:
-        return None
-
+    """Return REACHABILITY_SEVERED when curation loses an observed path, else None."""
     cur_src = resolver.get(assertion.from_node)
     cur_dst = resolver.get(assertion.to_node)
     if _is_reachable_in_curated(cur_indexed, cur_src, cur_dst):
@@ -314,28 +311,80 @@ def _check_single_reachability(
     )
 
 
+def _check_single_reachability(
+    assertion: ReachabilityAssertion,
+    obs_indexed: _IndexedDiGraph,
+    cur_indexed: _IndexedDiGraph,
+    resolver: dict[str, str],
+    view_id: str,
+) -> LintDiagnostic | None:
+    """preserve_reachability: preserve the observed path if one exists (vacuous otherwise)."""
+    witness_path = _shortest_path_ids(obs_indexed, assertion.from_node, assertion.to_node)
+    if witness_path is None:
+        return None
+    return _severed_diagnostic(assertion, witness_path, cur_indexed, resolver, view_id)
+
+
+def _check_required_reachability(
+    assertion: ReachabilityAssertion,
+    obs_indexed: _IndexedDiGraph,
+    cur_indexed: _IndexedDiGraph,
+    resolver: dict[str, str],
+    view_id: str,
+) -> LintDiagnostic | None:
+    """require_reachability: observed path MUST exist AND curation must preserve it."""
+    if assertion.from_node not in obs_indexed.id_to_idx:
+        return None  # Unknown endpoint: reported by Gate 1 grounding, never a fake path error.
+    if assertion.to_node not in obs_indexed.id_to_idx:
+        return None
+
+    witness_path = _shortest_path_ids(obs_indexed, assertion.from_node, assertion.to_node)
+    if witness_path is not None:
+        return _severed_diagnostic(assertion, witness_path, cur_indexed, resolver, view_id)
+
+    rel_note = (
+        f" restricted to relations {list(assertion.via_relations)}"
+        if assertion.via_relations
+        else " over any relation"
+    )
+    return LintDiagnostic(
+        gate=GateId.GATE_3_TOPOLOGY_POSET,
+        severity=DiagnosticSeverity.ERROR,
+        code="REACHABILITY_NOT_OBSERVED",
+        view_id=view_id,
+        offending_symbols=(assertion.from_node, assertion.to_node),
+        message=(
+            f"Required reachability from '{assertion.from_node}' to '{assertion.to_node}'"
+            f"{rel_note} has no directed path in the observed input for view '{view_id}'."
+        ),
+        repair_hint=(
+            "Fix the endpoints or relation filter in require_reachability, or move the "
+            "assertion to preserve_reachability if the path is optional."
+        ),
+    )
+
+
 def _check_view_reachability(
     ctx: _StructuralContext,
     curated_ir: StructuralGraphIR,
     view: DiagramViewSpec,
     resolver: dict[str, str],
 ) -> list[LintDiagnostic]:
-    if not view.invariants.preserve_reachability:
+    inv = view.invariants
+    if not inv.preserve_reachability and not inv.require_reachability:
         return []
 
     cur_cache: dict[frozenset[str], _IndexedDiGraph] = {}
     diagnostics: list[LintDiagnostic] = []
-    for assertion in view.invariants.preserve_reachability:
+    checks = (
+        *((a, _check_single_reachability) for a in inv.preserve_reachability),
+        *((a, _check_required_reachability) for a in inv.require_reachability),
+    )
+    for assertion, check in checks:
         allowed = frozenset(assertion.via_relations)
         obs_indexed = _get_filtered_digraph(ctx.observed_ir, allowed, ctx.filtered_cache)
         cur_indexed = _get_filtered_digraph(curated_ir, allowed, cur_cache)
-        diag = _check_single_reachability(
-            assertion=assertion,
-            obs_indexed=obs_indexed,
-            cur_indexed=cur_indexed,
-            resolver=resolver,
-            view_id=view.id,
-        )
+        diag = check(assertion, obs_indexed, cur_indexed, resolver, view.id)
         if diag is not None:
             diagnostics.append(diag)
     return diagnostics

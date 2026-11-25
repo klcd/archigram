@@ -279,3 +279,45 @@ def test_gate3_200_event_trace_poset_benchmark(benchmark: Any) -> None:
     report = benchmark(_GATE.check, _TRACE_OBS, _TRACE_SPEC, _TRACE_CUR)
     assert report.passed
     assert report.error_count == 0
+
+
+def _with_required_reachability(
+    spec: CurationSpecV1,
+    *,
+    via_relations: tuple[str, ...],
+) -> CurationSpecV1:
+    """Copy a spec, promoting its preserve_reachability assertions to require_reachability."""
+    views = tuple(
+        view.model_copy(
+            update={
+                "invariants": view.invariants.model_copy(
+                    update={
+                        "require_reachability": tuple(
+                            a.model_copy(update={"via_relations": via_relations})
+                            for a in view.invariants.preserve_reachability
+                        )
+                    }
+                )
+            }
+        )
+        for view in spec.views
+    )
+    return spec.model_copy(update={"views": views})
+
+
+_SPEC_REQUIRE_OK = _with_required_reachability(_SPEC_CLEAN, via_relations=("calls",))
+_SPEC_REQUIRE_UNOBSERVED = _with_required_reachability(_SPEC_CLEAN, via_relations=("writes_data",))
+
+
+def test_gate3_400_node_require_reachability_benchmark(benchmark: Any) -> None:
+    report = benchmark(_GATE.check, _OBS_CLEAN, _SPEC_REQUIRE_OK, _CUR_CLEAN)
+    assert report.passed
+    assert not [d for d in report.diagnostics if d.code.startswith("REACHABILITY")]
+
+
+def test_gate3_400_node_require_reachability_unobserved_benchmark(benchmark: Any) -> None:
+    report = benchmark(_GATE.check, _OBS_CLEAN, _SPEC_REQUIRE_UNOBSERVED, _CUR_CLEAN)
+    assert not report.passed
+    missing = [d for d in report.diagnostics if d.code == "REACHABILITY_NOT_OBSERVED"]
+    assert len(missing) == 4
+    assert all(d.witness_path == () for d in missing)

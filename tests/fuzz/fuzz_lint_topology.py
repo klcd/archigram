@@ -8,7 +8,7 @@ from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from archigram.domain import ProvenanceGrade, ProvenanceStamp
-from archigram.domain.diagnostics import DiagnosticSeverity, GateId
+from archigram.domain.diagnostics import DiagnosticSeverity, GateId, LintReport
 from archigram.domain.ir import (
     EdgeRelation,
     InteractionTraceIR,
@@ -732,3 +732,269 @@ def test_semref_cohesion_respects_in_partition_parent_containment(
     else:
         assert len(cohesion_diags) == 1
         assert not report.passed
+
+
+# ---------------------------------------------------------------------------
+# require_reachability (opt-in) vs preserve_reachability (vacuous if unobserved)
+# ---------------------------------------------------------------------------
+
+_REL_CHOICES = st.sampled_from([EdgeRelation.CALLS, EdgeRelation.IMPORTS, EdgeRelation.WRITES_DATA])
+
+
+def _chain_ir(node_ids: list[str], rel: EdgeRelation) -> StructuralGraphIR:
+    return StructuralGraphIR(
+        nodes={nid: _obs_node(nid) for nid in node_ids},
+        edges=tuple(
+            _obs_edge(f"e{idx}", node_ids[idx], node_ids[idx + 1], relation=rel)
+            for idx in range(len(node_ids) - 1)
+        ),
+    )
+
+
+def _without_node(ir: StructuralGraphIR, cut_node: str) -> StructuralGraphIR:
+    return StructuralGraphIR(
+        nodes={nid: node for nid, node in ir.nodes.items() if nid != cut_node},
+        edges=tuple(e for e in ir.edges if cut_node not in {e.source, e.target}),
+    )
+
+
+def _inv_spec(
+    *,
+    preserve: tuple[ReachabilityAssertion, ...] = (),
+    require: tuple[ReachabilityAssertion, ...] = (),
+) -> CurationSpecV1:
+    return _structural_spec(
+        invariants=ViewInvariants(preserve_reachability=preserve, require_reachability=require)
+    )
+
+
+def _assert_not_observed(report: LintReport, src: str, dst: str, via: tuple[str, ...]) -> None:
+    assert not report.passed
+    diags = [d for d in report.diagnostics if d.code == "REACHABILITY_NOT_OBSERVED"]
+    assert len(diags) == 1
+    diag = diags[0]
+    assert diag.severity is DiagnosticSeverity.ERROR
+    assert diag.witness_path == ()  # never a fabricated witness
+    assert diag.view_id == "arch-view"
+    assert src in diag.message
+    assert dst in diag.message
+    assert set(diag.offending_symbols) == {src, dst}
+    if via:
+        assert via[0] in diag.message
+    assert not [d for d in report.diagnostics if d.code == "REACHABILITY_SEVERED"]
+
+
+def _assert_severed(report: LintReport, node_ids: list[str], cut_node: str) -> None:
+    assert not report.passed
+    sev = [d for d in report.diagnostics if d.code == "REACHABILITY_SEVERED"]
+    assert len(sev) == 1
+    assert sev[0].witness_path == tuple(node_ids)
+    assert cut_node in sev[0].offending_symbols
+    assert not [d for d in report.diagnostics if d.code == "REACHABILITY_NOT_OBSERVED"]
+
+
+@settings(max_examples=120, deadline=None)
+@given(
+    chain_len=st.integers(min_value=3, max_value=10),
+    rel=_REL_CHOICES,
+    other_rel=_REL_CHOICES,
+    reverse=st.booleans(),
+    filter_mode=st.sampled_from(["none", "match", "mismatch"]),
+    cut=st.booleans(),
+)
+def test_require_reachability_matrix_vs_preserve(
+    chain_len: int,
+    rel: EdgeRelation,
+    other_rel: EdgeRelation,
+    reverse: bool,
+    filter_mode: str,
+    cut: bool,
+) -> None:
+    gate = TopologicalInvariantGate()
+    node_ids = [f"svc/n{idx}" for idx in range(chain_len)]
+    observed = _chain_ir(node_ids, rel)
+    cut_node = node_ids[chain_len // 2]
+    curated = _without_node(observed, cut_node) if cut else observed
+
+    src, dst = (node_ids[-1], node_ids[0]) if reverse else (node_ids[0], node_ids[-1])
+    via: tuple[str, ...] = {
+        "none": (),
+        "match": (rel.value,),
+        "mismatch": (other_rel.value,),
+    }[filter_mode]
+    if filter_mode == "mismatch" and other_rel is rel:
+        via = (rel.value,)
+        filter_mode = "match"
+    assertion = ReachabilityAssertion(from_node=src, to_node=dst, via_relations=via)
+    path_observed = not reverse and filter_mode != "mismatch"
+
+    preserve_report = gate.check(observed, _inv_spec(preserve=(assertion,)), {"arch-view": curated})
+    require_report = gate.check(observed, _inv_spec(require=(assertion,)), {"arch-view": curated})
+
+    # preserve_reachability semantics: vacuous pass when no observed path exists.
+    if path_observed and cut:
+        assert not preserve_report.passed
+    else:
+        assert preserve_report.passed
+
+    if not path_observed:
+        _assert_not_observed(require_report, src, dst, via)
+    elif cut:
+        _assert_severed(require_report, node_ids, cut_node)
+    else:
+        assert require_report.passed
+        assert require_report.error_count == 0
+    # Determinism.
+    assert gate.check(observed, _inv_spec(require=(assertion,)), {"arch-view": curated}) == (
+        require_report
+    )
+
+
+@settings(max_examples=60, deadline=None)
+@given(
+    branch_len=st.integers(min_value=1, max_value=4),
+    cut_a=st.booleans(),
+    cut_b=st.booleans(),
+)
+def test_require_reachability_survives_alternative_routes(
+    branch_len: int,
+    cut_a: bool,
+    cut_b: bool,
+) -> None:
+    gate = TopologicalInvariantGate()
+    branch_a = [f"alt/a{idx}" for idx in range(branch_len)]
+    branch_b = [f"alt/b{idx}" for idx in range(branch_len)]
+    ids = ["alt/src", *branch_a, *branch_b, "alt/dst"]
+    edges = [
+        _obs_edge("sa", "alt/src", branch_a[0]),
+        _obs_edge("sb", "alt/src", branch_b[0]),
+        _obs_edge("ea", branch_a[-1], "alt/dst"),
+        _obs_edge("eb", branch_b[-1], "alt/dst"),
+    ]
+    for idx in range(branch_len - 1):
+        edges.append(_obs_edge(f"a{idx}", branch_a[idx], branch_a[idx + 1]))
+        edges.append(_obs_edge(f"b{idx}", branch_b[idx], branch_b[idx + 1]))
+    observed = StructuralGraphIR(nodes={n: _obs_node(n) for n in ids}, edges=tuple(edges))
+
+    curated = observed
+    if cut_a:
+        curated = _without_node(curated, branch_a[0])
+    if cut_b:
+        curated = _without_node(curated, branch_b[0])
+
+    assertion = ReachabilityAssertion(from_node="alt/src", to_node="alt/dst")
+    report = gate.check(observed, _inv_spec(require=(assertion,)), {"arch-view": curated})
+    if cut_a and cut_b:
+        assert not report.passed
+        sev = [d for d in report.diagnostics if d.code == "REACHABILITY_SEVERED"]
+        assert len(sev) == 1
+        assert sev[0].witness_path[0] == "alt/src"
+        assert sev[0].witness_path[-1] == "alt/dst"
+    else:
+        assert report.passed
+
+
+@settings(max_examples=60, deadline=None)
+@given(
+    a=_IDENT,
+    b=_IDENT,
+    ghost=_IDENT,
+    connected=st.booleans(),
+    unknown_side=st.sampled_from(["from", "to", "none"]),
+)
+def test_require_reachability_unknown_vs_disconnected_endpoints(
+    a: str,
+    b: str,
+    ghost: str,
+    connected: bool,
+    unknown_side: str,
+) -> None:
+    gate = TopologicalInvariantGate()
+    a_id, b_id = f"mod/{a}_a", f"mod/{b}_b"
+    ghost_id = f"ghost/{ghost}"
+    edges = (_obs_edge("e0", a_id, b_id),) if connected else ()
+    observed = StructuralGraphIR(
+        nodes={a_id: _obs_node(a_id), b_id: _obs_node(b_id)},
+        edges=edges,
+    )
+    src = ghost_id if unknown_side == "from" else a_id
+    dst = ghost_id if unknown_side == "to" else b_id
+    assertion = ReachabilityAssertion(from_node=src, to_node=dst)
+    report = gate.check(observed, _inv_spec(require=(assertion,)), {"arch-view": observed})
+
+    codes = {d.code for d in report.diagnostics}
+    if unknown_side != "none":
+        # Gate 3 never fabricates a disconnected-path error for unknown endpoints.
+        assert codes == set()
+    elif connected:
+        assert report.passed
+    else:
+        assert codes == {"REACHABILITY_NOT_OBSERVED"}
+        assert not report.passed
+
+
+@settings(max_examples=60, deadline=None)
+@given(
+    prefix=st.integers(min_value=0, max_value=3),
+    suffix=st.integers(min_value=0, max_value=3),
+    reverse=st.booleans(),
+    use_rule_resolution=st.booleans(),
+)
+def test_require_reachability_grouped_endpoints_need_observed_path(
+    prefix: int,
+    suffix: int,
+    reverse: bool,
+    use_rule_resolution: bool,
+) -> None:
+    gate = TopologicalInvariantGate()
+    total = prefix + 2 + suffix
+    node_ids = [f"grp/n{idx}" for idx in range(total)]
+    observed = _chain_ir(node_ids, EdgeRelation.CALLS)
+    collapsed = (node_ids[prefix], node_ids[prefix + 1])
+    super_id = "grp/Core"
+
+    cur_nodes = {nid: _obs_node(nid) for nid in node_ids if nid not in collapsed}
+    cur_nodes[super_id] = _derived_supernode(super_id, "collapse-core", collapsed)
+    cur_edges: list[IREdge] = []
+    for edge in observed.edges:
+        s = super_id if edge.source in collapsed else edge.source
+        t = super_id if edge.target in collapsed else edge.target
+        if s != t:
+            cur_edges.append(_obs_edge(edge.edge_id, s, t))
+    curated = StructuralGraphIR(nodes=cur_nodes, edges=tuple(cur_edges))
+    rules: tuple[CollapsePartitionRule, ...] = (
+        (
+            CollapsePartitionRule(
+                id="collapse-core",
+                target_node_id=super_id,
+                label="Core",
+                member_globs=collapsed,
+            ),
+        )
+        if use_rule_resolution
+        else ()
+    )
+
+    src, dst = collapsed if not reverse else (collapsed[1], collapsed[0])
+    assertion = ReachabilityAssertion(from_node=src, to_node=dst)
+    spec = _structural_spec(
+        rules=rules,
+        invariants=ViewInvariants(require_reachability=(assertion,)),
+    )
+    report = gate.check(observed, spec, {"arch-view": curated})
+    if reverse:
+        # Same curated node, but the observed directed path does not exist.
+        assert [d.code for d in report.diagnostics if d.code.startswith("REACHABILITY")] == [
+            "REACHABILITY_NOT_OBSERVED"
+        ]
+        assert not report.passed
+    else:
+        assert not [d for d in report.diagnostics if d.code.startswith("REACHABILITY")]
+
+    # Cross-group endpoints still pass through the supernode projection.
+    wide = ReachabilityAssertion(from_node=node_ids[0], to_node=node_ids[-1])
+    wide_spec = _structural_spec(
+        rules=rules, invariants=ViewInvariants(require_reachability=(wide,))
+    )
+    wide_report = gate.check(observed, wide_spec, {"arch-view": curated})
+    assert not [d for d in wide_report.diagnostics if d.code.startswith("REACHABILITY")]

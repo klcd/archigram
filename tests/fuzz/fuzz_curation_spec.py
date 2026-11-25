@@ -191,23 +191,28 @@ def trace_compaction_strategy(draw: st.DrawFn) -> TraceCompactionConfig:
     )
 
 
+_reachability_tuple_strategy: st.SearchStrategy[tuple[ReachabilityAssertion, ...]] = st.lists(
+    st.builds(
+        ReachabilityAssertion,
+        from_node=_SAFE_ID,
+        to_node=_SAFE_ID,
+        via_relations=st.lists(_SAFE_ID, max_size=2).map(tuple),
+    ),
+    max_size=2,
+).map(tuple)
+
+
 @st.composite
 def view_invariants_strategy(draw: st.DrawFn) -> ViewInvariants:
     """Generate valid ViewInvariants with consistent BudgetRange and reachability assertions."""
     min_c = draw(st.integers(min_value=0, max_value=20))
     max_c = draw(st.integers(min_value=max(1, min_c), max_value=60))
-    reach_count = draw(st.integers(min_value=0, max_value=2))
-    reachability = tuple(
-        ReachabilityAssertion(
-            from_node=draw(_SAFE_ID),
-            to_node=draw(_SAFE_ID),
-            via_relations=tuple(draw(st.lists(_SAFE_ID, max_size=2))),
-        )
-        for _ in range(reach_count)
-    )
+    reachability = draw(_reachability_tuple_strategy)
+    required = draw(_reachability_tuple_strategy)
     return ViewInvariants(
         protected_nodes=tuple(draw(st.lists(_SAFE_ID, max_size=3))),
         preserve_reachability=reachability,
+        require_reachability=required,
         preserve_partial_order=draw(st.booleans()),
         forbid_new_cycles=draw(st.booleans()),
         node_budget=BudgetRange(min_count=min_c, max_count=max_c),
@@ -567,3 +572,42 @@ def test_extended_port_protocols_runtime_checkable(
     assert compactor.compact(empty_trace, spec.views[0].trace_compaction) == empty_trace
     assert linter.check(empty_graph, spec) == report
     assert digester.to_compact_markdown(empty_graph).startswith("# Digest")
+
+
+@settings(max_examples=40, deadline=None)
+@given(spec=valid_curation_spec_strategy())
+def test_v1_yaml_without_require_reachability_parses_with_empty_default(
+    spec: CurationSpecV1,
+) -> None:
+    """Legacy v1 YAML (no require_reachability key) parses identically to an empty tuple."""
+    payload: dict[str, Any] = spec.model_dump(mode="json")
+    legacy_views = []
+    for view in payload["views"]:
+        view["invariants"].pop("require_reachability")
+        legacy_views.append(view)
+    legacy_spec = CurationSpecV1.model_validate({**payload, "views": legacy_views})
+    legacy_yaml = yaml.safe_dump({**payload, "views": legacy_views}, sort_keys=False)
+    assert parse_curation_spec_yaml(legacy_yaml) == legacy_spec
+    for view in legacy_spec.views:
+        assert view.invariants.require_reachability == ()
+    # preserve_reachability semantics are untouched by the new field.
+    for legacy_view, orig_view in zip(legacy_spec.views, spec.views, strict=True):
+        assert legacy_view.invariants.preserve_reachability == (
+            orig_view.invariants.preserve_reachability
+        )
+
+
+@settings(max_examples=40, deadline=None)
+@given(
+    required=_reachability_tuple_strategy,
+    preserved=_reachability_tuple_strategy,
+)
+def test_require_and_preserve_reachability_are_independent_fields(
+    required: tuple[ReachabilityAssertion, ...],
+    preserved: tuple[ReachabilityAssertion, ...],
+) -> None:
+    inv = ViewInvariants(preserve_reachability=preserved, require_reachability=required)
+    assert inv.preserve_reachability == preserved
+    assert inv.require_reachability == required
+    restored = ViewInvariants.model_validate_json(inv.model_dump_json())
+    assert restored == inv
