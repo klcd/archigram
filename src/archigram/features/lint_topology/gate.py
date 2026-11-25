@@ -568,13 +568,15 @@ def _check_bypass_rule(
     observed_ir: StructuralGraphIR,
     rule: BypassVerticesRule,
     view_id: str | None,
+    *,
+    already_flagged: frozenset[str] = frozenset(),
 ) -> list[LintDiagnostic]:
     allowed = frozenset(rule.preserve_edge_relations)
     in_counts, out_counts = _edge_degree_counts(observed_ir, allowed)
     diagnostics: list[LintDiagnostic] = []
 
     for symbol_id in sorted(observed_ir.nodes):
-        if not _matches_globs(symbol_id, rule.node_id_globs):
+        if symbol_id in already_flagged or not _matches_globs(symbol_id, rule.node_id_globs):
             continue
         in_deg = in_counts.get(symbol_id, 0)
         out_deg = out_counts.get(symbol_id, 0)
@@ -675,6 +677,23 @@ def _check_structural_rules(
             diag = _check_collapse_rule(ctx, rule, view_id, strict_cohesion=strict_cohesion)
             if diag is not None:
                 diagnostics.append(diag)
+    return diagnostics
+
+
+def _check_post_collapse_bypass(
+    ctx: _StructuralContext,
+    curated_ir: StructuralGraphIR,
+    rules: Sequence[GlobalAbstractionRule],
+    view_id: str,
+) -> list[LintDiagnostic]:
+    """Enforce max_fanout_product on bypass nodes whose degrees grew after collapse."""
+    diagnostics: list[LintDiagnostic] = []
+    for rule in rules:
+        if not isinstance(rule, BypassVerticesRule):
+            continue
+        observed_hits = _check_bypass_rule(ctx.observed_ir, rule, view_id)
+        flagged = frozenset(s for d in observed_hits for s in d.offending_symbols)
+        diagnostics.extend(_check_bypass_rule(curated_ir, rule, view_id, already_flagged=flagged))
     return diagnostics
 
 
@@ -1271,6 +1290,7 @@ class TopologicalInvariantGate:
                 continue
             combined_rules = (*spec.global_abstractions, *view.rules)
             resolver = _build_curated_resolver(observed_ir, curated, combined_rules)
+            diagnostics.extend(_check_post_collapse_bypass(ctx, curated, combined_rules, view.id))
             diagnostics.extend(
                 _check_view_reachability(ctx, curated, view, resolver, combined_rules)
             )

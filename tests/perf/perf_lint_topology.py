@@ -363,3 +363,47 @@ def test_gate3_resolver_bypass_attribution_benchmark(benchmark: Any) -> None:
     resolver = benchmark(_build_curated_resolver, _RES_OBS, _RES_CUR, _RES_RULES)
     assert "res/n_0001" not in resolver
     assert resolver["res/n_1500"] == "res/sup"
+
+
+def _hub_fixture() -> tuple[StructuralGraphIR, StructuralGraphIR]:
+    hub = "shared/hub"
+    sides = 20
+    nodes = {hub: IRNode(symbol_id=hub, label=hub, kind=NodeKind.SERVICE, provenance=_OBS_PROV)}
+    edges: list[IREdge] = []
+    for idx in range(sides):
+        for name, src, dst in (
+            (f"in_{idx}", f"up/u{idx}", hub),
+            (f"out_{idx}", hub, f"down/d{idx}"),
+        ):
+            other = src if dst == hub else dst
+            nodes[other] = IRNode(
+                symbol_id=other, label=other, kind=NodeKind.SERVICE, provenance=_OBS_PROV
+            )
+            edges.append(
+                IREdge(
+                    edge_id=name,
+                    source=src,
+                    target=dst,
+                    relation=EdgeRelation.CALLS,
+                    sync_kind=SyncKind.SYNC,
+                    provenance=_OBS_PROV,
+                )
+            )
+    graph = StructuralGraphIR(nodes=nodes, edges=tuple(edges))
+    return graph, graph
+
+
+def test_gate3_post_collapse_bypass_fanout_benchmark(benchmark: Any) -> None:
+    observed, curated = _hub_fixture()
+    rule = BypassVerticesRule(id="bypass-hub", node_id_globs=("shared/*",), max_fanout_product=1)
+    view = DiagramViewSpec(
+        id="v",
+        title="V",
+        ir_mode=IRMode.STRUCTURAL_GRAPH,
+        target_renderer=TargetRenderer.MERMAID,
+        rules=(rule,),
+        invariants=ViewInvariants(),
+    )
+    spec = CurationSpecV1(global_abstractions=(), views=(view,))
+    report = benchmark(_GATE.check, observed, spec, {"v": curated})
+    assert any(d.code == "BICLIQUE_FANOUT_EXCEEDED" for d in report.diagnostics)

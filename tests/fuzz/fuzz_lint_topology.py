@@ -426,6 +426,50 @@ def test_bypass_hub_biclique_fanout_guard_exact_threshold(
         assert fanout_diags == []
 
 
+def _hub_graph(hub: str, in_deg: int, out_deg: int) -> StructuralGraphIR:
+    nodes: dict[str, IRNode] = {hub: _obs_node(hub)}
+    edges: list[IREdge] = []
+    for idx in range(in_deg):
+        nodes[f"up/u{idx}"] = _obs_node(f"up/u{idx}")
+        edges.append(_obs_edge(f"in_{idx}", f"up/u{idx}", hub))
+    for idx in range(out_deg):
+        nodes[f"down/d{idx}"] = _obs_node(f"down/d{idx}")
+        edges.append(_obs_edge(f"out_{idx}", hub, f"down/d{idx}"))
+    return StructuralGraphIR(nodes=nodes, edges=tuple(edges))
+
+
+@settings(max_examples=50, deadline=None)
+@given(
+    obs_in=st.integers(min_value=1, max_value=4),
+    obs_out=st.integers(min_value=1, max_value=4),
+    extra_in=st.integers(min_value=0, max_value=8),
+    extra_out=st.integers(min_value=0, max_value=8),
+    slack=st.integers(min_value=0, max_value=6),
+)
+def test_post_collapse_bypass_fanout_is_enforced_on_curated_nodes(
+    obs_in: int,
+    obs_out: int,
+    extra_in: int,
+    extra_out: int,
+    slack: int,
+) -> None:
+    hub = "shared/hub"
+    budget = obs_in * obs_out + slack
+    observed = _hub_graph(hub, obs_in, obs_out)
+    curated = _hub_graph(hub, obs_in + extra_in, obs_out + extra_out)
+    rule = BypassVerticesRule(
+        id="bypass-hub", node_id_globs=("shared/*",), max_fanout_product=budget
+    )
+    spec = _structural_spec(rules=(rule,))
+
+    report = TopologicalInvariantGate().check(observed, spec, {"arch-view": curated})
+    codes = [d.code for d in report.diagnostics if d.code == "BICLIQUE_FANOUT_EXCEEDED"]
+    product = (obs_in + extra_in) * (obs_out + extra_out)
+    assert len(codes) == (1 if product > budget else 0)
+    if product > budget:
+        assert not report.passed
+
+
 @settings(max_examples=50, deadline=None)
 @given(
     comp_a_size=st.integers(min_value=1, max_value=4),
