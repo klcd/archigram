@@ -6,6 +6,8 @@
 [![Architecture: Hexagonal + 16 Independent Slices](https://img.shields.io/badge/architecture-hexagonal%20%2B%20feature--sliced-10b981)](docs/architecture/README.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-64748b)](LICENSE)
 
+> **Pre-alpha:** ArchiGram is early-stage software. The CLI, MCP tools, spec format and output formats may change without notice.
+
 Deterministic graph projection, runtime concurrency trace compaction (`R1–R6` + Series-Parallel poset lowering), and 5-gate semantic/topological linting CLI + MCP server.
 
 | Stage 2: Triage Overlay on Raw `334`-Node AST (`50,186` Mermaid Chars) | Stage 3: 5-Gate-Verified Curated Result (`17` Nodes, `1,887` Chars) |
