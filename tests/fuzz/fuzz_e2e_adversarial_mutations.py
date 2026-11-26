@@ -997,7 +997,10 @@ def test_fuzz_guarantee_4_100_percent_adversarial_mutation_detection_and_cli_gat
         assert apply_res.exit_code == EXIT_LINT_OR_DRIFT
 
         diff_summary = compute_pr_regression_diff(fixture.graph, mut_graph, mut_spec)
-        assert not diff_summary.passed
+        # Regression means newly introduced on head; diagnostics that the (shared) mutated spec
+        # already produces on base are pre-existing and must not fail the diff.
+        assert not diff_summary.head_passed
+        assert diff_summary.passed is (not diff_summary.new_errors)
 
 
 class _EnterpriseSelfHealingProposer:

@@ -27,6 +27,9 @@ from archigram.domain.spec import (
     ViewInvariants,
 )
 from archigram.features.lint_topology import TopologicalInvariantGate
+from archigram.features.lint_topology.gate import (
+    _build_curated_resolver,  # pyright: ignore[reportPrivateUsage]
+)
 
 _OBS_PROV = ProvenanceStamp(
     grade=ProvenanceGrade.OBSERVED,
@@ -279,3 +282,180 @@ def test_gate3_200_event_trace_poset_benchmark(benchmark: Any) -> None:
     report = benchmark(_GATE.check, _TRACE_OBS, _TRACE_SPEC, _TRACE_CUR)
     assert report.passed
     assert report.error_count == 0
+
+
+def _with_required_reachability(
+    spec: CurationSpecV1,
+    *,
+    via_relations: tuple[str, ...],
+) -> CurationSpecV1:
+    """Copy a spec, promoting its preserve_reachability assertions to require_reachability."""
+    views = tuple(
+        view.model_copy(
+            update={
+                "invariants": view.invariants.model_copy(
+                    update={
+                        "require_reachability": tuple(
+                            a.model_copy(update={"via_relations": via_relations})
+                            for a in view.invariants.preserve_reachability
+                        )
+                    }
+                )
+            }
+        )
+        for view in spec.views
+    )
+    return spec.model_copy(update={"views": views})
+
+
+_SPEC_REQUIRE_OK = _with_required_reachability(_SPEC_CLEAN, via_relations=("calls",))
+_SPEC_REQUIRE_UNOBSERVED = _with_required_reachability(_SPEC_CLEAN, via_relations=("writes_data",))
+
+
+def test_gate3_400_node_require_reachability_benchmark(benchmark: Any) -> None:
+    report = benchmark(_GATE.check, _OBS_CLEAN, _SPEC_REQUIRE_OK, _CUR_CLEAN)
+    assert report.passed
+    assert not [d for d in report.diagnostics if d.code.startswith("REACHABILITY")]
+
+
+def test_gate3_400_node_require_reachability_unobserved_benchmark(benchmark: Any) -> None:
+    report = benchmark(_GATE.check, _OBS_CLEAN, _SPEC_REQUIRE_UNOBSERVED, _CUR_CLEAN)
+    assert not report.passed
+    missing = [d for d in report.diagnostics if d.code == "REACHABILITY_NOT_OBSERVED"]
+    assert len(missing) == 4
+    assert all(d.witness_path == () for d in missing)
+
+
+def _build_resolver_fixture() -> tuple[
+    StructuralGraphIR, StructuralGraphIR, tuple[BypassVerticesRule | CollapsePartitionRule, ...]
+]:
+    ids = [f"res/n_{idx:04d}" for idx in range(2000)]
+    observed = StructuralGraphIR(
+        nodes={
+            sid: IRNode(symbol_id=sid, label=sid, kind=NodeKind.MODULE, provenance=_OBS_PROV)
+            for sid in ids
+        },
+        edges=(),
+    )
+    sup = IRNode(
+        symbol_id="res/sup",
+        label="sup",
+        kind=NodeKind.SUPERNODE,
+        provenance=ProvenanceStamp(
+            grade=ProvenanceGrade.DERIVED_DETERMINISTIC,
+            rule_id="collapse-all",
+            backing_ids=("res/n_1999",),
+        ),
+    )
+    rules = (
+        BypassVerticesRule(id="bypass-half", node_id_globs=("res/n_0*",)),
+        CollapsePartitionRule(
+            id="collapse-all", label="all", target_node_id="res/sup", member_globs=("res/n_*",)
+        ),
+    )
+    return observed, StructuralGraphIR(nodes={"res/sup": sup}, edges=()), rules
+
+
+_RES_OBS, _RES_CUR, _RES_RULES = _build_resolver_fixture()
+
+
+def test_gate3_resolver_bypass_attribution_benchmark(benchmark: Any) -> None:
+    resolver = benchmark(_build_curated_resolver, _RES_OBS, _RES_CUR, _RES_RULES)
+    assert "res/n_0001" not in resolver
+    assert resolver["res/n_1500"] == "res/sup"
+
+
+def _hub_fixture() -> tuple[StructuralGraphIR, StructuralGraphIR]:
+    hub = "shared/hub"
+    sides = 20
+    nodes = {hub: IRNode(symbol_id=hub, label=hub, kind=NodeKind.SERVICE, provenance=_OBS_PROV)}
+    edges: list[IREdge] = []
+    for idx in range(sides):
+        for name, src, dst in (
+            (f"in_{idx}", f"up/u{idx}", hub),
+            (f"out_{idx}", hub, f"down/d{idx}"),
+        ):
+            other = src if dst == hub else dst
+            nodes[other] = IRNode(
+                symbol_id=other, label=other, kind=NodeKind.SERVICE, provenance=_OBS_PROV
+            )
+            edges.append(
+                IREdge(
+                    edge_id=name,
+                    source=src,
+                    target=dst,
+                    relation=EdgeRelation.CALLS,
+                    sync_kind=SyncKind.SYNC,
+                    provenance=_OBS_PROV,
+                )
+            )
+    graph = StructuralGraphIR(nodes=nodes, edges=tuple(edges))
+    return graph, graph
+
+
+def test_gate3_post_collapse_bypass_fanout_benchmark(benchmark: Any) -> None:
+    observed, curated = _hub_fixture()
+    rule = BypassVerticesRule(id="bypass-hub", node_id_globs=("shared/*",), max_fanout_product=1)
+    view = DiagramViewSpec(
+        id="v",
+        title="V",
+        ir_mode=IRMode.STRUCTURAL_GRAPH,
+        target_renderer=TargetRenderer.MERMAID,
+        rules=(rule,),
+        invariants=ViewInvariants(),
+    )
+    spec = CurationSpecV1(global_abstractions=(), views=(view,))
+    report = benchmark(_GATE.check, observed, spec, {"v": curated})
+    assert any(d.code == "BICLIQUE_FANOUT_EXCEEDED" for d in report.diagnostics)
+
+
+def _build_severed_attribution_fixture() -> tuple[
+    StructuralGraphIR, CurationSpecV1, StructuralGraphIR
+]:
+    ids = [f"svc/n{idx}" for idx in range(300)]
+    nodes = {
+        nid: IRNode(symbol_id=nid, label=nid, kind=NodeKind.MODULE, provenance=_OBS_PROV)
+        for nid in ids
+    }
+    edges = tuple(
+        IREdge(
+            edge_id=f"e{idx}",
+            source=ids[idx],
+            target=ids[idx + 1],
+            relation=EdgeRelation.CALLS,
+            sync_kind=SyncKind.SYNC,
+            provenance=_OBS_PROV,
+        )
+        for idx in range(len(ids) - 1)
+    )
+    cut = ids[150]
+    curated = StructuralGraphIR(
+        nodes={k: v for k, v in nodes.items() if k != cut},
+        edges=tuple(e for e in edges if cut not in {e.source, e.target}),
+    )
+    view = DiagramViewSpec(
+        id="arch-view",
+        title="Architecture View",
+        ir_mode=IRMode.STRUCTURAL_GRAPH,
+        target_renderer=TargetRenderer.MERMAID,
+        rules=(
+            CollapsePartitionRule(
+                id="fold-rule", target_node_id="fold/all", label="Fold", member_globs=("fold/*",)
+            ),
+            BypassVerticesRule(id="bypass-cut", node_id_globs=(cut,)),
+        ),
+        invariants=ViewInvariants(
+            preserve_reachability=(ReachabilityAssertion(from_node=ids[0], to_node=ids[-1]),)
+        ),
+    )
+    return StructuralGraphIR(nodes=nodes, edges=edges), CurationSpecV1(views=(view,)), curated
+
+
+_OBS_SEV, _SPEC_SEV, _CUR_SEV = _build_severed_attribution_fixture()
+
+
+def test_gate3_severed_reachability_attribution_benchmark(benchmark: Any) -> None:
+    report = benchmark(_GATE.check, _OBS_SEV, _SPEC_SEV, {"arch-view": _CUR_SEV})
+    (diag,) = [d for d in report.diagnostics if d.code == "REACHABILITY_SEVERED"]
+    assert "bypass-cut" in diag.message
+    assert "fold-rule" not in diag.message

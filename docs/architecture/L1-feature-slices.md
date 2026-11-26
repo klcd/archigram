@@ -60,92 +60,114 @@ flowchart TD
   classDef default fill:transparent,stroke:#64748b,stroke-width:1.5px
   subgraph n0["archigram"]
     subgraph n1["entrypoints"]
-      n9["entrypoints.cli"]
-      n10["entrypoints.mcp"]
+      n8["entrypoints.cli"]
+      n9["entrypoints.mcp"]
     end
     subgraph n2["features"]
       n3["digest"]
       n5["emit_d2"]
-      n6["emit_likec4"]
+      n6["emit_likec4 + emit_plantuml"]
       n7["emit_mermaid"]
-      n8["emit_plantuml"]
-      n11["ingest_class"]
-      n12["ingest_dot"]
-      n13["ingest_otel"]
-      n14["ingest_python"]
-      n15["ingest_scip"]
-      n16["lint_budget"]
-      n17["lint_grounding"]
-      n18["lint_syntax"]
-      n19["lint_topology"]
-      n21["reduce_structural"]
-      n22["reduce_trace"]
+      n10["ingest_class"]
+      n11["ingest_dot"]
+      n12["ingest_otel"]
+      n13["ingest_python"]
+      n14["ingest_scip"]
+      n15["lint_budget"]
+      n16["lint_grounding"]
+      n17["lint_syntax"]
+      n18["lint_topology"]
+      n20["reduce_structural"]
+      n21["reduce_trace"]
     end
     n4["domain"]
-    n20["ports"]
+    n19["ports"]
   end
   style n0 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   style n1 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   style n2 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
-  n10 -.->|"imports"| n3
-  n19 -.->|"imports"| n4
+  n8 -.->|"imports"| n0
+  n9 -->|"calls"| n3
+  n9 -.->|"imports"| n3
+  n12 -.->|"imports"| n4
+  n18 -.->|"imports"| n4
   n7 -.->|"imports"| n4
+  n11 -->|"calls"| n4
+  n21 -->|"composes"| n4
+  n12 -->|"calls"| n4
   n3 -.->|"imports"| n4
-  n17 -->|"calls"| n4
-  n5 -.->|"imports"| n4
-  n3 -->|"composes"| n4
+  n6 -->|"composes"| n4
+  n13 -->|"composes"| n4
+  n14 -->|"calls"| n4
   n16 -->|"calls"| n4
-  n22 -->|"calls"| n4
-  n19 -->|"composes"| n4
-  n19 -->|"calls"| n4
-  n22 -.->|"imports"| n4
-  n17 -.->|"imports"| n4
-  n8 -->|"composes"| n4
-  n5 -->|"composes"| n4
-  n20 -.->|"imports"| n4
+  n6 -.->|"imports"| n4
+  n5 -.->|"imports"| n4
+  n13 -.->|"imports"| n4
+  n3 -->|"composes"| n4
+  n15 -->|"calls"| n4
+  n21 -->|"calls"| n4
+  n10 -->|"composes"| n4
+  n18 -->|"composes"| n4
+  n18 -->|"calls"| n4
+  n14 -.->|"imports"| n4
   n21 -.->|"imports"| n4
   n16 -.->|"imports"| n4
-  n8 -.->|"imports"| n4
+  n5 -->|"composes"| n4
+  n13 -->|"calls"| n4
+  n10 -->|"calls"| n4
+  n10 -.->|"imports"| n4
+  n11 -->|"composes"| n4
+  n20 -.->|"imports"| n4
+  n15 -.->|"imports"| n4
   n7 -->|"composes"| n4
-  n6 -.->|"imports"| n4
-  n21 -->|"calls"| n4
-  n10 -.->|"imports"| n5
-  n10 -.->|"imports"| n6
-  n10 -.->|"imports"| n7
-  n10 -.->|"imports"| n8
-  n9 -.->|"imports"| n11
-  n9 -.->|"imports"| n12
-  n9 -.->|"imports"| n13
-  n9 -->|"calls"| n14
-  n9 -.->|"imports"| n14
+  n14 -->|"composes"| n4
+  n11 -.->|"imports"| n4
+  n12 -->|"composes"| n4
+  n20 -->|"calls"| n4
+  n9 -.->|"imports"| n5
+  n9 -->|"calls"| n5
+  n9 -.->|"imports"| n6
+  n9 -->|"calls"| n6
+  n9 -->|"calls"| n7
+  n9 -.->|"imports"| n7
+  n8 -.->|"imports"| n10
+  n8 -.->|"imports"| n11
+  n8 -.->|"imports"| n12
+  n8 -->|"calls"| n13
+  n8 -.->|"imports"| n13
+  n8 -.->|"imports"| n14
+  n9 -->|"calls"| n15
   n9 -.->|"imports"| n15
-  n10 -.->|"imports"| n16
-  n10 -->|"calls"| n17
-  n10 -.->|"imports"| n17
-  n10 -.->|"imports"| n18
+  n9 -->|"calls"| n16
+  n9 -.->|"imports"| n16
+  n9 -.->|"imports"| n17
+  n9 -->|"calls"| n17
+  n9 -->|"calls"| n18
+  n9 -.->|"imports"| n18
+  n8 -.->|"imports"| n9
+  n8 -->|"calls"| n9
+  n17 -.->|"imports"| n19
+  n13 -.->|"implements"| n19
+  n13 -.->|"imports"| n19
+  n12 -.->|"imports"| n19
+  n12 -.->|"implements"| n19
+  n17 -.->|"implements"| n19
+  n14 -.->|"implements"| n19
+  n14 -.->|"imports"| n19
+  n11 -.->|"imports"| n19
   n10 -.->|"imports"| n19
-  n9 -.->|"imports"| n10
-  n9 -->|"calls"| n10
-  n18 -.->|"imports"| n20
-  n14 -.->|"implements"| n20
-  n14 -.->|"imports"| n20
-  n13 -.->|"imports"| n20
-  n13 -.->|"implements"| n20
-  n18 -.->|"implements"| n20
-  n15 -.->|"implements"| n20
-  n15 -.->|"imports"| n20
-  n12 -.->|"imports"| n20
-  n11 -.->|"imports"| n20
-  n11 -.->|"implements"| n20
-  n18 -->|"calls"| n20
-  n12 -.->|"implements"| n20
-  n18 -->|"composes"| n20
-  n10 -.->|"imports"| n21
-  n10 -.->|"imports"| n22
-  linkStyle 0,1,2,3,5,11,12,15,16,17,18,20,22,23,24,25,26,27,28,30,31,32,34,35,36,37,39,41,42,46,47,48,53,54 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 4,7,8,10,21,29,33,38,50 stroke:#3b82f6,stroke-width:1.75px
-  linkStyle 6,9,13,14,19,52 stroke:#14b8a6,stroke-width:1.75px
-  linkStyle 40,43,44,45,49,51 stroke:#a855f7,stroke-width:1.75px,stroke-dasharray:5 5
+  n10 -.->|"implements"| n19
+  n17 -->|"calls"| n19
+  n11 -.->|"implements"| n19
+  n17 -->|"composes"| n19
+  n9 -->|"calls"| n20
+  n9 -.->|"imports"| n20
+  n9 -.->|"imports"| n21
+  n9 -->|"calls"| n21
+  linkStyle 0,2,3,4,5,9,14,15,16,23,24,25,29,31,32,35,38,40,43,44,45,46,48,49,51,53,54,57,58,60,62,63,67,68,69,75,76 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 1,6,8,12,13,18,19,22,27,28,37,39,41,42,47,50,52,55,56,59,71,74,77 stroke:#3b82f6,stroke-width:1.75px
+  linkStyle 7,10,11,17,20,21,26,30,33,34,36,73 stroke:#14b8a6,stroke-width:1.75px
+  linkStyle 61,64,65,66,70,72 stroke:#a855f7,stroke-width:1.75px,stroke-dasharray:5 5
 ```
 <!-- archigram:end l1_feature_slices_mermaid -->
 

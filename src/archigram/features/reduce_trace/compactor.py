@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 from collections import defaultdict
+from dataclasses import dataclass
 from enum import StrEnum
 from typing import TYPE_CHECKING
 
@@ -168,6 +169,95 @@ def _remap_event_references(
     return updated
 
 
+def _build_quotient_edges(
+    events: dict[str, TraceEvent],
+    rep_of: dict[str, str],
+) -> tuple[dict[str, set[str]], dict[str, int]]:
+    """Return successor sets and indegrees of the causal graph contracted by ``rep_of``."""
+    succ: dict[str, set[str]] = {rid: set() for rid in set(rep_of.values())}
+    indegree: dict[str, int] = dict.fromkeys(succ, 0)
+    for eid, ev in events.items():
+        dst = rep_of[eid]
+        preds = (
+            ev.causal_links
+            if ev.parent_event_id is None
+            else (ev.parent_event_id, *ev.causal_links)
+        )
+        for pred in preds:
+            src = rep_of.get(pred)
+            if src is None or src == dst or dst in succ[src]:
+                continue
+            succ[src].add(dst)
+            indegree[dst] += 1
+    return succ, indegree
+
+
+def _quotient_is_acyclic(events: dict[str, TraceEvent], mapping: dict[str, str]) -> bool:
+    """Kahn check: is the causal graph contracted by ``mapping`` (id -> rep) still a DAG?"""
+    rep_of = {eid: _resolve_rep_id(eid, mapping) for eid in events}
+    succ, indegree = _build_quotient_edges(events, rep_of)
+    ready = [node for node, deg in indegree.items() if deg == 0]
+    visited = 0
+    while ready:
+        curr = ready.pop()
+        visited += 1
+        for nxt in succ[curr]:
+            indegree[nxt] -= 1
+            if indegree[nxt] == 0:
+                ready.append(nxt)
+    return visited == len(indegree)
+
+
+class _ContractionGuard:
+    """Veto contractions whose quotient would contain a causal cycle (non-convex groups).
+
+    Contracting a group ``S`` creates a cycle iff some external ``x`` satisfies
+    ``s1 < x < s2`` (``S`` is non-convex); two individually convex groups can also close a
+    cycle together. Committing only candidates whose quotient (over every contraction already
+    recorded in ``folded_to_rep``) stays acyclic keeps the compacted trace a DAG by induction.
+
+    Fast path: ``parent_event_id`` edges form a forest and every candidate group is a union of
+    whole subtrees (or depth-aligned loop levels), so a cycle needs at least one
+    ``causal_links`` edge. Candidates whose scope touches no link endpoint skip the traversal.
+    """
+
+    __slots__ = ("_events", "_touched", "folded_to_rep")
+
+    def __init__(self, events: dict[str, TraceEvent]) -> None:
+        self._events = events
+        self.folded_to_rep: dict[str, str] = {}
+        touched: set[str] = set()
+        for eid, ev in events.items():
+            if ev.causal_links:
+                touched.add(eid)
+                touched.update(ev.causal_links)
+        self._touched = touched
+
+    @property
+    def has_links(self) -> bool:
+        """Return True if any event in the pass participates in ``causal_links``."""
+        return bool(self._touched)
+
+    def touches(self, event_id: str) -> bool:
+        """Return True if ``event_id`` is a known link endpoint or part of a guarded fold."""
+        return event_id in self._touched
+
+    def allows(self, candidate: dict[str, str], scope: Iterable[str]) -> bool:
+        """Return True if contracting ``candidate`` (id -> rep) keeps the graph acyclic.
+
+        ``scope`` is every event id of the subtrees the candidate touches.
+        """
+        if not candidate or self._touched.isdisjoint(scope):
+            return True
+        return _quotient_is_acyclic(self._events, {**self.folded_to_rep, **candidate})
+
+    def commit(self, scope: Iterable[str]) -> None:
+        """Record that a candidate over ``scope`` was applied (keeps the fast path sound)."""
+        scope_ids = tuple(scope)
+        if not self._touched.isdisjoint(scope_ids):
+            self._touched.update(scope_ids)
+
+
 def _is_recursive_call(
     ev: TraceEvent,
     ancestor_frames: Sequence[tuple[str, str, str]],
@@ -232,13 +322,11 @@ def _record_folded_subtree(
 
 def _collapse_recursion_or_depth(
     ev: TraceEvent,
-    events: dict[str, TraceEvent],
-    children_map: dict[str | None, list[TraceEvent]],
+    sub: Sequence[TraceEvent],
     folded_to_rep: dict[str, str],
     *,
     is_rec: bool,
 ) -> TraceEvent:
-    sub = _collect_subtree_events(ev.event_id, events, children_map)
     _record_folded_subtree(ev.event_id, sub, folded_to_rep)
     if is_rec:
         sig = (
@@ -264,17 +352,39 @@ def _collapse_recursion_or_depth(
     )
 
 
+def _try_collapse_recursion_or_depth(
+    ev: TraceEvent,
+    events: dict[str, TraceEvent],
+    children_map: dict[str | None, list[TraceEvent]],
+    guard: _ContractionGuard,
+    *,
+    is_rec: bool,
+) -> TraceEvent | None:
+    """Collapse the subtree of ``ev`` into ``ev`` unless that contraction is non-convex."""
+    sub = _collect_subtree_events(ev.event_id, events, children_map)
+    scope = [member.event_id for member in sub]
+    candidate = {sid: ev.event_id for sid in scope if sid != ev.event_id}
+    if not guard.allows(candidate, scope):
+        return None
+    guard.commit(scope)
+    return _collapse_recursion_or_depth(ev, sub, guard.folded_to_rep, is_rec=is_rec)
+
+
 def _apply_recursion_and_depth_pass(
     events: dict[str, TraceEvent],
     config: TraceCompactionConfig,
 ) -> dict[str, TraceEvent]:
-    """Pass 1: R4 recursion cut and max_call_depth subtree summarization."""
+    """Pass 1: R4 recursion cut and max_call_depth subtree summarization.
+
+    A cut whose subtree is non-convex in the causal graph (a ``causal_links`` path leaves the
+    subtree and re-enters it) is skipped: its descendants are visited individually instead.
+    """
     if not events or (not config.cut_recursion and config.max_call_depth is None):
         return events
 
     children_map = _build_children_map(events)
     surviving: dict[str, TraceEvent] = {}
-    folded_to_rep: dict[str, str] = {}
+    guard = _ContractionGuard(events)
 
     def _visit(
         ev: TraceEvent,
@@ -286,10 +396,12 @@ def _apply_recursion_and_depth_pass(
         child_list = children_map.get(ev.event_id, [])
 
         if is_rec or (exceeds_depth and child_list):
-            surviving[ev.event_id] = _collapse_recursion_or_depth(
-                ev, events, children_map, folded_to_rep, is_rec=is_rec
+            collapsed = _try_collapse_recursion_or_depth(
+                ev, events, children_map, guard, is_rec=is_rec
             )
-            return
+            if collapsed is not None:
+                surviving[ev.event_id] = collapsed
+                return
 
         surviving[ev.event_id] = ev
         next_frames = (*frames, (ev.caller_id, ev.callee_id, ev.signature))
@@ -299,7 +411,7 @@ def _apply_recursion_and_depth_pass(
     for root in children_map.get(None, []):
         _visit(root, 1, ())
 
-    return _remap_event_references(surviving, folded_to_rep)
+    return _remap_event_references(surviving, guard.folded_to_rep)
 
 
 def _to_span_intervals(events: Iterable[TraceEvent]) -> list[SpanInterval]:
@@ -339,7 +451,7 @@ def _fold_homogeneous_bucket(
     members: list[TraceEvent],
     events: dict[str, TraceEvent],
     children_map: dict[str | None, list[TraceEvent]],
-    folded_to_rep: dict[str, str],
+    guard: _ContractionGuard,
 ) -> None:
     rep = members[0]
     all_sub: list[TraceEvent] = []
@@ -371,10 +483,43 @@ def _fold_homogeneous_bucket(
             "end_ns": max(ev.end_ns for ev in all_sub),
         }
     )
+    guard.commit([ev.event_id for ev in all_sub])
     for ev in all_sub:
         if ev.event_id != rep.event_id:
-            folded_to_rep[ev.event_id] = rep.event_id
+            guard.folded_to_rep[ev.event_id] = rep.event_id
             events.pop(ev.event_id, None)
+
+
+def _members_fold_candidate(
+    members: Sequence[TraceEvent],
+    subtree_ids: dict[str, list[str]],
+) -> tuple[dict[str, str], list[str]]:
+    """Return ``(id -> rep, scope)`` for folding ``members`` (and their subtrees) into the first."""
+    rep_id = members[0].event_id
+    scope = [sid for member in members for sid in subtree_ids[member.event_id]]
+    return {sid: rep_id for sid in scope if sid != rep_id}, scope
+
+
+def _select_convex_members(
+    members: list[TraceEvent],
+    subtree_ids: dict[str, list[str]],
+    guard: _ContractionGuard,
+) -> list[TraceEvent]:
+    """Pick a maximal-by-greedy subset of ``members`` whose joint contraction stays acyclic.
+
+    The whole bucket is tried first (the common case, one traversal at most). Otherwise members
+    are added in order, keeping each only if the group built so far remains convex, so a member
+    bridged to an earlier one by an external causal path is excluded from that group.
+    """
+    candidate, scope = _members_fold_candidate(members, subtree_ids)
+    if guard.allows(candidate, scope):
+        return members
+    chosen: list[TraceEvent] = []
+    for member in members:
+        trial = [*chosen, member]
+        if guard.allows(*_members_fold_candidate(trial, subtree_ids)):
+            chosen = trial
+    return chosen
 
 
 def _fold_cluster_parallel_maps(
@@ -382,7 +527,7 @@ def _fold_cluster_parallel_maps(
     working: dict[str, TraceEvent],
     children_map: dict[str | None, list[TraceEvent]],
     max_par_branches: int,
-    folded_to_rep: dict[str, str],
+    guard: _ContractionGuard,
 ) -> None:
     buckets: dict[tuple[str, str, str, SyncKind], list[TraceEvent]] = defaultdict(list)
     for eid in cluster.event_ids:
@@ -390,16 +535,34 @@ def _fold_cluster_parallel_maps(
             ev = working[eid]
             buckets[(ev.caller_id, ev.callee_id, ev.signature, ev.sync_kind)].append(ev)
     for key in sorted(buckets):
-        members = sorted(buckets[key], key=_event_sort_key)
-        if len(members) >= max_par_branches:
-            _fold_homogeneous_bucket(members, working, children_map, folded_to_rep)
+        remaining = sorted(buckets[key], key=_event_sort_key)
+        if len(remaining) < max_par_branches:
+            continue
+        subtree_ids = {
+            m.event_id: [
+                ev.event_id for ev in _collect_subtree_events(m.event_id, working, children_map)
+            ]
+            for m in remaining
+        }
+        while len(remaining) >= max_par_branches:
+            chosen = _select_convex_members(remaining, subtree_ids, guard)
+            if len(chosen) < max_par_branches:
+                remaining = remaining[1:]
+                continue
+            _fold_homogeneous_bucket(chosen, working, children_map, guard)
+            chosen_ids = {m.event_id for m in chosen}
+            remaining = [m for m in remaining if m.event_id not in chosen_ids]
 
 
 def _apply_parallel_siblings_and_map_pass(
     events: dict[str, TraceEvent],
     config: TraceCompactionConfig,
 ) -> dict[str, TraceEvent]:
-    """Pass 2 & 3: R5 clock-domain sibling clustering and R6 homogeneous parallel map folding."""
+    """Pass 2 & 3: R5 clock-domain sibling clustering and R6 homogeneous parallel map folding.
+
+    R6 only contracts convex member groups: siblings ``m_i < x < m_j`` joined through an
+    external event ``x`` are never folded together, so the result stays acyclic.
+    """
     if len(events) < 2 or (not config.fold_parallel_siblings and not config.fold_parallel_map):
         return events
 
@@ -419,13 +582,11 @@ def _apply_parallel_siblings_and_map_pass(
         return working
 
     children_map = _build_children_map(working)
-    folded_to_rep: dict[str, str] = {}
+    guard = _ContractionGuard(events)
     for cluster in clusters:
-        _fold_cluster_parallel_maps(
-            cluster, working, children_map, config.max_par_branches, folded_to_rep
-        )
+        _fold_cluster_parallel_maps(cluster, working, children_map, config.max_par_branches, guard)
 
-    return _remap_event_references(working, folded_to_rep) if folded_to_rep else working
+    return _remap_event_references(working, guard.folded_to_rep) if guard.folded_to_rep else working
 
 
 def _build_causal_dag_edges(events: dict[str, TraceEvent]) -> list[tuple[str, str]]:
@@ -660,6 +821,20 @@ def _pair_loop_subtrees(
     return opt_cand
 
 
+def _merge_group_causal_links(
+    surv: TraceEvent,
+    group: Sequence[TraceEvent],
+) -> tuple[str, ...]:
+    """Union the causal_links of every member folded into ``surv`` (self/group links dropped)."""
+    group_ids = {ev.event_id for ev in group}
+    merged: list[str] = list(surv.causal_links)
+    for ev in group:
+        for link in ev.causal_links:
+            if link not in group_ids and link not in merged:
+                merged.append(link)
+    return tuple(merged)
+
+
 def _apply_matched_loop_provenance(
     rep_id: str,
     rule_id: str,
@@ -672,23 +847,70 @@ def _apply_matched_loop_provenance(
             if ev.event_id != surv_id:
                 folded_to_rep[ev.event_id] = surv_id
                 working.pop(ev.event_id, None)
-        if surv_id != rep_id and len(group) > 1 and surv_id in working:
-            surv = working[surv_id]
-            working[surv_id] = surv.model_copy(
-                update={
-                    "status": _merge_status(group),
-                    "provenance": _derive_provenance(rule_id, group),
-                }
-            )
+        if surv_id not in working:
+            continue
+        surv = working[surv_id]
+        updates: dict[str, object] = {}
+        links = _merge_group_causal_links(surv, group)
+        if links != surv.causal_links:
+            updates["causal_links"] = links
+        if surv_id != rep_id and len(group) > 1:
+            updates["status"] = _merge_status(group)
+            updates["provenance"] = _derive_provenance(rule_id, group)
+        if updates:
+            working[surv_id] = surv.model_copy(update=updates)
 
 
-def _fold_loop_run(
+def _collect_touched_subtrees(
+    events: dict[str, TraceEvent],
+    children_map: dict[str | None, list[TraceEvent]],
+    guard: _ContractionGuard,
+) -> set[str]:
+    if not guard.has_links:
+        return set()
+    touched: set[str] = set()
+    visited: set[str] = set()
+
+    def _walk(eid: str) -> bool:
+        if eid in visited:
+            return eid in touched
+        visited.add(eid)
+        hit = guard.touches(eid)
+        for child in children_map.get(eid, ()):
+            if _walk(child.event_id):
+                hit = True
+        if hit:
+            touched.add(eid)
+        return hit
+
+    for eid in events:
+        _walk(eid)
+    return touched
+
+
+@dataclass(slots=True)
+class _LoopFoldContext:
+    working: dict[str, TraceEvent]
+    children_map: dict[str | None, list[TraceEvent]]
+    hashes: dict[str, str]
+    config: TraceCompactionConfig
+    guard: _ContractionGuard
+    touched_subtrees: set[str]
+
+    def refresh(self) -> None:
+        self.children_map = _build_children_map(self.working)
+        self.hashes = _compute_subtree_hashes(self.working, self.children_map)
+        self.touched_subtrees = _collect_touched_subtrees(
+            self.working, self.children_map, self.guard
+        )
+
+
+def _prepare_loop_run(
     run: list[TraceEvent],
     working: dict[str, TraceEvent],
     children_map: dict[str | None, list[TraceEvent]],
     hashes: dict[str, str],
-    folded_to_rep: dict[str, str],
-) -> None:
+) -> tuple[TraceEvent, list[TraceEvent], dict[str, list[TraceEvent]], TraceEvent | None]:
     rep = max(run, key=lambda ev: len(children_map.get(ev.event_id, [])))
     all_sub: list[TraceEvent] = []
     matched: dict[str, list[TraceEvent]] = defaultdict(list)
@@ -698,7 +920,25 @@ def _fold_loop_run(
         cand_opt = _pair_loop_subtrees(rep, member, children_map, hashes, matched)
         if opt_leaf is None and cand_opt is not None:
             opt_leaf = cand_opt
+    return rep, all_sub, matched, opt_leaf
 
+
+def _loop_run_is_convex(run: list[TraceEvent], ctx: _LoopFoldContext) -> bool:
+    _, all_sub, matched, _ = _prepare_loop_run(run, ctx.working, ctx.children_map, ctx.hashes)
+    scope = [ev.event_id for ev in all_sub]
+    candidate = {
+        ev.event_id: surv_id
+        for surv_id, group in matched.items()
+        for ev in group
+        if ev.event_id != surv_id
+    }
+    return ctx.guard.allows(candidate, scope)
+
+
+def _fold_loop_run(run: list[TraceEvent], ctx: _LoopFoldContext) -> None:
+    rep, all_sub, matched, opt_leaf = _prepare_loop_run(
+        run, ctx.working, ctx.children_map, ctx.hashes
+    )
     repeat_count = len(run)
     rule_id = (
         "R3_loop_with_opt"
@@ -709,15 +949,15 @@ def _fold_loop_run(
     attrs["loop_count"] = str(repeat_count)
     attrs["compacted_kind"] = "loop_with_opt" if opt_leaf is not None else "loop"
 
-    if opt_leaf is not None and opt_leaf.event_id in working:
-        opt_ev = working[opt_leaf.event_id]
+    if opt_leaf is not None and opt_leaf.event_id in ctx.working:
+        opt_ev = ctx.working[opt_leaf.event_id]
         opt_cond = f"optional {opt_ev.signature}"
         opt_attrs = {**opt_ev.attributes, "opt_condition": opt_cond, "compacted_kind": "opt"}
-        working[opt_ev.event_id] = opt_ev.model_copy(update={"attributes": opt_attrs})
+        ctx.working[opt_ev.event_id] = opt_ev.model_copy(update={"attributes": opt_attrs})
         attrs["opt_condition"] = opt_cond
 
     rep_group = matched[rep.event_id]
-    working[rep.event_id] = rep.model_copy(
+    ctx.working[rep.event_id] = rep.model_copy(
         update={
             "signature": f"{rep.signature} [loop x{repeat_count}]",
             "start_ns": min(m.start_ns for m in run),
@@ -727,28 +967,30 @@ def _fold_loop_run(
             "provenance": _derive_provenance(rule_id, rep_group),
         }
     )
-    _apply_matched_loop_provenance(rep.event_id, rule_id, matched, working, folded_to_rep)
+    ctx.guard.commit(ev.event_id for ev in all_sub)
+    _apply_matched_loop_provenance(
+        rep.event_id, rule_id, matched, ctx.working, ctx.guard.folded_to_rep
+    )
 
 
-def _fold_sibling_runs(
-    siblings: list[TraceEvent],
-    working: dict[str, TraceEvent],
-    children_map: dict[str | None, list[TraceEvent]],
-    hashes: dict[str, str],
-    config: TraceCompactionConfig,
-    folded_to_rep: dict[str, str],
-) -> None:
+def _fold_sibling_runs(siblings: list[TraceEvent], ctx: _LoopFoldContext) -> None:
     idx = 0
     while idx < len(siblings):
         run = [siblings[idx]]
+        run_touched = siblings[idx].event_id in ctx.touched_subtrees
         nxt = idx + 1
         while nxt < len(siblings) and _can_join_loop_run(
-            run, siblings[nxt], children_map, hashes, config
+            run, siblings[nxt], ctx.children_map, ctx.hashes, ctx.config
         ):
-            run.append(siblings[nxt])
+            cand = siblings[nxt]
+            cand_touched = cand.event_id in ctx.touched_subtrees
+            if (run_touched or cand_touched) and not _loop_run_is_convex([*run, cand], ctx):
+                break
+            run.append(cand)
+            run_touched = run_touched or cand_touched
             nxt += 1
         if len(run) >= 2:
-            _fold_loop_run(run, working, children_map, hashes, folded_to_rep)
+            _fold_loop_run(run, ctx)
         idx = nxt
 
 
@@ -756,30 +998,44 @@ def _apply_loop_folding_pass(
     events: dict[str, TraceEvent],
     config: TraceCompactionConfig,
 ) -> dict[str, TraceEvent]:
-    """Pass 5: R1/R2 contiguous repeating loop folding and R3 loop + opt leaf folding."""
+    """Pass 5: R1/R2 contiguous repeating loop folding and R3 loop + opt leaf folding.
+
+    Candidate runs are checked against ``_ContractionGuard`` whenever a run member or its
+    subtree touches ``causal_links``, preventing non-convex folds from inducing cycles.
+    """
     if len(events) < 2 or not config.fold_loops:
         return events
 
     working = dict(events)
     children_map = _build_children_map(working)
     hashes = _compute_subtree_hashes(working, children_map)
-    folded_to_rep: dict[str, str] = {}
+    guard = _ContractionGuard(events)
+    ctx = _LoopFoldContext(
+        working=working,
+        children_map=children_map,
+        hashes=hashes,
+        config=config,
+        guard=guard,
+        touched_subtrees=_collect_touched_subtrees(working, children_map, guard),
+    )
 
     def _fold_level(parent_id: str | None) -> None:
-        nonlocal children_map, hashes
-        before_len = len(working)
-        for ev in list(children_map.get(parent_id, [])):
-            if ev.event_id in working:
+        before_len = len(ctx.working)
+        for ev in list(ctx.children_map.get(parent_id, [])):
+            if ev.event_id in ctx.working:
                 _fold_level(ev.event_id)
-        if len(working) != before_len:
-            children_map = _build_children_map(working)
-            hashes = _compute_subtree_hashes(working, children_map)
-        siblings = [ev for ev in children_map.get(parent_id, []) if ev.event_id in working]
+        if len(ctx.working) != before_len:
+            ctx.refresh()
+        siblings = [ev for ev in ctx.children_map.get(parent_id, []) if ev.event_id in ctx.working]
         if len(siblings) >= 2:
-            _fold_sibling_runs(siblings, working, children_map, hashes, config, folded_to_rep)
+            _fold_sibling_runs(siblings, ctx)
 
     _fold_level(None)
-    return _remap_event_references(working, folded_to_rep) if folded_to_rep else working
+    return (
+        _remap_event_references(ctx.working, ctx.guard.folded_to_rep)
+        if ctx.guard.folded_to_rep
+        else ctx.working
+    )
 
 
 _FRAGMENT_KIND_BY_COMPACTED: dict[str, TraceFragmentKind] = {

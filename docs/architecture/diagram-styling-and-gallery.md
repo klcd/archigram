@@ -94,20 +94,30 @@ flowchart TD
   style n0 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   style n1 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   style n2 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  n3 -.->|"imports"| n0
+  n7 -->|"composes"| n4
+  n8 -->|"composes"| n4
+  n7 -->|"calls"| n4
   n5 -.->|"imports"| n4
   n5 -->|"composes"| n4
   n9 -.->|"imports"| n4
   n9 -->|"calls"| n4
-  n11 -.->|"imports"| n4
+  n9 -->|"composes"| n4
+  n7 -.->|"imports"| n4
+  n8 -.->|"imports"| n4
+  n8 -->|"calls"| n4
   n6 -.->|"imports"| n4
   n6 -->|"composes"| n4
+  n10 -->|"calls"| n5
   n10 -.->|"imports"| n5
+  n10 -->|"calls"| n6
   n10 -.->|"imports"| n6
   n3 -->|"calls"| n7
   n3 -.->|"imports"| n7
   n10 -.->|"imports"| n8
   n10 -->|"calls"| n8
   n10 -.->|"imports"| n9
+  n10 -->|"calls"| n9
   n3 -->|"calls"| n10
   n3 -.->|"imports"| n10
   n8 -.->|"implements"| n11
@@ -116,10 +126,10 @@ flowchart TD
   n7 -.->|"imports"| n11
   n8 -->|"composes"| n11
   n8 -->|"calls"| n11
-  linkStyle 0,2,4,5,7,8,10,11,13,15,17,19 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 1,6,20 stroke:#14b8a6,stroke-width:1.75px
-  linkStyle 3,9,12,14,21 stroke:#3b82f6,stroke-width:1.75px
-  linkStyle 16,18 stroke:#a855f7,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 0,4,6,9,10,12,15,17,19,20,22,25,27,29 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 1,2,5,8,13,30 stroke:#14b8a6,stroke-width:1.75px
+  linkStyle 3,7,11,14,16,18,21,23,24,31 stroke:#3b82f6,stroke-width:1.75px
+  linkStyle 26,28 stroke:#a855f7,stroke-width:1.75px,stroke-dasharray:5 5
 ```
 <!-- archigram:end l0_hexagonal_rings_mermaid -->
 
@@ -153,7 +163,7 @@ archigram: "archigram" {
     cli_dataplane: "CLI Data Plane" {
       style.fill: transparent
       style.stroke: "#64748b"
-      tooltip: "Derived via l0_d2_cli_dataplane (71 backing nodes: archigram.entrypoints.cli, archigram.entrypoints.cli.app, archigram.entrypoints.cli.app.ApplyOptions, archigram.entrypoints.cli.app.DiffOptions, archigram.entrypoints.cli.app.LintOptions, ...)"
+      tooltip: "Derived via l0_d2_cli_dataplane (85 backing nodes: archigram.entrypoints.cli, archigram.entrypoints.cli.app, archigram.entrypoints.cli.app.ApplyOptions, archigram.entrypoints.cli.app.DiffOptions, archigram.entrypoints.cli.app.LintOptions, ...)"
     }
     mcp_controlplane: "MCP Control Plane" {
       style.fill: transparent
@@ -182,12 +192,12 @@ archigram: "archigram" {
     feature_linters: "5-Gate Linter Slices" {
       style.fill: transparent
       style.stroke: "#64748b"
-      tooltip: "Derived via l0_d2_feature_linters (33 backing nodes: archigram.features.lint_budget, archigram.features.lint_budget.gate, archigram.features.lint_budget.gate.CognitiveBudgetAndOrphanGate, archigram.features.lint_budget.gate.apply_spanning_tree_edge_fallback, archigram.features.lint_grounding, ...)"
+      tooltip: "Derived via l0_d2_feature_linters (36 backing nodes: archigram.features.lint_budget, archigram.features.lint_budget.gate, archigram.features.lint_budget.gate.CognitiveBudgetAndOrphanGate, archigram.features.lint_budget.gate.apply_spanning_tree_edge_fallback, archigram.features.lint_grounding, ...)"
     }
     feature_reducers: "Reducer Slices" {
       style.fill: transparent
       style.stroke: "#64748b"
-      tooltip: "Derived via l0_d2_feature_reducers (19 backing nodes: archigram.features.reduce_structural, archigram.features.reduce_structural.reducer, archigram.features.reduce_structural.reducer.CycleInducedError, archigram.features.reduce_structural.reducer.StructuralTopologicalReducer, archigram.features.reduce_structural.reducer.apply_structural_rule, ...)"
+      tooltip: "Derived via l0_d2_feature_reducers (21 backing nodes: archigram.features.reduce_structural, archigram.features.reduce_structural.reducer, archigram.features.reduce_structural.reducer.CycleInducedError, archigram.features.reduce_structural.reducer.StructuralTopologicalReducer, archigram.features.reduce_structural.reducer.apply_structural_rule, ...)"
     }
   }
   domain_core: "Domain Core" {
@@ -202,6 +212,10 @@ archigram: "archigram" {
   }
 }
 
+archigram."archigram.entrypoints".cli_dataplane -> archigram: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
 archigram."archigram.entrypoints".cli_dataplane -> archigram."archigram.features".feature_ingestors: "calls" {
   style.stroke: "#3b82f6"
   style.animated: true
@@ -240,6 +254,21 @@ archigram."archigram.features".feature_emitters -> archigram.domain_core: "impor
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }
+archigram."archigram.features".feature_ingestors -> archigram.domain_core: "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.features".feature_ingestors -> archigram.domain_core: "composes" {
+  style.stroke: "#14b8a6"
+  source-arrowhead: {
+    shape: diamond
+    style.filled: true
+  }
+}
+archigram."archigram.features".feature_ingestors -> archigram.domain_core: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
 archigram."archigram.features".feature_ingestors -> archigram.ports_contracts: "implements" {
   style.stroke: "#a855f7"
   style.stroke-dash: 5
@@ -249,6 +278,21 @@ archigram."archigram.features".feature_ingestors -> archigram.ports_contracts: "
   }
 }
 archigram."archigram.features".feature_ingestors -> archigram.ports_contracts: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.features".feature_linters -> archigram.domain_core: "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.features".feature_linters -> archigram.domain_core: "composes" {
+  style.stroke: "#14b8a6"
+  source-arrowhead: {
+    shape: diamond
+    style.filled: true
+  }
+}
+archigram."archigram.features".feature_linters -> archigram.domain_core: "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }
@@ -279,13 +323,28 @@ archigram."archigram.features".feature_reducers -> archigram.domain_core: "calls
   style.stroke: "#3b82f6"
   style.animated: true
 }
+archigram."archigram.features".feature_reducers -> archigram.domain_core: "composes" {
+  style.stroke: "#14b8a6"
+  source-arrowhead: {
+    shape: diamond
+    style.filled: true
+  }
+}
 archigram."archigram.features".feature_reducers -> archigram.domain_core: "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }
+archigram."archigram.entrypoints".mcp_controlplane -> archigram."archigram.features".feature_digest: "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
 archigram."archigram.entrypoints".mcp_controlplane -> archigram."archigram.features".feature_digest: "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
+}
+archigram."archigram.entrypoints".mcp_controlplane -> archigram."archigram.features".feature_emitters: "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
 }
 archigram."archigram.entrypoints".mcp_controlplane -> archigram."archigram.features".feature_emitters: "imports" {
   style.stroke: "#64748b"
@@ -299,11 +358,11 @@ archigram."archigram.entrypoints".mcp_controlplane -> archigram."archigram.featu
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }
-archigram."archigram.entrypoints".mcp_controlplane -> archigram."archigram.features".feature_reducers: "imports" {
-  style.stroke: "#64748b"
-  style.stroke-dash: 5
+archigram."archigram.entrypoints".mcp_controlplane -> archigram."archigram.features".feature_reducers: "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
 }
-archigram.ports_contracts -> archigram.domain_core: "imports" {
+archigram."archigram.entrypoints".mcp_controlplane -> archigram."archigram.features".feature_reducers: "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }
@@ -352,6 +411,7 @@ package "archigram" as n_0_archigram_983b03 {
   component "Domain Core" as n_4_domain_core_f195b2
   component "Ports & Contracts" as n_11_ports_contracts_d0accd
 }
+n_3_cli_dataplane_493a5b ..>[#64748b] n_0_archigram_983b03 : imports
 n_3_cli_dataplane_493a5b -->[#3b82f6] n_7_feature_ingestor_73234e : calls
 n_3_cli_dataplane_493a5b ..>[#64748b] n_7_feature_ingestor_73234e : imports
 n_3_cli_dataplane_493a5b -->[#3b82f6] n_10_mcp_controlplane_ff4d3b : calls
@@ -360,20 +420,29 @@ n_5_feature_digest_52876d *--[#14b8a6] n_4_domain_core_f195b2 : composes
 n_5_feature_digest_52876d ..>[#64748b] n_4_domain_core_f195b2 : imports
 n_6_feature_emitters_75a4c0 *--[#14b8a6] n_4_domain_core_f195b2 : composes
 n_6_feature_emitters_75a4c0 ..>[#64748b] n_4_domain_core_f195b2 : imports
+n_7_feature_ingestor_73234e -->[#3b82f6] n_4_domain_core_f195b2 : calls
+n_7_feature_ingestor_73234e *--[#14b8a6] n_4_domain_core_f195b2 : composes
+n_7_feature_ingestor_73234e ..>[#64748b] n_4_domain_core_f195b2 : imports
 n_11_ports_contracts_d0accd <|..[#a855f7] n_7_feature_ingestor_73234e : implements
 n_7_feature_ingestor_73234e ..>[#64748b] n_11_ports_contracts_d0accd : imports
+n_8_feature_linters_57c819 -->[#3b82f6] n_4_domain_core_f195b2 : calls
+n_8_feature_linters_57c819 *--[#14b8a6] n_4_domain_core_f195b2 : composes
+n_8_feature_linters_57c819 ..>[#64748b] n_4_domain_core_f195b2 : imports
 n_8_feature_linters_57c819 -->[#3b82f6] n_11_ports_contracts_d0accd : calls
 n_8_feature_linters_57c819 *--[#14b8a6] n_11_ports_contracts_d0accd : composes
 n_11_ports_contracts_d0accd <|..[#a855f7] n_8_feature_linters_57c819 : implements
 n_8_feature_linters_57c819 ..>[#64748b] n_11_ports_contracts_d0accd : imports
 n_9_feature_reducers_8a2858 -->[#3b82f6] n_4_domain_core_f195b2 : calls
+n_9_feature_reducers_8a2858 *--[#14b8a6] n_4_domain_core_f195b2 : composes
 n_9_feature_reducers_8a2858 ..>[#64748b] n_4_domain_core_f195b2 : imports
+n_10_mcp_controlplane_ff4d3b -->[#3b82f6] n_5_feature_digest_52876d : calls
 n_10_mcp_controlplane_ff4d3b ..>[#64748b] n_5_feature_digest_52876d : imports
+n_10_mcp_controlplane_ff4d3b -->[#3b82f6] n_6_feature_emitters_75a4c0 : calls
 n_10_mcp_controlplane_ff4d3b ..>[#64748b] n_6_feature_emitters_75a4c0 : imports
 n_10_mcp_controlplane_ff4d3b -->[#3b82f6] n_8_feature_linters_57c819 : calls
 n_10_mcp_controlplane_ff4d3b ..>[#64748b] n_8_feature_linters_57c819 : imports
+n_10_mcp_controlplane_ff4d3b -->[#3b82f6] n_9_feature_reducers_8a2858 : calls
 n_10_mcp_controlplane_ff4d3b ..>[#64748b] n_9_feature_reducers_8a2858 : imports
-n_11_ports_contracts_d0accd ..>[#64748b] n_4_domain_core_f195b2 : imports
 @enduml
 ```
 <!-- archigram:end l0_hexagonal_rings_puml -->
@@ -521,24 +590,33 @@ model {
   archigram.archigram_entrypoints.cli_dataplane -[imports]-> archigram.archigram_entrypoints.mcp_controlplane 'imports'
   archigram.archigram_entrypoints.cli_dataplane -[calls]-> archigram.archigram_features.feature_ingestors 'calls'
   archigram.archigram_entrypoints.cli_dataplane -[imports]-> archigram.archigram_features.feature_ingestors 'imports'
+  archigram.archigram_entrypoints.mcp_controlplane -[calls]-> archigram.archigram_features.feature_digest 'calls'
   archigram.archigram_entrypoints.mcp_controlplane -[imports]-> archigram.archigram_features.feature_digest 'imports'
+  archigram.archigram_entrypoints.mcp_controlplane -[calls]-> archigram.archigram_features.feature_emitters 'calls'
   archigram.archigram_entrypoints.mcp_controlplane -[imports]-> archigram.archigram_features.feature_emitters 'imports'
   archigram.archigram_entrypoints.mcp_controlplane -[calls]-> archigram.archigram_features.feature_linters 'calls'
   archigram.archigram_entrypoints.mcp_controlplane -[imports]-> archigram.archigram_features.feature_linters 'imports'
+  archigram.archigram_entrypoints.mcp_controlplane -[calls]-> archigram.archigram_features.feature_reducers 'calls'
   archigram.archigram_entrypoints.mcp_controlplane -[imports]-> archigram.archigram_features.feature_reducers 'imports'
   archigram.archigram_features.feature_digest -[composes]-> archigram.domain_core 'composes'
   archigram.archigram_features.feature_digest -[imports]-> archigram.domain_core 'imports'
   archigram.archigram_features.feature_emitters -[composes]-> archigram.domain_core 'composes'
   archigram.archigram_features.feature_emitters -[imports]-> archigram.domain_core 'imports'
+  archigram.archigram_features.feature_ingestors -[calls]-> archigram.domain_core 'calls'
+  archigram.archigram_features.feature_ingestors -[composes]-> archigram.domain_core 'composes'
+  archigram.archigram_features.feature_ingestors -[imports]-> archigram.domain_core 'imports'
   archigram.archigram_features.feature_ingestors -[implements]-> archigram.ports_contracts 'implements'
   archigram.archigram_features.feature_ingestors -[imports]-> archigram.ports_contracts 'imports'
+  archigram.archigram_features.feature_linters -[calls]-> archigram.domain_core 'calls'
+  archigram.archigram_features.feature_linters -[composes]-> archigram.domain_core 'composes'
+  archigram.archigram_features.feature_linters -[imports]-> archigram.domain_core 'imports'
   archigram.archigram_features.feature_linters -[calls]-> archigram.ports_contracts 'calls'
   archigram.archigram_features.feature_linters -[composes]-> archigram.ports_contracts 'composes'
   archigram.archigram_features.feature_linters -[implements]-> archigram.ports_contracts 'implements'
   archigram.archigram_features.feature_linters -[imports]-> archigram.ports_contracts 'imports'
   archigram.archigram_features.feature_reducers -[calls]-> archigram.domain_core 'calls'
+  archigram.archigram_features.feature_reducers -[composes]-> archigram.domain_core 'composes'
   archigram.archigram_features.feature_reducers -[imports]-> archigram.domain_core 'imports'
-  archigram.ports_contracts -[imports]-> archigram.domain_core 'imports'
 }
 
 views {
@@ -600,6 +678,7 @@ digraph "archigram" {
     "domain_core" [label="Domain Core", kind="supernode", _kind="supernode"];
     "ports_contracts" [label="Ports & Contracts", kind="supernode", _kind="supernode"];
   }
+  "cli_dataplane" -> "archigram" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
   "cli_dataplane" -> "feature_ingestors" [xlabel="calls", _rel_kind="calls", _sync_kind="sync", style="solid", color="#3b82f6", arrowhead="vee"];
   "cli_dataplane" -> "feature_ingestors" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
   "cli_dataplane" -> "mcp_controlplane" [xlabel="calls", _rel_kind="calls", _sync_kind="sync", style="solid", color="#3b82f6", arrowhead="vee"];
@@ -608,20 +687,29 @@ digraph "archigram" {
   "feature_digest" -> "domain_core" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
   "feature_emitters" -> "domain_core" [xlabel="composes", _rel_kind="composes", _sync_kind="sync", style="solid", color="#14b8a6", arrowhead="diamond"];
   "feature_emitters" -> "domain_core" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
+  "feature_ingestors" -> "domain_core" [xlabel="calls", _rel_kind="calls", _sync_kind="sync", style="solid", color="#3b82f6", arrowhead="vee"];
+  "feature_ingestors" -> "domain_core" [xlabel="composes", _rel_kind="composes", _sync_kind="sync", style="solid", color="#14b8a6", arrowhead="diamond"];
+  "feature_ingestors" -> "domain_core" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
   "feature_ingestors" -> "ports_contracts" [xlabel="implements", _rel_kind="implements", _sync_kind="sync", style="dashed", color="#a855f7", arrowhead="empty"];
   "feature_ingestors" -> "ports_contracts" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
+  "feature_linters" -> "domain_core" [xlabel="calls", _rel_kind="calls", _sync_kind="sync", style="solid", color="#3b82f6", arrowhead="vee"];
+  "feature_linters" -> "domain_core" [xlabel="composes", _rel_kind="composes", _sync_kind="sync", style="solid", color="#14b8a6", arrowhead="diamond"];
+  "feature_linters" -> "domain_core" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
   "feature_linters" -> "ports_contracts" [xlabel="calls", _rel_kind="calls", _sync_kind="sync", style="solid", color="#3b82f6", arrowhead="vee"];
   "feature_linters" -> "ports_contracts" [xlabel="composes", _rel_kind="composes", _sync_kind="sync", style="solid", color="#14b8a6", arrowhead="diamond"];
   "feature_linters" -> "ports_contracts" [xlabel="implements", _rel_kind="implements", _sync_kind="sync", style="dashed", color="#a855f7", arrowhead="empty"];
   "feature_linters" -> "ports_contracts" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
   "feature_reducers" -> "domain_core" [xlabel="calls", _rel_kind="calls", _sync_kind="sync", style="solid", color="#3b82f6", arrowhead="vee"];
+  "feature_reducers" -> "domain_core" [xlabel="composes", _rel_kind="composes", _sync_kind="sync", style="solid", color="#14b8a6", arrowhead="diamond"];
   "feature_reducers" -> "domain_core" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
+  "mcp_controlplane" -> "feature_digest" [xlabel="calls", _rel_kind="calls", _sync_kind="sync", style="solid", color="#3b82f6", arrowhead="vee"];
   "mcp_controlplane" -> "feature_digest" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
+  "mcp_controlplane" -> "feature_emitters" [xlabel="calls", _rel_kind="calls", _sync_kind="sync", style="solid", color="#3b82f6", arrowhead="vee"];
   "mcp_controlplane" -> "feature_emitters" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
   "mcp_controlplane" -> "feature_linters" [xlabel="calls", _rel_kind="calls", _sync_kind="sync", style="solid", color="#3b82f6", arrowhead="vee"];
   "mcp_controlplane" -> "feature_linters" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
+  "mcp_controlplane" -> "feature_reducers" [xlabel="calls", _rel_kind="calls", _sync_kind="sync", style="solid", color="#3b82f6", arrowhead="vee"];
   "mcp_controlplane" -> "feature_reducers" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
-  "ports_contracts" -> "domain_core" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
 }
 ```
 <!-- archigram:end l0_hexagonal_rings_dot -->

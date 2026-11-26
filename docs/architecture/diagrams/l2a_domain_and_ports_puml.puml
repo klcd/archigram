@@ -31,7 +31,4 @@ package "archigram" as n_0_archigram_983b03 {
   component "ports.contracts Protocols" as n_8_ports_protocols_b2b1c2
 }
 n_2_archigram_domain_ae7fc5 ..>[#64748b] n_1_archigram_domain_6f6ac3 : imports
-n_8_ports_protocols_b2b1c2 ..>[#64748b] n_2_archigram_domain_ae7fc5 : imports
-n_8_ports_protocols_b2b1c2 ..>[#64748b] n_4_domain_diagnosti_fc27fb : imports
-n_8_ports_protocols_b2b1c2 ..>[#64748b] n_7_domain_spec_d7d1fd : imports
 @enduml

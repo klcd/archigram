@@ -563,3 +563,104 @@ def test_interaction_trace_ir_grounding_and_protected_participant(
         ),
     )
     assert gate.check(trace_ir, valid_spec).passed
+
+
+def _require_spec(assertion: ReachabilityAssertion) -> CurationSpecV1:
+    return CurationSpecV1(
+        views=(
+            DiagramViewSpec(
+                id="v_require",
+                title="Require View",
+                ir_mode=IRMode.STRUCTURAL_GRAPH,
+                target_renderer=TargetRenderer.MERMAID,
+                invariants=ViewInvariants(require_reachability=(assertion,)),
+            ),
+        ),
+    )
+
+
+@settings(max_examples=50, deadline=None)
+@given(
+    fixture=layered_graph_strategy(),
+    missing_side=st.sampled_from(["from", "to", "both"]),
+    mode=st.sampled_from(["case_flip", "suffix_typo", "hallucinated"]),
+)
+def test_gate_1_require_reachability_unknown_endpoint_names_missing_symbol(
+    fixture: LayeredGraphFixture,
+    missing_side: str,
+    mode: str,
+) -> None:
+    root, sink = fixture.roots[0], fixture.sinks[0]
+    bad_root = _mutate_symbol(root, mode) if missing_side in {"from", "both"} else root
+    bad_sink = _mutate_symbol(sink, mode) if missing_side in {"to", "both"} else sink
+    spec = _require_spec(ReachabilityAssertion(from_node=bad_root, to_node=bad_sink))
+
+    report = Gate1GroundingGate().check(fixture.ir, spec)
+    assert not report.passed
+    diags = [d for d in report.by_gate(GateId.GATE_1_GROUNDING) if d.code == "UNKNOWN_SYMBOL_ID"]
+    named = {sym for d in diags for sym in d.offending_symbols}
+    expected = {s for s, orig in ((bad_root, root), (bad_sink, sink)) if s != orig}
+    assert named == expected
+    assert all(d.severity is DiagnosticSeverity.ERROR for d in diags)
+    assert all("require_reachability" in d.message for d in diags)
+
+
+@settings(max_examples=40, deadline=None)
+@given(
+    fixture=layered_graph_strategy(),
+    rels=st.lists(st.sampled_from([r.value for r in EdgeRelation]), max_size=3),
+    bad_rel=st.one_of(st.none(), st.sampled_from(["teleports_to", "CALLS_SYNC", "depends_on"])),
+)
+def test_gate_1_require_reachability_grounds_endpoints_and_relations(
+    fixture: LayeredGraphFixture,
+    rels: list[str],
+    bad_rel: str | None,
+) -> None:
+    via = (*rels, bad_rel) if bad_rel is not None else tuple(rels)
+    spec = _require_spec(
+        ReachabilityAssertion(
+            from_node=fixture.roots[0], to_node=fixture.sinks[0], via_relations=via
+        )
+    )
+    report = Gate1GroundingGate().check(fixture.ir, spec)
+    rel_diags = [d for d in report.diagnostics if d.code == "INVALID_EDGE_RELATION"]
+    if bad_rel is None:
+        assert report.passed
+        assert not rel_diags
+    else:
+        assert not report.passed
+        assert [d.offending_symbols for d in rel_diags] == [(bad_rel,)]
+
+
+@settings(max_examples=30, deadline=None)
+@given(fixture=layered_graph_strategy())
+def test_gate_1_require_reachability_accepts_partition_target_endpoint(
+    fixture: LayeredGraphFixture,
+) -> None:
+    spec = CurationSpecV1(
+        views=(
+            DiagramViewSpec(
+                id="v_require",
+                title="Require View",
+                ir_mode=IRMode.STRUCTURAL_GRAPH,
+                target_renderer=TargetRenderer.MERMAID,
+                rules=(
+                    CollapsePartitionRule(
+                        id="collapse_bridges",
+                        target_node_id="super.bridge_cluster",
+                        label="Bridge Cluster",
+                        member_globs=("pkg.bridge.**",),
+                    ),
+                ),
+                invariants=ViewInvariants(
+                    require_reachability=(
+                        ReachabilityAssertion(
+                            from_node=fixture.roots[0], to_node="super.bridge_cluster"
+                        ),
+                    )
+                ),
+            ),
+        ),
+    )
+    report = Gate1GroundingGate().check(fixture.ir, spec)
+    assert report.passed

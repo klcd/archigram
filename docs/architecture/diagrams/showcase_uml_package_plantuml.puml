@@ -33,14 +33,23 @@ package "archigram" as n_0_archigram_983b03 {
   package "Domain Core (Canonical IR, Spec, Style)" as n_4_domain_core_f195b2
   package "Ports & Contracts (archigram.ports)" as n_11_ports_contracts_d0accd
 }
+n_3_cli_dataplane_493a5b ..>[#64748b] n_0_archigram_983b03 : <<import>>
 n_10_mcp_controlplane_ff4d3b ..>[#64748b] n_5_feature_digest_52876d : <<import>>
+n_10_mcp_controlplane_ff4d3b ..>[#64748b] n_5_feature_digest_52876d : <<import>>
+n_7_feature_ingestor_73234e ..>[#64748b] n_4_domain_core_f195b2 : <<import>>
 n_5_feature_digest_52876d ..>[#64748b] n_4_domain_core_f195b2 : <<import>>
 n_6_feature_emitters_75a4c0 ..>[#64748b] n_4_domain_core_f195b2 : <<import>>
 n_9_feature_reducers_8a2858 ..>[#64748b] n_4_domain_core_f195b2 : <<import>>
 n_9_feature_reducers_8a2858 ..>[#64748b] n_4_domain_core_f195b2 : <<import>>
-n_11_ports_contracts_d0accd ..>[#64748b] n_4_domain_core_f195b2 : <<import>>
+n_8_feature_linters_57c819 ..>[#64748b] n_4_domain_core_f195b2 : <<import>>
+n_9_feature_reducers_8a2858 ..>[#64748b] n_4_domain_core_f195b2 : <<import>>
 n_6_feature_emitters_75a4c0 ..>[#64748b] n_4_domain_core_f195b2 : <<import>>
+n_7_feature_ingestor_73234e ..>[#64748b] n_4_domain_core_f195b2 : <<import>>
+n_7_feature_ingestor_73234e ..>[#64748b] n_4_domain_core_f195b2 : <<import>>
+n_8_feature_linters_57c819 ..>[#64748b] n_4_domain_core_f195b2 : <<import>>
 n_5_feature_digest_52876d ..>[#64748b] n_4_domain_core_f195b2 : <<import>>
+n_8_feature_linters_57c819 ..>[#64748b] n_4_domain_core_f195b2 : <<import>>
+n_10_mcp_controlplane_ff4d3b ..>[#64748b] n_6_feature_emitters_75a4c0 : <<import>>
 n_10_mcp_controlplane_ff4d3b ..>[#64748b] n_6_feature_emitters_75a4c0 : <<import>>
 n_3_cli_dataplane_493a5b ..>[#64748b] n_7_feature_ingestor_73234e : <<import>>
 n_3_cli_dataplane_493a5b ..>[#64748b] n_7_feature_ingestor_73234e : <<import>>
@@ -54,5 +63,6 @@ n_8_feature_linters_57c819 ..>[#64748b] n_11_ports_contracts_d0accd : <<import>>
 n_7_feature_ingestor_73234e ..>[#64748b] n_11_ports_contracts_d0accd : <<import>>
 n_7_feature_ingestor_73234e ..>[#64748b] n_11_ports_contracts_d0accd : <<import>>
 n_8_feature_linters_57c819 ..>[#64748b] n_11_ports_contracts_d0accd : <<import>>
+n_10_mcp_controlplane_ff4d3b ..>[#64748b] n_9_feature_reducers_8a2858 : <<import>>
 n_10_mcp_controlplane_ff4d3b ..>[#64748b] n_9_feature_reducers_8a2858 : <<import>>
 @enduml

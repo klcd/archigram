@@ -16,7 +16,7 @@ archigram: "archigram" {
     cli_dataplane: "CLI Data Plane" {
       style.fill: transparent
       style.stroke: "#64748b"
-      tooltip: "Derived via l0_d2_cli_dataplane (71 backing nodes: archigram.entrypoints.cli, archigram.entrypoints.cli.app, archigram.entrypoints.cli.app.ApplyOptions, archigram.entrypoints.cli.app.DiffOptions, archigram.entrypoints.cli.app.LintOptions, ...)"
+      tooltip: "Derived via l0_d2_cli_dataplane (85 backing nodes: archigram.entrypoints.cli, archigram.entrypoints.cli.app, archigram.entrypoints.cli.app.ApplyOptions, archigram.entrypoints.cli.app.DiffOptions, archigram.entrypoints.cli.app.LintOptions, ...)"
     }
     mcp_controlplane: "MCP Control Plane" {
       style.fill: transparent
@@ -45,12 +45,12 @@ archigram: "archigram" {
     feature_linters: "5-Gate Linter Slices" {
       style.fill: transparent
       style.stroke: "#64748b"
-      tooltip: "Derived via l0_d2_feature_linters (33 backing nodes: archigram.features.lint_budget, archigram.features.lint_budget.gate, archigram.features.lint_budget.gate.CognitiveBudgetAndOrphanGate, archigram.features.lint_budget.gate.apply_spanning_tree_edge_fallback, archigram.features.lint_grounding, ...)"
+      tooltip: "Derived via l0_d2_feature_linters (36 backing nodes: archigram.features.lint_budget, archigram.features.lint_budget.gate, archigram.features.lint_budget.gate.CognitiveBudgetAndOrphanGate, archigram.features.lint_budget.gate.apply_spanning_tree_edge_fallback, archigram.features.lint_grounding, ...)"
     }
     feature_reducers: "Reducer Slices" {
       style.fill: transparent
       style.stroke: "#64748b"
-      tooltip: "Derived via l0_d2_feature_reducers (19 backing nodes: archigram.features.reduce_structural, archigram.features.reduce_structural.reducer, archigram.features.reduce_structural.reducer.CycleInducedError, archigram.features.reduce_structural.reducer.StructuralTopologicalReducer, archigram.features.reduce_structural.reducer.apply_structural_rule, ...)"
+      tooltip: "Derived via l0_d2_feature_reducers (21 backing nodes: archigram.features.reduce_structural, archigram.features.reduce_structural.reducer, archigram.features.reduce_structural.reducer.CycleInducedError, archigram.features.reduce_structural.reducer.StructuralTopologicalReducer, archigram.features.reduce_structural.reducer.apply_structural_rule, ...)"
     }
   }
   domain_core: "Domain Core" {
@@ -65,6 +65,10 @@ archigram: "archigram" {
   }
 }
 
+archigram."archigram.entrypoints".cli_dataplane -> archigram: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
 archigram."archigram.entrypoints".cli_dataplane -> archigram."archigram.features".feature_ingestors: "calls" {
   style.stroke: "#3b82f6"
   style.animated: true
@@ -103,6 +107,21 @@ archigram."archigram.features".feature_emitters -> archigram.domain_core: "impor
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }
+archigram."archigram.features".feature_ingestors -> archigram.domain_core: "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.features".feature_ingestors -> archigram.domain_core: "composes" {
+  style.stroke: "#14b8a6"
+  source-arrowhead: {
+    shape: diamond
+    style.filled: true
+  }
+}
+archigram."archigram.features".feature_ingestors -> archigram.domain_core: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
 archigram."archigram.features".feature_ingestors -> archigram.ports_contracts: "implements" {
   style.stroke: "#a855f7"
   style.stroke-dash: 5
@@ -112,6 +131,21 @@ archigram."archigram.features".feature_ingestors -> archigram.ports_contracts: "
   }
 }
 archigram."archigram.features".feature_ingestors -> archigram.ports_contracts: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.features".feature_linters -> archigram.domain_core: "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.features".feature_linters -> archigram.domain_core: "composes" {
+  style.stroke: "#14b8a6"
+  source-arrowhead: {
+    shape: diamond
+    style.filled: true
+  }
+}
+archigram."archigram.features".feature_linters -> archigram.domain_core: "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }
@@ -142,13 +176,28 @@ archigram."archigram.features".feature_reducers -> archigram.domain_core: "calls
   style.stroke: "#3b82f6"
   style.animated: true
 }
+archigram."archigram.features".feature_reducers -> archigram.domain_core: "composes" {
+  style.stroke: "#14b8a6"
+  source-arrowhead: {
+    shape: diamond
+    style.filled: true
+  }
+}
 archigram."archigram.features".feature_reducers -> archigram.domain_core: "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }
+archigram."archigram.entrypoints".mcp_controlplane -> archigram."archigram.features".feature_digest: "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
 archigram."archigram.entrypoints".mcp_controlplane -> archigram."archigram.features".feature_digest: "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
+}
+archigram."archigram.entrypoints".mcp_controlplane -> archigram."archigram.features".feature_emitters: "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
 }
 archigram."archigram.entrypoints".mcp_controlplane -> archigram."archigram.features".feature_emitters: "imports" {
   style.stroke: "#64748b"
@@ -162,11 +211,11 @@ archigram."archigram.entrypoints".mcp_controlplane -> archigram."archigram.featu
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }
-archigram."archigram.entrypoints".mcp_controlplane -> archigram."archigram.features".feature_reducers: "imports" {
-  style.stroke: "#64748b"
-  style.stroke-dash: 5
+archigram."archigram.entrypoints".mcp_controlplane -> archigram."archigram.features".feature_reducers: "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
 }
-archigram.ports_contracts -> archigram.domain_core: "imports" {
+archigram."archigram.entrypoints".mcp_controlplane -> archigram."archigram.features".feature_reducers: "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }

@@ -57,11 +57,8 @@ flowchart TD
   style n0 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   style n1 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   style n2 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
-  n8 -.->|"imports"| n4
-  n8 -.->|"imports"| n2
-  n8 -.->|"imports"| n7
   n2 -.->|"imports"| n1
-  linkStyle 0,1,2,3 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 0 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
 ```
 <!-- archigram:end l2a_domain_and_ports_mermaid -->
 
@@ -141,10 +138,11 @@ flowchart TD
   n12 -->|"calls"| n13
   n11 -->|"calls"| n14
   n14 -->|"calls"| n15
+  n7 -->|"calls"| n15
   n4 -.->|"imports"| n5
   n6 -.->|"imports"| n7
-  linkStyle 0,1,2,4,5,6,7,8,9,14,15 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 3,10,11,12,13 stroke:#3b82f6,stroke-width:1.75px
+  linkStyle 0,1,2,4,5,6,7,8,9,15,16 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 3,10,11,12,13,14 stroke:#3b82f6,stroke-width:1.75px
 ```
 <!-- archigram:end l2b_reduction_engine_mermaid -->
 
@@ -209,16 +207,17 @@ flowchart TD
   n6 -.->|"imports"| n1
   n8 -.->|"imports"| n6
   n7 -.->|"imports"| n6
-  n12 -.->|"imports"| n6
   n9 -.->|"imports"| n6
   n11 -.->|"imports"| n7
+  n4 -.->|"imports"| n7
+  n4 -.->|"imports"| n8
   n11 -.->|"imports"| n8
+  n4 -.->|"imports"| n9
   n11 -.->|"imports"| n9
   n11 -.->|"imports"| n10
-  n4 -.->|"imports"| n11
-  n12 -.->|"imports"| n5
+  n4 -.->|"imports"| n10
   n10 -.->|"imports"| n12
-  linkStyle 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
 ```
 <!-- archigram:end l2c_five_gate_linter_mermaid -->
 
@@ -367,26 +366,35 @@ flowchart TD
   n7 -.->|"imports"| n3
   n7 -.->|"imports"| n4
   n2 -.->|"imports"| n7
+  n7 -.->|"imports"| n0
   n8 -.->|"imports"| n10
   n7 -.->|"imports"| n8
-  n9 -.->|"imports"| n10
-  n2 -.->|"imports"| n9
+  n7 -.->|"imports"| n9
   n4 -.->|"imports"| n10
   n11 -.->|"imports"| n10
+  n17 -->|"calls"| n12
   n17 -.->|"imports"| n12
   n17 -.->|"imports"| n13
   n10 -.->|"imports"| n13
+  n10 -->|"calls"| n13
+  n17 -->|"calls"| n13
   n10 -.->|"imports"| n14
+  n17 -->|"calls"| n15
   n17 -.->|"imports"| n15
   n10 -.->|"imports"| n15
   n11 -.->|"imports"| n17
   n18 -.->|"imports"| n17
   n5 -.->|"imports"| n18
   n12 -.->|"imports"| n19
+  n15 -.->|"imports"| n19
+  n9 -.->|"imports"| n19
+  n13 -.->|"imports"| n19
   n3 -.->|"imports"| n19
-  n10 -.->|"imports"| n19
+  n16 -.->|"imports"| n19
+  n17 -->|"calls"| n16
   n17 -.->|"imports"| n16
   n10 -.->|"imports"| n16
-  linkStyle 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 0,1,2,3,4,5,6,7,8,10,11,12,15,17,18,19,20,21,22,23,24,25,26,27,29,30 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 9,13,14,16,28 stroke:#3b82f6,stroke-width:1.75px
 ```
 <!-- archigram:end l2d_cli_and_mcp_adapters_mermaid -->

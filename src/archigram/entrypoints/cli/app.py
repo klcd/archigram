@@ -5,25 +5,32 @@ from __future__ import annotations
 import importlib
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated
 
 import typer
 from pydantic import ValidationError
 
 from archigram.entrypoints.cli.curate_cli import curate_app
 from archigram.entrypoints.cli.diff_report import PrDiffSummary, compute_pr_regression_diff
+from archigram.entrypoints.cli.markdown_sync import sync_markdown_views
 from archigram.entrypoints.cli.pipeline import (
+    ApplyCheckReport,
     ApplySyncOutcome,
     InputFormat,
     PipelineCompilationResult,
+    build_apply_report,
     compile_and_lint_pipeline,
     format_lint_report_text,
+    format_regeneration_command,
     load_canonical_ir,
     load_curation_spec,
     load_mermaid_theme,
     sync_compiled_artifacts,
 )
 from archigram.entrypoints.cli.triage import TriageOptions, TriageOutcome, execute_triage
+
+if TYPE_CHECKING:
+    from archigram.domain.ir import CanonicalIR
 
 EXIT_CLEAN = 0
 EXIT_LINT_OR_DRIFT = 1
@@ -66,7 +73,7 @@ class LintOptions:
 class DiffOptions:
     """Configuration options for `archigram diff`."""
 
-    base_path: Path
+    base_path: Path | None
     head_path: Path
     spec_path: Path
     input_format: InputFormat = InputFormat.AUTO
@@ -81,14 +88,47 @@ def version_cmd() -> None:
     typer.echo(__version__)
 
 
-def _emit_apply_summary(outcome: ApplySyncOutcome, *, check_only: bool) -> None:
+def apply_regeneration_command(options: ApplyOptions) -> str:
+    """Return the exact `archigram apply` command that regenerates committed artifacts."""
+    flags: list[tuple[str, str]] = [
+        ("--spec", str(options.spec_path)),
+        ("--out-dir", str(options.out_dir)),
+    ]
+    if options.input_format is not InputFormat.AUTO:
+        flags.append(("--format", options.input_format.value))
+    if options.sync_md is not None:
+        flags.append(("--sync-md", str(options.sync_md)))
+    return format_regeneration_command("apply", options.input_path, flags)
+
+
+def build_apply_check_report(outcome: ApplySyncOutcome, options: ApplyOptions) -> ApplyCheckReport:
+    """Structured (JSON-serializable) `apply` outcome incl. lint report and stale artifacts."""
+    return build_apply_report(outcome, regeneration_command=apply_regeneration_command(options))
+
+
+def _emit_stale_footer(*, lint_passed: bool, regeneration_command: str) -> None:
+    if lint_passed:
+        typer.echo(f"  Regenerate stale artifacts with: {regeneration_command}")
+        return
+    typer.echo(
+        "  Fix the lint error(s) above first; regeneration refuses to write while lint fails."
+    )
+    typer.echo(f"  Then regenerate stale artifacts with: {regeneration_command}")
+
+
+def _emit_apply_summary(outcome: ApplySyncOutcome, options: ApplyOptions) -> None:
     report_text = format_lint_report_text(outcome.compilation.lint_report)
     typer.echo(report_text)
-    if check_only:
+    if options.check_only:
         for missing in outcome.missing_files:
             typer.echo(f"  [STALE] Missing committed diagram file: {missing}")
         for drifted in outcome.drifted_files:
             typer.echo(f"  [STALE] Committed diagram file drifted from spec: {drifted}")
+        if outcome.missing_files or outcome.drifted_files:
+            _emit_stale_footer(
+                lint_passed=outcome.compilation.lint_report.passed,
+                regeneration_command=apply_regeneration_command(options),
+            )
         if outcome.is_clean:
             typer.echo(
                 f"Check passed: {len(outcome.compilation.views)} view(s) up-to-date byte-for-byte."
@@ -110,6 +150,7 @@ def execute_apply(options: ApplyOptions) -> ApplySyncOutcome:
         options.out_dir,
         check_only=options.check_only,
         sync_md_target=options.sync_md,
+        markdown_syncer=sync_markdown_views,
     )
 
 
@@ -121,12 +162,29 @@ def execute_lint(options: LintOptions) -> PipelineCompilationResult:
     return compile_and_lint_pipeline(observed_ir, spec, mermaid_theme=theme)
 
 
+def _load_optional_base(
+    base_path: Path | None,
+    input_format: InputFormat,
+) -> tuple[CanonicalIR | None, str | None]:
+    """Load the baseline IR, or return `(None, reason)` when it is omitted or unusable."""
+    if base_path is None:
+        return None, "--base was not provided"
+    try:
+        return load_canonical_ir(base_path, input_format), None
+    except (OSError, ValueError, SyntaxError) as exc:
+        return None, f"base input '{base_path}' could not be loaded ({type(exc).__name__}: {exc})"
+
+
 def execute_diff(options: DiffOptions) -> PrDiffSummary:
-    """Run deterministic baseline-vs-PR `diff` pipeline without Typer framing."""
-    base_ir = load_canonical_ir(options.base_path, options.input_format)
+    """Run deterministic baseline-vs-PR `diff` pipeline without Typer framing.
+
+    `head` and `spec` must load (errors propagate -> usage error). An omitted or unreadable base
+    degrades to head-only Gate 1-5 validation reported via `base_available=False`.
+    """
     head_ir = load_canonical_ir(options.head_path, options.input_format)
     spec = load_curation_spec(options.spec_path)
-    return compute_pr_regression_diff(base_ir, head_ir, spec)
+    base_ir, reason = _load_optional_base(options.base_path, options.input_format)
+    return compute_pr_regression_diff(base_ir, head_ir, spec, base_unavailable_reason=reason)
 
 
 @app.command("apply")
@@ -169,22 +227,21 @@ def apply_cmd(
     ] = None,
 ) -> None:
     """Compile Canonical IR + CurationSpecV1 into deterministic diagram files (or --check)."""
+    options = ApplyOptions(
+        input_path=input_path,
+        spec_path=spec,
+        out_dir=out_dir,
+        input_format=input_format,
+        check_only=check,
+        sync_md=sync_md,
+    )
     try:
-        outcome = execute_apply(
-            ApplyOptions(
-                input_path=input_path,
-                spec_path=spec,
-                out_dir=out_dir,
-                input_format=input_format,
-                check_only=check,
-                sync_md=sync_md,
-            )
-        )
+        outcome = execute_apply(options)
     except (FileNotFoundError, OSError, ValueError, ValidationError) as exc:
         typer.echo(f"Input/Usage Error: {exc}", err=True)
         raise typer.Exit(code=EXIT_USAGE_ERROR) from exc
 
-    _emit_apply_summary(outcome, check_only=check)
+    _emit_apply_summary(outcome, options)
     if not outcome.is_clean:
         raise typer.Exit(code=EXIT_LINT_OR_DRIFT)
 
@@ -236,10 +293,6 @@ def lint_cmd(
 
 @app.command("diff")
 def diff_cmd(
-    base: Annotated[
-        Path,
-        typer.Option("--base", "--base-input", help="Baseline input topology/trace file."),
-    ],
     head: Annotated[
         Path,
         typer.Option("--head", "--head-input", help="PR head input topology/trace file."),
@@ -248,6 +301,17 @@ def diff_cmd(
         Path,
         typer.Option("--spec", "-s", help="Path to CurationSpecV1 YAML (diagram-views.yaml)."),
     ],
+    base: Annotated[
+        Path | None,
+        typer.Option(
+            "--base",
+            "--base-input",
+            help=(
+                "Baseline input topology/trace file. If omitted or unreadable, only head is "
+                "validated (exit status reflects head Gates 1-5)."
+            ),
+        ),
+    ] = None,
     input_format: Annotated[
         InputFormat,
         typer.Option(
@@ -274,6 +338,12 @@ def diff_cmd(
         typer.echo(f"Input/Usage Error: {exc}", err=True)
         raise typer.Exit(code=EXIT_USAGE_ERROR) from exc
 
+    if not summary.base_available:
+        typer.echo(
+            f"Warning: base comparison unavailable ({summary.base_unavailable_reason}); "
+            "validated head only.",
+            err=True,
+        )
     if output_json:
         typer.echo(summary.model_dump_json(indent=2))
     else:
@@ -324,6 +394,7 @@ def propose_cmd(
             input_path=str(input_path),
             out_spec_path=str(out_spec),
             max_turns=max_turns,
+            ir_loader=load_canonical_ir,
         )
     else:
         import tempfile
@@ -334,6 +405,7 @@ def propose_cmd(
                 input_path=str(input_path),
                 out_spec_path=str(tmp_out),
                 max_turns=max_turns,
+                ir_loader=load_canonical_ir,
             )
             if exit_code == 0 and tmp_out.is_file():
                 typer.echo(tmp_out.read_text(encoding="utf-8"), nl=False)
@@ -342,7 +414,19 @@ def propose_cmd(
         raise typer.Exit(code=exit_code)
 
 
-def _emit_triage_summary(outcome: TriageOutcome, *, check_only: bool) -> None:
+def triage_regeneration_command(options: TriageOptions) -> str:
+    """Return the exact `archigram triage` command that regenerates committed triage files."""
+    flags: list[tuple[str, str]] = [
+        ("--spec", str(options.spec_path)),
+        ("--view", options.view_id),
+        ("--out-dir", str(options.out_dir)),
+    ]
+    if options.input_format is not InputFormat.AUTO:
+        flags.append(("--format", options.input_format.value))
+    return format_regeneration_command("triage", options.input_path, flags)
+
+
+def _emit_triage_summary(outcome: TriageOutcome, options: TriageOptions) -> None:
     st = outcome.stats
     limit_note = (
         "EXCEEDS 5,000 Gitea limit -> SVG comparison required"
@@ -358,11 +442,16 @@ def _emit_triage_summary(outcome: TriageOutcome, *, check_only: bool) -> None:
         f"keep={st.kept_count}, remove={st.removed_count}, "
         f"bypass={st.bypassed_count}, collapse={st.collapsed_count}"
     )
-    if check_only:
+    if options.check_only:
         for missing in outcome.missing_files:
             typer.echo(f"  [STALE] Missing triage artifact: {missing}")
         for drifted in outcome.drifted_files:
             typer.echo(f"  [STALE] Drifted triage artifact: {drifted}")
+        if outcome.missing_files or outcome.drifted_files:
+            _emit_stale_footer(
+                lint_passed=outcome.compilation.lint_report.passed,
+                regeneration_command=triage_regeneration_command(options),
+            )
         return
     for written in outcome.written_files:
         typer.echo(f"  [WROTE] {written}")
@@ -396,22 +485,21 @@ def triage_cmd(
     ] = False,
 ) -> None:
     """Render 3-stage comparison (1_original -> 2_triage diff -> 3_curated) as SVGs + Mermaid."""
+    options = TriageOptions(
+        input_path=input_path,
+        spec_path=spec,
+        view_id=view,
+        out_dir=out_dir,
+        input_format=input_format,
+        check_only=check,
+    )
     try:
-        outcome = execute_triage(
-            TriageOptions(
-                input_path=input_path,
-                spec_path=spec,
-                view_id=view,
-                out_dir=out_dir,
-                input_format=input_format,
-                check_only=check,
-            )
-        )
+        outcome = execute_triage(options)
     except (FileNotFoundError, OSError, ValueError, ValidationError) as exc:
         typer.echo(f"Input/Usage Error: {exc}", err=True)
         raise typer.Exit(code=EXIT_USAGE_ERROR) from exc
 
-    _emit_triage_summary(outcome, check_only=check)
+    _emit_triage_summary(outcome, options)
     if not outcome.is_clean:
         raise typer.Exit(code=EXIT_LINT_OR_DRIFT)
 

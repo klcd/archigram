@@ -183,6 +183,10 @@ class ViewInvariants(BaseModel):
 
     protected_nodes: tuple[NonBlankStr, ...] = Field(default_factory=tuple)
     preserve_reachability: tuple[ReachabilityAssertion, ...] = Field(default_factory=tuple)
+    # Opt-in stricter contract: the observed input MUST contain the directed path
+    # (respecting via_relations) AND the curated view must preserve it.
+    # preserve_reachability semantics remain "preserve if present in observed input".
+    require_reachability: tuple[ReachabilityAssertion, ...] = Field(default_factory=tuple)
     preserve_partial_order: bool = True
     forbid_new_cycles: bool = True
     node_budget: BudgetRange = Field(default_factory=BudgetRange)

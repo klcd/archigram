@@ -39,11 +39,13 @@ from archigram.domain.spec import (
     CurationSpecV1,
     DiagramViewSpec,
     GlobalAbstractionRule,
+    KHopNeighborhoodScope,
     ReachabilityAssertion,
+    ViewScope,
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping, Sequence
+    from collections.abc import Iterator, Mapping, Sequence
 
 
 @dataclass(frozen=True, slots=True)
@@ -150,6 +152,31 @@ def _collapse_members(
     )
 
 
+def _apply_rule_bindings(
+    resolver: dict[str, str],
+    observed_ir: StructuralGraphIR,
+    curated_ir: StructuralGraphIR,
+    rules: tuple[GlobalAbstractionRule, ...],
+) -> None:
+    """Bind collapse members in rule order, never rebinding symbols an earlier bypass dropped."""
+    bypassed: set[str] = set()
+    for rule in rules:
+        if isinstance(rule, BypassVerticesRule):
+            bypassed.update(
+                symbol_id
+                for symbol_id in observed_ir.nodes
+                if symbol_id not in resolver and _matches_globs(symbol_id, rule.node_id_globs)
+            )
+            continue
+        if not isinstance(rule, CollapsePartitionRule):
+            continue
+        if rule.target_node_id not in curated_ir.nodes:
+            continue
+        for member in _collapse_members(observed_ir, rule):
+            if member not in bypassed:
+                resolver.setdefault(member, rule.target_node_id)
+
+
 def _build_curated_resolver(
     observed_ir: StructuralGraphIR,
     curated_ir: StructuralGraphIR,
@@ -171,13 +198,7 @@ def _build_curated_resolver(
             if backing_id in observed_ir.nodes and backing_id not in resolver:
                 resolver[backing_id] = node.symbol_id
 
-    for rule in rules:
-        if not isinstance(rule, CollapsePartitionRule):
-            continue
-        if rule.target_node_id not in curated_ir.nodes:
-            continue
-        for member in _collapse_members(observed_ir, rule):
-            resolver.setdefault(member, rule.target_node_id)
+    _apply_rule_bindings(resolver, observed_ir, curated_ir, rules)
 
     return resolver
 
@@ -278,38 +299,238 @@ def _find_bottlenecks(
     return (witness_path[0], witness_path[-1])
 
 
-def _check_single_reachability(
+@dataclass(frozen=True, slots=True)
+class _SeverContext:
+    """View identity, scope, and effective rules used to attribute a severed path."""
+
+    view_id: str
+    scope: ViewScope
+    rules: tuple[GlobalAbstractionRule, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class _Attribution:
+    """Evidence-based cause of a severed curated path (rules and/or scope exclusions)."""
+
+    rule_ids: tuple[str, ...] = ()
+    rule_notes: tuple[str, ...] = ()
+    scope_excluded: tuple[str, ...] = ()
+    scope_note: str = ""
+
+    @property
+    def rule_id(self) -> str | None:
+        """Return the rule id only when exactly one rule is attributable."""
+        return self.rule_ids[0] if len(self.rule_ids) == 1 else None
+
+
+def _rule_removal_note(rule: GlobalAbstractionRule) -> str:
+    note = f"{rule.op} '{rule.id}'"
+    if isinstance(rule, BypassVerticesRule) and rule.preserve_edge_relations:
+        note += f" (splices only relations {list(rule.preserve_edge_relations)})"
+    return note
+
+
+def _rules_removing_symbol(
+    symbol_id: str,
+    rules: tuple[GlobalAbstractionRule, ...],
+) -> dict[str, str]:
+    """Map rule id -> note for the rules that dropped a symbol absent from the curated view.
+
+    A matching bypass_vertices/prune rule is the causal drop; collapse globs matching the
+    same symbol are not co-attributed.
+    """
+    hits: dict[str, str] = {}
+    dropping_hits: dict[str, str] = {}
+    for rule in rules:
+        if isinstance(rule, CollapsePartitionRule):
+            matched = symbol_id not in rule.exclude_ids and _matches_globs(
+                symbol_id, rule.member_globs
+            )
+        else:
+            matched = _matches_globs(symbol_id, rule.node_id_globs)
+        if matched:
+            hits[rule.id] = _rule_removal_note(rule)
+            if not isinstance(rule, CollapsePartitionRule):
+                dropping_hits[rule.id] = hits[rule.id]
+    return dropping_hits or hits
+
+
+def _rules_collapsing_hop(
+    bottlenecks: tuple[str, ...],
+    rules: tuple[GlobalAbstractionRule, ...],
+) -> dict[str, str]:
+    """Map rule id -> note for collapse_partition rules contracting a severed hop endpoint."""
+    hits: dict[str, str] = {}
+    for rule in rules:
+        if not isinstance(rule, CollapsePartitionRule):
+            continue
+        for symbol_id in bottlenecks:
+            if symbol_id not in rule.exclude_ids and _matches_globs(symbol_id, rule.member_globs):
+                hits[rule.id] = _rule_removal_note(rule)
+    return hits
+
+
+def _scope_note(scope: ViewScope) -> str:
+    if not isinstance(scope, KHopNeighborhoodScope):
+        return ""
+    return (
+        f"k_hop_neighborhood(focal_nodes={list(scope.focal_nodes)}, "
+        f"upstream_depth={scope.upstream_depth}, downstream_depth={scope.downstream_depth})"
+    )
+
+
+def _attribute_severance(
+    bottlenecks: tuple[str, ...],
+    resolver: dict[str, str],
+    sever: _SeverContext,
+) -> _Attribution:
+    """Attribute a severed path to rules (glob match) or k-hop scope exclusion when evidenced."""
+    missing = tuple(sym for sym in bottlenecks if sym not in resolver)
+    hits: dict[str, str] = {}
+    scope_excluded: list[str] = []
+    for symbol_id in missing:
+        symbol_hits = _rules_removing_symbol(symbol_id, sever.rules)
+        hits.update(symbol_hits)
+        if not symbol_hits and _scope_note(sever.scope):
+            scope_excluded.append(symbol_id)
+    if not missing:
+        hits.update(_rules_collapsing_hop(bottlenecks, sever.rules))
+    return _Attribution(
+        rule_ids=tuple(hits),
+        rule_notes=tuple(hits.values()),
+        scope_excluded=tuple(scope_excluded),
+        scope_note=_scope_note(sever.scope) if scope_excluded else "",
+    )
+
+
+def _attribution_message(attribution: _Attribution) -> str:
+    parts: list[str] = []
+    if attribution.rule_notes:
+        label = "rule" if len(attribution.rule_notes) == 1 else "rules (multiple attributable)"
+        parts.append(f"attributable {label}: {', '.join(attribution.rule_notes)}")
+    if attribution.scope_excluded:
+        parts.append(
+            f"excluded node(s) {', '.join(attribution.scope_excluded)} fall outside view scope "
+            f"{attribution.scope_note}"
+        )
+    return f" Cause: {'; '.join(parts)}." if parts else ""
+
+
+def _severed_repair_hint(
+    bottlenecks: tuple[str, ...],
+    attribution: _Attribution,
+    sever: _SeverContext,
+) -> str:
+    joined = ", ".join(bottlenecks)
+    bypass_ids = {r.id for r in sever.rules if isinstance(r, BypassVerticesRule)}
+    if bypass_ids.intersection(attribution.rule_ids):
+        hint = f"Bottleneck(s) ({joined}) were dropped by an existing bypass_vertices rule."
+    else:
+        hint = (
+            "Preserve path connectivity by adding a bypass_vertices rule across intermediate "
+            f"bottleneck(s) ({joined}) or widening the view k_hop_neighborhood."
+        )
+    if attribution.rule_ids:
+        hint += (
+            f" Narrow or remove rule(s) {', '.join(attribution.rule_ids)} so they no longer "
+            "remove symbols on the observed witness path."
+        )
+    if attribution.scope_excluded:
+        hint += (
+            f" Add the excluded node(s) {', '.join(attribution.scope_excluded)} to the "
+            "k_hop_neighborhood focal_nodes or increase upstream_depth/downstream_depth."
+        )
+    return hint
+
+
+def _severed_diagnostic(
     assertion: ReachabilityAssertion,
-    obs_indexed: _IndexedDiGraph,
+    witness_path: tuple[str, ...],
     cur_indexed: _IndexedDiGraph,
     resolver: dict[str, str],
-    view_id: str,
+    sever: _SeverContext,
 ) -> LintDiagnostic | None:
-    witness_path = _shortest_path_ids(obs_indexed, assertion.from_node, assertion.to_node)
-    if witness_path is None:
-        return None
-
+    """Return REACHABILITY_SEVERED when curation loses an observed path, else None."""
     cur_src = resolver.get(assertion.from_node)
     cur_dst = resolver.get(assertion.to_node)
     if _is_reachable_in_curated(cur_indexed, cur_src, cur_dst):
         return None
 
     bottlenecks = _find_bottlenecks(witness_path, resolver, cur_indexed)
-    rel_note = f" via relations {assertion.via_relations}" if assertion.via_relations else ""
+    attribution = _attribute_severance(bottlenecks, resolver, sever)
+    rel_note = (
+        f" via relations {list(assertion.via_relations)}"
+        if assertion.via_relations
+        else " over any relation"
+    )
     return LintDiagnostic(
         gate=GateId.GATE_3_TOPOLOGY_POSET,
         severity=DiagnosticSeverity.ERROR,
         code="REACHABILITY_SEVERED",
-        view_id=view_id,
+        view_id=sever.view_id,
+        rule_id=attribution.rule_id,
         offending_symbols=bottlenecks,
         witness_path=witness_path,
         message=(
             f"Reachability from '{assertion.from_node}' to '{assertion.to_node}'{rel_note} "
-            f"was severed in view '{view_id}'; bottleneck symbol(s): {', '.join(bottlenecks)}."
+            f"was severed in view '{sever.view_id}'; observed witness: "
+            f"{' -> '.join(witness_path)}; bottleneck symbol(s): {', '.join(bottlenecks)}."
+            f"{_attribution_message(attribution)}"
+        ),
+        repair_hint=_severed_repair_hint(bottlenecks, attribution, sever),
+    )
+
+
+def _check_single_reachability(
+    assertion: ReachabilityAssertion,
+    obs_indexed: _IndexedDiGraph,
+    cur_indexed: _IndexedDiGraph,
+    resolver: dict[str, str],
+    sever: _SeverContext,
+) -> LintDiagnostic | None:
+    """preserve_reachability: preserve the observed path if one exists (vacuous otherwise)."""
+    witness_path = _shortest_path_ids(obs_indexed, assertion.from_node, assertion.to_node)
+    if witness_path is None:
+        return None
+    return _severed_diagnostic(assertion, witness_path, cur_indexed, resolver, sever)
+
+
+def _check_required_reachability(
+    assertion: ReachabilityAssertion,
+    obs_indexed: _IndexedDiGraph,
+    cur_indexed: _IndexedDiGraph,
+    resolver: dict[str, str],
+    sever: _SeverContext,
+) -> LintDiagnostic | None:
+    """require_reachability: observed path MUST exist AND curation must preserve it."""
+    if assertion.from_node not in obs_indexed.id_to_idx:
+        return None  # Unknown endpoint: reported by Gate 1 grounding, never a fake path error.
+    if assertion.to_node not in obs_indexed.id_to_idx:
+        return None
+
+    witness_path = _shortest_path_ids(obs_indexed, assertion.from_node, assertion.to_node)
+    if witness_path is not None:
+        return _severed_diagnostic(assertion, witness_path, cur_indexed, resolver, sever)
+
+    rel_note = (
+        f" restricted to relations {list(assertion.via_relations)}"
+        if assertion.via_relations
+        else " over any relation"
+    )
+    return LintDiagnostic(
+        gate=GateId.GATE_3_TOPOLOGY_POSET,
+        severity=DiagnosticSeverity.ERROR,
+        code="REACHABILITY_NOT_OBSERVED",
+        view_id=sever.view_id,
+        offending_symbols=(assertion.from_node, assertion.to_node),
+        message=(
+            f"Required reachability from '{assertion.from_node}' to '{assertion.to_node}'"
+            f"{rel_note} has no directed path in the observed input for view "
+            f"'{sever.view_id}'; no witness path exists."
         ),
         repair_hint=(
-            "Preserve path connectivity by adding a bypass_vertices rule across intermediate "
-            f"bottleneck(s) ({', '.join(bottlenecks)}) or widening the view k_hop_neighborhood."
+            "Fix the endpoints or relation filter in require_reachability, or move the "
+            "assertion to preserve_reachability if the path is optional."
         ),
     )
 
@@ -319,23 +540,24 @@ def _check_view_reachability(
     curated_ir: StructuralGraphIR,
     view: DiagramViewSpec,
     resolver: dict[str, str],
+    rules: tuple[GlobalAbstractionRule, ...] = (),
 ) -> list[LintDiagnostic]:
-    if not view.invariants.preserve_reachability:
+    inv = view.invariants
+    if not inv.preserve_reachability and not inv.require_reachability:
         return []
 
     cur_cache: dict[frozenset[str], _IndexedDiGraph] = {}
     diagnostics: list[LintDiagnostic] = []
-    for assertion in view.invariants.preserve_reachability:
+    sever = _SeverContext(view_id=view.id, scope=view.scope, rules=rules)
+    checks = (
+        *((a, _check_single_reachability) for a in inv.preserve_reachability),
+        *((a, _check_required_reachability) for a in inv.require_reachability),
+    )
+    for assertion, check in checks:
         allowed = frozenset(assertion.via_relations)
         obs_indexed = _get_filtered_digraph(ctx.observed_ir, allowed, ctx.filtered_cache)
         cur_indexed = _get_filtered_digraph(curated_ir, allowed, cur_cache)
-        diag = _check_single_reachability(
-            assertion=assertion,
-            obs_indexed=obs_indexed,
-            cur_indexed=cur_indexed,
-            resolver=resolver,
-            view_id=view.id,
-        )
+        diag = check(assertion, obs_indexed, cur_indexed, resolver, sever)
         if diag is not None:
             diagnostics.append(diag)
     return diagnostics
@@ -361,13 +583,15 @@ def _check_bypass_rule(
     observed_ir: StructuralGraphIR,
     rule: BypassVerticesRule,
     view_id: str | None,
+    *,
+    already_flagged: frozenset[str] = frozenset(),
 ) -> list[LintDiagnostic]:
     allowed = frozenset(rule.preserve_edge_relations)
     in_counts, out_counts = _edge_degree_counts(observed_ir, allowed)
     diagnostics: list[LintDiagnostic] = []
 
     for symbol_id in sorted(observed_ir.nodes):
-        if not _matches_globs(symbol_id, rule.node_id_globs):
+        if symbol_id in already_flagged or not _matches_globs(symbol_id, rule.node_id_globs):
             continue
         in_deg = in_counts.get(symbol_id, 0)
         out_deg = out_counts.get(symbol_id, 0)
@@ -468,6 +692,23 @@ def _check_structural_rules(
             diag = _check_collapse_rule(ctx, rule, view_id, strict_cohesion=strict_cohesion)
             if diag is not None:
                 diagnostics.append(diag)
+    return diagnostics
+
+
+def _check_post_collapse_bypass(
+    ctx: _StructuralContext,
+    curated_ir: StructuralGraphIR,
+    rules: Sequence[GlobalAbstractionRule],
+    view_id: str,
+) -> list[LintDiagnostic]:
+    """Enforce max_fanout_product on bypass nodes whose degrees grew after collapse."""
+    diagnostics: list[LintDiagnostic] = []
+    for rule in rules:
+        if not isinstance(rule, BypassVerticesRule):
+            continue
+        observed_hits = _check_bypass_rule(ctx.observed_ir, rule, view_id)
+        flagged = frozenset(s for d in observed_hits for s in d.offending_symbols)
+        diagnostics.extend(_check_bypass_rule(curated_ir, rule, view_id, already_flagged=flagged))
     return diagnostics
 
 
@@ -782,62 +1023,89 @@ def _check_trace_async_upgrade(
     return diagnostics
 
 
-def _find_reversed_observed_pair(
-    earlier_backing_mask: int,
-    later_backing_ids: tuple[str, ...],
+@dataclass(frozen=True, slots=True)
+class _TraceOrderContext:
+    """Observed vs curated poset plus per-curated-event backing observed event sets."""
+
+    obs_poset: _TracePoset
+    cur_poset: _TracePoset
+    cur_events: Mapping[str, TraceEvent]
+    backing_ids: tuple[tuple[str, ...], ...]
+    backing_mask: tuple[int, ...]
+    obs_desc_union: tuple[int, ...]
+
+
+def _build_trace_order_context(
+    observed: InteractionTraceIR,
+    curated: InteractionTraceIR,
+) -> _TraceOrderContext:
+    obs_poset = _build_trace_poset(observed)
+    cur_poset = _build_trace_poset(curated)
+    backing_ids: list[tuple[str, ...]] = []
+    backing_mask: list[int] = []
+    desc_union: list[int] = []
+    for cur_eid in cur_poset.event_ids:
+        backing = _trace_event_backing_ids(curated.events[cur_eid], observed.events)
+        mask = 0
+        union = 0
+        for obs_eid in backing:
+            o_idx = obs_poset.id_to_idx[obs_eid]
+            mask |= 1 << o_idx
+            union |= obs_poset.desc_mask[o_idx]
+        backing_ids.append(backing)
+        backing_mask.append(mask)
+        desc_union.append(union)
+    return _TraceOrderContext(
+        obs_poset=obs_poset,
+        cur_poset=cur_poset,
+        cur_events=curated.events,
+        backing_ids=tuple(backing_ids),
+        backing_mask=tuple(backing_mask),
+        obs_desc_union=tuple(desc_union),
+    )
+
+
+def _iter_bits(mask: int) -> Iterator[int]:
+    while mask:
+        bit = mask & -mask
+        mask ^= bit
+        yield bit.bit_length() - 1
+
+
+def _find_ordered_backing_pair(
+    src_backing_ids: tuple[str, ...],
+    dst_backing_mask: int,
     obs_poset: _TracePoset,
 ) -> tuple[str, str]:
-    for obs_a in later_backing_ids:
-        a_idx = obs_poset.id_to_idx[obs_a]
-        overlap = obs_poset.desc_mask[a_idx] & earlier_backing_mask
+    """Return the first observed pair ``(b_src, b_dst)`` with ``b_src`` before ``b_dst``."""
+    for obs_src in src_backing_ids:
+        overlap = obs_poset.desc_mask[obs_poset.id_to_idx[obs_src]] & dst_backing_mask
         if overlap:
-            b_idx = (overlap & -overlap).bit_length() - 1
-            return (obs_a, obs_poset.event_ids[b_idx])
+            return (obs_src, obs_poset.event_ids[(overlap & -overlap).bit_length() - 1])
     return ("<unknown>", "<unknown>")
 
 
-def _check_trace_partial_order(
-    observed: InteractionTraceIR,
-    curated: InteractionTraceIR,
+def _check_reversed_order(
+    ctx: _TraceOrderContext,
     view_id: str,
-) -> list[LintDiagnostic]:
-    obs_poset = _build_trace_poset(observed)
-    cur_poset = _build_trace_poset(curated)
-
-    cur_count = len(cur_poset.event_ids)
-    backing_ids_by_cur: list[tuple[str, ...]] = []
-    backing_mask_by_cur = [0] * cur_count
-    obs_desc_union_by_cur = [0] * cur_count
-
-    for idx, cur_eid in enumerate(cur_poset.event_ids):
-        backing = _trace_event_backing_ids(curated.events[cur_eid], observed.events)
-        backing_ids_by_cur.append(backing)
-        b_mask = 0
-        d_union = 0
-        for obs_eid in backing:
-            o_idx = obs_poset.id_to_idx[obs_eid]
-            b_mask |= 1 << o_idx
-            d_union |= obs_poset.desc_mask[o_idx]
-        backing_mask_by_cur[idx] = b_mask
-        obs_desc_union_by_cur[idx] = d_union
-
+) -> tuple[list[LintDiagnostic], frozenset[tuple[int, int]]]:
+    """Check 1: curated ``u`` precedes ``v`` while observed backing of ``v`` precedes ``u``."""
     diagnostics: list[LintDiagnostic] = []
-    for earlier_idx, earlier_id in enumerate(cur_poset.event_ids):
-        earlier_mask = backing_mask_by_cur[earlier_idx]
+    reversed_pairs: set[tuple[int, int]] = set()
+    event_ids = ctx.cur_poset.event_ids
+    for earlier_idx, earlier_id in enumerate(event_ids):
+        earlier_mask = ctx.backing_mask[earlier_idx]
         if not earlier_mask:
             continue
-        rem = cur_poset.desc_mask[earlier_idx]
-        while rem:
-            bit = rem & -rem
-            rem ^= bit
-            later_idx = bit.bit_length() - 1
-            if not (obs_desc_union_by_cur[later_idx] & earlier_mask):
+        for later_idx in _iter_bits(ctx.cur_poset.desc_mask[earlier_idx]):
+            if not ctx.obs_desc_union[later_idx] & earlier_mask:
                 continue
-            later_id = cur_poset.event_ids[later_idx]
-            obs_a, obs_b = _find_reversed_observed_pair(
-                earlier_mask, backing_ids_by_cur[later_idx], obs_poset
+            reversed_pairs.add((earlier_idx, later_idx))
+            later_id = event_ids[later_idx]
+            obs_a, obs_b = _find_ordered_backing_pair(
+                ctx.backing_ids[later_idx], earlier_mask, ctx.obs_poset
             )
-            witness = _shortest_path_ids(cur_poset.indexed_graph, earlier_id, later_id) or (
+            witness = _shortest_path_ids(ctx.cur_poset.indexed_graph, earlier_id, later_id) or (
                 earlier_id,
                 later_id,
             )
@@ -847,7 +1115,7 @@ def _check_trace_partial_order(
                     severity=DiagnosticSeverity.ERROR,
                     code="PARTIAL_ORDER_VIOLATED",
                     view_id=view_id,
-                    offending_symbols=(earlier_id, later_id),
+                    offending_symbols=tuple(dict.fromkeys((earlier_id, later_id, obs_a, obs_b))),
                     witness_path=witness,
                     message=(
                         f"Curated trace reverses observed happens-before order: '{earlier_id}' "
@@ -860,6 +1128,141 @@ def _check_trace_partial_order(
                     ),
                 )
             )
+    return diagnostics, frozenset(reversed_pairs)
+
+
+def _direct_curated_edges(ctx: _TraceOrderContext) -> Iterator[tuple[int, int]]:
+    """Yield deduplicated direct curated causal edges ``(u_idx, v_idx)`` with ``u != v``."""
+    id_to_idx = ctx.cur_poset.id_to_idx
+    for v_idx, v_id in enumerate(ctx.cur_poset.event_ids):
+        preds = dict.fromkeys(_event_predecessors(ctx.cur_events[v_id]))
+        for pred_id in preds:
+            u_idx = id_to_idx.get(pred_id)
+            if u_idx is not None and u_idx != v_idx:
+                yield (u_idx, v_idx)
+
+
+def _check_invented_order(
+    ctx: _TraceOrderContext,
+    view_id: str,
+    reversed_pairs: frozenset[tuple[int, int]],
+) -> list[LintDiagnostic]:
+    """Check 2: curated direct edge ``u -> v`` with no observed ``b_u < b_v`` backing pair."""
+    diagnostics: list[LintDiagnostic] = []
+    event_ids = ctx.cur_poset.event_ids
+    for u_idx, v_idx in _direct_curated_edges(ctx):
+        u_mask, v_mask = ctx.backing_mask[u_idx], ctx.backing_mask[v_idx]
+        if not u_mask or not v_mask or u_mask & v_mask or (u_idx, v_idx) in reversed_pairs:
+            continue
+        if ctx.obs_desc_union[u_idx] & v_mask:
+            continue
+        u_id, v_id = event_ids[u_idx], event_ids[v_idx]
+        symbols = tuple(
+            dict.fromkeys((u_id, v_id, *ctx.backing_ids[u_idx], *ctx.backing_ids[v_idx]))
+        )
+        diagnostics.append(
+            LintDiagnostic(
+                gate=GateId.GATE_3_TOPOLOGY_POSET,
+                severity=DiagnosticSeverity.ERROR,
+                code="PARTIAL_ORDER_FALSE_BARRIER",
+                view_id=view_id,
+                offending_symbols=symbols,
+                witness_path=(u_id, v_id),
+                message=(
+                    f"Curated trace invents happens-before order '{u_id}' -> '{v_id}' in view "
+                    f"'{view_id}': observed backing event(s) "
+                    f"{', '.join(ctx.backing_ids[u_idx])} are not ordered before "
+                    f"{', '.join(ctx.backing_ids[v_idx])} (concurrent or causally independent)."
+                ),
+                repair_hint=(
+                    "Remove the parent_event_id/causal_links edge that has no observed "
+                    "happens-before backing; async fire-and-forget continuations must not "
+                    "depend on the spawned child."
+                ),
+            )
+        )
+    return diagnostics
+
+
+def _observed_projection(ctx: _TraceOrderContext) -> tuple[list[int], list[int]]:
+    """Project observed order onto distinct curated events.
+
+    Returns ``(succ, pred)`` bitmasks over curated indices: ``succ[u]`` has bit ``v`` iff some
+    backing event of ``u`` precedes some backing event of ``v`` in the observed poset, ``u != v``,
+    and the two representatives share no backing events (shared backing means the order is
+    internal to a contracted group and may be abstracted away).
+    """
+    count = len(ctx.cur_poset.event_ids)
+    succ = [0] * count
+    pred = [0] * count
+    for u_idx in range(count):
+        u_mask = ctx.backing_mask[u_idx]
+        if not u_mask:
+            continue
+        reach = ctx.obs_desc_union[u_idx]
+        for v_idx in range(count):
+            v_mask = ctx.backing_mask[v_idx]
+            if v_idx != u_idx and v_mask & reach and not v_mask & u_mask:
+                succ[u_idx] |= 1 << v_idx
+                pred[v_idx] |= 1 << u_idx
+    return succ, pred
+
+
+def _check_lost_order(
+    ctx: _TraceOrderContext,
+    view_id: str,
+    reversed_pairs: frozenset[tuple[int, int]],
+) -> list[LintDiagnostic]:
+    """Check 3: observed order between distinct survivors missing from the curated poset.
+
+    Only minimal missing pairs are reported (no intermediate survivor ``w`` with observed
+    ``u < w < v``), so a single severed chain yields one diagnostic instead of O(N^2) noise.
+    """
+    succ, pred = _observed_projection(ctx)
+    diagnostics: list[LintDiagnostic] = []
+    event_ids = ctx.cur_poset.event_ids
+    for u_idx, u_id in enumerate(event_ids):
+        missing = succ[u_idx] & ~ctx.cur_poset.desc_mask[u_idx]
+        for v_idx in _iter_bits(missing):
+            if (v_idx, u_idx) in reversed_pairs or succ[u_idx] & pred[v_idx]:
+                continue
+            v_id = event_ids[v_idx]
+            b_u, b_v = _find_ordered_backing_pair(
+                ctx.backing_ids[u_idx], ctx.backing_mask[v_idx], ctx.obs_poset
+            )
+            diagnostics.append(
+                LintDiagnostic(
+                    gate=GateId.GATE_3_TOPOLOGY_POSET,
+                    severity=DiagnosticSeverity.ERROR,
+                    code="PARTIAL_ORDER_LOST_EDGE",
+                    view_id=view_id,
+                    offending_symbols=tuple(dict.fromkeys((u_id, v_id, b_u, b_v))),
+                    witness_path=(u_id, v_id),
+                    message=(
+                        f"Curated trace drops observed happens-before order between surviving "
+                        f"events '{u_id}' and '{v_id}' in view '{view_id}': observed '{b_u}' "
+                        f"precedes '{b_v}' but '{u_id}' does not precede '{v_id}'."
+                    ),
+                    repair_hint=(
+                        "Retain a parent_event_id or causal_links path from the earlier "
+                        "representative to the later one; only order internal to a contracted "
+                        "group (loop, recursion cut, depth cut, parallel map) may be abstracted."
+                    ),
+                )
+            )
+    return diagnostics
+
+
+def _check_trace_partial_order(
+    observed: InteractionTraceIR,
+    curated: InteractionTraceIR,
+    view_id: str,
+) -> list[LintDiagnostic]:
+    """Verify the compaction ordering contract (reversed, invented, and dropped order)."""
+    ctx = _build_trace_order_context(observed, curated)
+    diagnostics, reversed_pairs = _check_reversed_order(ctx, view_id)
+    diagnostics.extend(_check_invented_order(ctx, view_id, reversed_pairs))
+    diagnostics.extend(_check_lost_order(ctx, view_id, reversed_pairs))
     return diagnostics
 
 
@@ -902,7 +1305,10 @@ class TopologicalInvariantGate:
                 continue
             combined_rules = (*spec.global_abstractions, *view.rules)
             resolver = _build_curated_resolver(observed_ir, curated, combined_rules)
-            diagnostics.extend(_check_view_reachability(ctx, curated, view, resolver))
+            diagnostics.extend(_check_post_collapse_bypass(ctx, curated, combined_rules, view.id))
+            diagnostics.extend(
+                _check_view_reachability(ctx, curated, view, resolver, combined_rules)
+            )
             diagnostics.extend(_check_induced_cycles(ctx, curated, view, combined_rules))
             diagnostics.extend(_check_structural_async_upgrade(ctx, curated, view))
 

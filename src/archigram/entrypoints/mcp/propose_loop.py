@@ -64,7 +64,7 @@ from archigram.features.reduce_structural import (
 from archigram.features.reduce_trace import TraceCompactionEngine
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Callable, Sequence
 
 _CANONICAL_IR_ADAPTER: TypeAdapter[CanonicalIR] = TypeAdapter(CanonicalIR)
 _DIGEST_GENERATOR = GraphDigestGenerator()
@@ -1046,10 +1046,11 @@ def run_propose_loop(
     )
 
 
-def _load_propose_input_ir(input_path: str) -> CanonicalIR | None:
+def _load_propose_input_ir(
+    input_path: str,
+    load_canonical_ir: Callable[[Path], CanonicalIR],
+) -> CanonicalIR | None:
     """Load CanonicalIR from a directory, .py file, IR JSON, or supported topology format."""
-    from archigram.entrypoints.cli.pipeline import load_canonical_ir
-
     in_path = Path(input_path)
     if not in_path.exists():
         return None
@@ -1070,10 +1071,14 @@ def run_propose_cli(
     out_spec_path: str,
     max_turns: int = 3,
     *,
+    ir_loader: Callable[[Path], CanonicalIR],
     proposer: RuleProposerProtocol | None = None,
 ) -> int:
-    """CLI helper reading CanonicalIR or Python directory, running repair loop, and writing YAML."""
-    ir = _load_propose_input_ir(input_path)
+    """CLI helper reading CanonicalIR or Python directory, running repair loop, and writing YAML.
+
+    The data-plane `ir_loader` is injected by the caller so this module has no CLI import edge.
+    """
+    ir = _load_propose_input_ir(input_path, ir_loader)
     if ir is None:
         return 1
 

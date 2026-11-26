@@ -553,15 +553,14 @@ views:
         label: "emit_d2"
         member_globs: ["archigram.features.emit_d2", "archigram.features.emit_d2.*"]
       - op: collapse_partition
-        id: l1_mmd_emit_plantuml
-        target_node_id: emit_plantuml
-        label: "emit_plantuml"
-        member_globs: ["archigram.features.emit_plantuml", "archigram.features.emit_plantuml.*"]
-      - op: collapse_partition
-        id: l1_mmd_emit_likec4
-        target_node_id: emit_likec4
-        label: "emit_likec4"
-        member_globs: ["archigram.features.emit_likec4", "archigram.features.emit_likec4.*"]
+        id: l1_mmd_emit_dsl
+        target_node_id: emit_dsl
+        label: "emit_likec4 + emit_plantuml"
+        member_globs:
+          - "archigram.features.emit_plantuml"
+          - "archigram.features.emit_plantuml.*"
+          - "archigram.features.emit_likec4"
+          - "archigram.features.emit_likec4.*"
       - op: collapse_partition
         id: l1_mmd_digest
         target_node_id: digest
@@ -681,15 +680,14 @@ views:
         label: "emit_d2"
         member_globs: ["archigram.features.emit_d2", "archigram.features.emit_d2.*"]
       - op: collapse_partition
-        id: l1_d2_emit_plantuml
-        target_node_id: emit_plantuml
-        label: "emit_plantuml"
-        member_globs: ["archigram.features.emit_plantuml", "archigram.features.emit_plantuml.*"]
-      - op: collapse_partition
-        id: l1_d2_emit_likec4
-        target_node_id: emit_likec4
-        label: "emit_likec4"
-        member_globs: ["archigram.features.emit_likec4", "archigram.features.emit_likec4.*"]
+        id: l1_d2_emit_dsl
+        target_node_id: emit_dsl
+        label: "emit_likec4 + emit_plantuml"
+        member_globs:
+          - "archigram.features.emit_plantuml"
+          - "archigram.features.emit_plantuml.*"
+          - "archigram.features.emit_likec4"
+          - "archigram.features.emit_likec4.*"
       - op: collapse_partition
         id: l1_d2_digest
         target_node_id: digest

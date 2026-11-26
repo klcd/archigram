@@ -6,11 +6,13 @@
 [![Architecture: Hexagonal + 16 Independent Slices](https://img.shields.io/badge/architecture-hexagonal%20%2B%20feature--sliced-10b981)](docs/architecture/README.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-64748b)](LICENSE)
 
+> **Pre-alpha:** ArchiGram is early-stage software. The CLI, MCP tools, spec format and output formats may change without notice.
+
 Deterministic graph projection, runtime concurrency trace compaction (`R1–R6` + Series-Parallel poset lowering), and 5-gate semantic/topological linting CLI + MCP server.
 
 | Stage 2: Triage Overlay on Raw `334`-Node AST (`50,186` Mermaid Chars) | Stage 3: 5-Gate-Verified Curated Result (`17` Nodes, `1,887` Chars) |
 | --- | --- |
-| ![Stage 2 — Triage Overlay](docs/architecture/diagrams/showcase_cli_triage.2_triage.d2.svg) | ![Stage 3 — Curated Result](docs/architecture/diagrams/showcase_cli_triage.3_curated.d2.svg) |
+| [<picture><source media="(prefers-color-scheme: dark)" srcset="docs/architecture/diagrams/showcase_cli_triage.2_triage.dark.d2.svg"><img alt="Stage 2 — Triage Overlay" src="docs/architecture/diagrams/showcase_cli_triage.2_triage.d2.svg"></picture>](docs/architecture/diagrams/showcase_cli_triage.2_triage.d2.svg) | [<picture><source media="(prefers-color-scheme: dark)" srcset="docs/architecture/diagrams/showcase_cli_triage.3_curated.dark.d2.svg"><img alt="Stage 3 — Curated Result" src="docs/architecture/diagrams/showcase_cli_triage.3_curated.d2.svg"></picture>](docs/architecture/diagrams/showcase_cli_triage.3_curated.d2.svg) |
 | *Crimson `[REMOVE]`, Amber `[BYPASS]`, Violet `[COLLAPSE]`, Emerald `[KEEP]` — computed from CLI rules ([full 3-stage showcase ->](docs/architecture/uml-and-curation-showcase.md))* | *Dual-mode transparent styling (`fill: transparent`) + 90° orthogonal ELK routing ([animated runtime playback ->](docs/architecture/diagrams/l3_runtime_pipeline_steps_d2.d2.svg))* |
 
 ## Why We Created ArchiGram
@@ -26,7 +28,7 @@ Software teams face three recurring failure modes whenever they try to keep arch
 - **Ground-Truth Ingestion (`OBSERVED` Provenance):** Deterministic extractors ingest real symbols, types, edges, and happens-before spans from Python ASTs, SCIP indexes, Graphviz DOT, OOP class hierarchies, OpenTelemetry traces, or live `sys.monitoring` execution—stamping every fact with cryptographic provenance.
 - **Declarative Curation (`CurationSpecV1`) Instead of Pixel Pushing:** Humans and AI agents never edit raw diagram syntax. Instead, they author small, version-controlled YAML views (`collapse_partition`, `k_hop_neighborhood`, `bypass_vertices`, `prune_leaves`, and `R1–R6` + Series-Parallel poset trace compaction) that distill large systems into focused `10–25` node views across zoom levels (`L0`–`L3`).
 - **5-Gate Mathematical Verification Before Emission:** Every view must pass **Gate 1** (100% symbol grounding—zero hallucinations), **Gate 2** (protected boundary survival), **Gate 3** (transitive reachability, cycle discipline & concurrency happens-before preservation with concrete witness counterexamples), **Gate 4** (cognitive node/edge budgets), and **Gate 5** (headless target syntax validation).
-- **Bounded Self-Healing AI Loop + Zero-Cost Deterministic CI:** When an LLM curates views via `archigram propose` or the MCP server, it only proposes `CurationSpecV1` rules inside a bounded 3-turn lint-and-repair loop guided by formal counterexamples. Once committed, `archigram apply --check` enforces **zero documentation drift** in CI and Git hooks in milliseconds with zero LLM calls and byte-identical output across Mermaid (`< 5,000` chars for Gitea/GitHub), D2 (+ animated `.d2.svg`), PlantUML, LikeC4, and Graphviz DOT.
+- **Bounded Self-Healing AI Loop + Zero-Cost Deterministic CI:** When the local heuristic `archigram propose` loop or an LLM client of the stdio MCP server curates views, it only proposes `CurationSpecV1` rules inside a bounded 3-turn lint-and-repair loop guided by formal counterexamples. Once committed, `archigram apply --check` enforces **zero documentation drift** in CI and Git hooks in milliseconds with zero LLM calls and byte-identical output across Mermaid (`< 5,000` chars for Gitea/GitHub), D2 (+ animated `.d2.svg`), PlantUML, LikeC4, and Graphviz DOT.
 
 ## Architecture Documentation (4 Zoom Levels + UML 2.5 Showcase)
 
@@ -40,6 +42,17 @@ ArchiGram dogfoods itself to generate and lint its own architecture docs (`0` ha
 | **L3** | [Runtime Execution & Self-Healing Traces](docs/architecture/L3-runtime-traces.md) | Live `sys.monitoring` trace of `compile_and_lint_pipeline` & 3-turn `run_propose_loop` compacted via `R1–R6` | 15 participants, 48 events |
 | **Gallery** | [Styling Policy & Multi-Target Gallery](docs/architecture/diagram-styling-and-gallery.md) | Dual-mode transparent styling (`domain/style.py`), edge-only semantic colors, flowing D2 SVGs, animated `steps` playback, compact `< 5,000`-char Gitea-ready Mermaid & all modes | All 5 renderers × all modes |
 | **UML & Triage** | [UML 2.5 & 3-Stage CLI Curation Showcase](docs/architecture/uml-and-curation-showcase.md) | Program-first AST/trace extraction (`50k` chars) -> CLI-only `curate` + `triage` 3-stage SVGs (`original` -> `triage` -> `curated`) & full 14-type UML 2.5 taxonomy (`package`, `deployment`, `use_case`, `communication`, `activity`, `state`) | 3-stage SVGs + 14 UML types |
+
+## Python Quickstart (CI-ready, offline, zero model calls)
+
+New here? Follow **[docs/quickstart.md](docs/quickstart.md)**: pin a revision, lint and regenerate a committed Mermaid diagram of a tiny Python package ([`examples/python-quickstart/`](examples/python-quickstart/)), run `archigram apply --check` in CI with the network disabled, and see a passing check plus both reachability failures (`REACHABILITY_NOT_OBSERVED`, `REACHABILITY_SEVERED`) and a `[STALE]` diagram reproduced with small edits. It also states what static Python extraction can and cannot see, and documents the local stdio MCP server.
+
+```bash
+uv sync --frozen
+uv run --offline --frozen archigram apply examples/python-quickstart/shop \
+  --spec examples/python-quickstart/diagram-views.yaml \
+  --out-dir examples/python-quickstart/diagrams --check
+```
 
 ## Install & Developer Quickstart
 
@@ -87,10 +100,10 @@ uv run archigram apply src/archigram \
   --sync-md docs/architecture
 
 # Compare two architectural snapshots for structural regressions (cycles, lost paths, budget drift)
-uv run archigram diff base.ir.json head.ir.json --spec docs/architecture/diagram-views.yaml
+uv run archigram diff --base base.ir.json --head head.ir.json --spec docs/architecture/diagram-views.yaml
 
-# Run the bounded 3-turn self-healing proposal -> lint -> repair loop
-uv run archigram propose src/archigram --goal "High-level hexagonal overview" --out curated.yaml
+# Run the bounded 3-turn self-healing proposal -> lint -> repair loop (local deterministic heuristic, no LLM call)
+uv run archigram propose src/archigram --out curated.yaml --max-turns 3
 ```
 
 ## Architecture (Hexagonal + Feature-Sliced)

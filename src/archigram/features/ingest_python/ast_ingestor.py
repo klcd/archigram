@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import ast
 import hashlib
+import re
+import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -124,6 +126,51 @@ def _find_top_package_dir(start_dir: Path, boundary: Path | None) -> Path | None
     return current
 
 
+def _normalize_dist_name(name: str) -> str:
+    """PEP 503-style normalization mapped to an importable identifier."""
+    return re.sub(r"[-_.]+", "_", name.strip()).lower()
+
+
+def _declared_import_names(data: dict[str, object]) -> list[str]:
+    """Collect explicitly declared top-level import names from build-backend tables."""
+    tool = data.get("tool")
+    if not isinstance(tool, dict):
+        return []
+    hatch: object = tool.get("hatch", {})
+    wheel: object = {}
+    if isinstance(hatch, dict):
+        build: object = hatch.get("build", {})
+        targets: object = build.get("targets", {}) if isinstance(build, dict) else {}
+        wheel = targets.get("wheel", {}) if isinstance(targets, dict) else {}
+    pkgs: object = wheel.get("packages", []) if isinstance(wheel, dict) else []
+    return [Path(str(p)).name for p in pkgs] if isinstance(pkgs, list) else []
+
+
+def _pyproject_root_package(pkg_dir: Path) -> str | None:
+    """Derive the root package ID from a pyproject.toml beside or above ``pkg_dir``.
+
+    Returns None when no pyproject is found, when ``pkg_dir`` is already a declared
+    package of the project, or when no name can be derived (caller keeps the basename).
+    """
+    for candidate_dir in (pkg_dir, pkg_dir.parent):
+        try:
+            text = (candidate_dir / "pyproject.toml").read_text(encoding="utf-8")
+            data: dict[str, object] = tomllib.loads(text)
+        except (OSError, tomllib.TOMLDecodeError, UnicodeDecodeError):
+            continue
+        declared = _declared_import_names(data)
+        if pkg_dir.name in declared:
+            return None
+        if len(declared) == 1:
+            return declared[0]
+        project = data.get("project")
+        raw_name = project.get("name") if isinstance(project, dict) else None
+        if isinstance(raw_name, str) and raw_name.strip():
+            name = _normalize_dist_name(raw_name)
+            return name if name.isidentifier() and name != pkg_dir.name else None
+    return None
+
+
 def _parts_to_module_id(rel_path: Path, fallback: str) -> str:
     """Convert a relative .py path into a canonical dotted module identifier."""
     parts = list(rel_path.with_suffix("").parts)
@@ -133,11 +180,16 @@ def _parts_to_module_id(rel_path: Path, fallback: str) -> str:
     return ".".join(cleaned) if cleaned else fallback
 
 
-def _resolve_dir_module_id(file_path: Path, root_dir: Path, root_has_init: bool) -> str:
+def _resolve_dir_module_id(
+    file_path: Path, root_dir: Path, root_has_init: bool, root_alias: str | None = None
+) -> str:
     """Resolve canonical dotted module name for a file inside a scanned directory."""
     if root_has_init:
         top_pkg = _find_top_package_dir(root_dir, None)
         base = top_pkg.parent if top_pkg is not None else root_dir.parent
+        if root_alias is not None and top_pkg == root_dir:
+            rel = file_path.relative_to(root_dir)
+            return _parts_to_module_id(Path(root_alias) / rel, root_alias)
     else:
         top_pkg = (
             _find_top_package_dir(file_path.parent, root_dir)
@@ -177,12 +229,13 @@ def _load_directory_sources(root_dir: Path) -> tuple[str, list[_SourceFile]]:
     """Load and parse all .py files in a directory with collision-safe dotted module names."""
     py_files = _discover_py_files(root_dir)
     root_has_init = (root_dir / "__init__.py").is_file()
+    root_alias = _pyproject_root_package(root_dir) if root_has_init else None
     raw_items: list[tuple[Path, str, str, bool]] = []
     seen_counts: dict[str, int] = {}
 
     for path in py_files:
         rel_posix = path.relative_to(root_dir).as_posix()
-        mod_id = _resolve_dir_module_id(path, root_dir, root_has_init)
+        mod_id = _resolve_dir_module_id(path, root_dir, root_has_init, root_alias)
         is_pkg = path.name == "__init__.py"
         seen_counts[mod_id] = seen_counts.get(mod_id, 0) + 1
         raw_items.append((path, rel_posix, mod_id, is_pkg))
@@ -512,21 +565,46 @@ def _extract_file_nodes(
     return extracted, local_defs
 
 
+def _is_type_checking_name(node: ast.expr) -> bool:
+    """Return True for ``TYPE_CHECKING`` and ``<alias>.TYPE_CHECKING`` references."""
+    if isinstance(node, ast.Name):
+        return node.id == "TYPE_CHECKING"
+    return isinstance(node, ast.Attribute) and node.attr == "TYPE_CHECKING"
+
+
+def _runtime_if_branches(stmt: ast.If) -> list[ast.stmt]:
+    """Return the runtime-reachable branches of an ``if``, dropping TYPE_CHECKING-only ones."""
+    test = stmt.test
+    if _is_type_checking_name(test):
+        return stmt.orelse
+    if (
+        isinstance(test, ast.UnaryOp)
+        and isinstance(test.op, ast.Not)
+        and _is_type_checking_name(test.operand)
+    ):
+        return stmt.body
+    return [*stmt.body, *stmt.orelse]
+
+
 def _iter_module_imports(stmts: list[ast.stmt]) -> list[ast.Import | ast.ImportFrom]:
-    """Collect module-level imports including inside TYPE_CHECKING / conditional blocks."""
+    """Collect runtime imports, incl. conditional and function-local (lazy) ones.
+
+    Imports guarded by ``if TYPE_CHECKING:`` are type-only and are skipped.
+    """
     found: list[ast.Import | ast.ImportFrom] = []
     for stmt in stmts:
         if isinstance(stmt, (ast.Import, ast.ImportFrom)):
             found.append(stmt)
         elif isinstance(stmt, ast.If):
-            found.extend(_iter_module_imports(stmt.body))
-            found.extend(_iter_module_imports(stmt.orelse))
+            found.extend(_iter_module_imports(_runtime_if_branches(stmt)))
         elif isinstance(stmt, ast.Try):
             found.extend(_iter_module_imports(stmt.body))
             for handler in stmt.handlers:
                 found.extend(_iter_module_imports(handler.body))
             found.extend(_iter_module_imports(stmt.orelse))
             found.extend(_iter_module_imports(stmt.finalbody))
+        elif isinstance(stmt, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            found.extend(_iter_module_imports(stmt.body))
     return found
 
 
@@ -625,6 +703,65 @@ def _build_module_index(
         dotted_imports=dotted_imports,
         imported_modules=tuple(imported_modules),
     )
+
+
+def _dunder_all_value(stmt: ast.stmt) -> ast.expr | None:
+    """Return the assigned value if stmt assigns to __all__, else None."""
+    if isinstance(stmt, ast.Assign):
+        targets: list[ast.expr] = list(stmt.targets)
+    elif isinstance(stmt, (ast.AugAssign, ast.AnnAssign)):
+        targets = [stmt.target]
+    else:
+        return None
+    if any(isinstance(t, ast.Name) and t.id == "__all__" for t in targets):
+        return stmt.value
+    return None
+
+
+def _literal_dunder_all(tree: ast.Module) -> list[str] | None:
+    """Return names from a literal module-level __all__ list/tuple, else None."""
+    names: list[str] | None = None
+    for stmt in tree.body:
+        value = _dunder_all_value(stmt)
+        if not isinstance(value, (ast.List, ast.Tuple)):
+            continue
+        items = [e.value for e in value.elts if isinstance(e, ast.Constant)]
+        if len(items) != len(value.elts) or not all(isinstance(i, str) for i in items):
+            continue
+        names = (names or []) + [i for i in items if isinstance(i, str)]
+    return names
+
+
+def _wildcard_public_names(target: _ModuleIndex) -> list[str]:
+    """Names a wildcard import of target brings in (__all__ if literal, else non-underscore)."""
+    known = {*target.local_defs, *target.import_bindings}
+    exported = _literal_dunder_all(target.source_file.tree)
+    if exported is not None:
+        return [n for n in exported if n in known]
+    return [n for n in known if not n.startswith("_")]
+
+
+def _apply_wildcard_bindings(mod_indices: dict[str, _ModuleIndex]) -> None:
+    """Bind names brought in by statically resolvable `from mod import *` statements."""
+    for _ in range(_MAX_REEXPORT_HOPS):
+        changed = False
+        for idx in mod_indices.values():
+            sf = idx.source_file
+            for stmt in _iter_module_imports(sf.tree.body):
+                if not isinstance(stmt, ast.ImportFrom):
+                    continue
+                if not any(alias.name == "*" for alias in stmt.names):
+                    continue
+                target_mod = _resolve_relative_module(sf, stmt.level, stmt.module)
+                target = mod_indices.get(target_mod) if target_mod else None
+                if target is None or target is idx:
+                    continue
+                for name in _wildcard_public_names(target):
+                    if name not in idx.import_bindings:
+                        idx.import_bindings[name] = f"{target_mod}.{name}"
+                        changed = True
+        if not changed:
+            return
 
 
 def _resolve_symbol_with_reexports(
@@ -949,6 +1086,42 @@ def _extract_calls_in_subtree(
     return edges
 
 
+def _module_scope_nodes(tree: ast.Module) -> Iterable[ast.AST]:
+    """Yield AST nodes executed at module scope, skipping def/async def/class bodies."""
+    stack: list[ast.AST] = list(reversed(tree.body))
+    while stack:
+        node = stack.pop()
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            continue
+        yield node
+        stack.extend(reversed(list(ast.iter_child_nodes(node))))
+
+
+def _extract_module_scope_calls(
+    idx: _ModuleIndex,
+    mod_indices: dict[str, _ModuleIndex],
+    nodes: dict[str, IRNode],
+) -> list[_EdgeCandidate]:
+    """Extract CALLS edges from the module to symbols called outside any def/class body."""
+    sf = idx.source_file
+    edges: list[_EdgeCandidate] = []
+    for node in _module_scope_nodes(sf.tree):
+        if not isinstance(node, ast.Call):
+            continue
+        target_id = _resolve_call_target(node, idx, mod_indices, nodes)
+        if target_id is not None and target_id != sf.module_id:
+            edges.append(
+                _EdgeCandidate(
+                    sf.module_id,
+                    target_id,
+                    EdgeRelation.CALLS,
+                    sf.rel_posix_path,
+                    _node_line_span(node),
+                )
+            )
+    return edges
+
+
 def _extract_module_edges(
     idx: _ModuleIndex,
     mod_indices: dict[str, _ModuleIndex],
@@ -972,6 +1145,7 @@ def _extract_module_edges(
             fn_id = f"{sf.module_id}.{stmt.name}"
             if fn_id in nodes:
                 edges.extend(_extract_calls_in_subtree(fn_id, stmt, idx, mod_indices, nodes))
+    edges.extend(_extract_module_scope_calls(idx, mod_indices, nodes))
     return edges
 
 
@@ -1039,6 +1213,7 @@ class PythonAstStructuralIngestor(StructuralIngestorPort):
             sf.module_id: _build_module_index(sf, local_defs_by_mod[sf.module_id], module_ids)
             for sf in sources
         }
+        _apply_wildcard_bindings(mod_indices)
 
         all_candidates: list[_EdgeCandidate] = []
         for mod_id in sorted(mod_indices):
