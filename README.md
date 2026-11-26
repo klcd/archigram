@@ -12,7 +12,7 @@ Deterministic graph projection, runtime concurrency trace compaction (`R1–R6` 
 
 | Stage 2: Triage Overlay on Raw `334`-Node AST (`50,186` Mermaid Chars) | Stage 3: 5-Gate-Verified Curated Result (`17` Nodes, `1,887` Chars) |
 | --- | --- |
-| ![Stage 2 — Triage Overlay](docs/architecture/diagrams/showcase_cli_triage.2_triage.d2.svg) | ![Stage 3 — Curated Result](docs/architecture/diagrams/showcase_cli_triage.3_curated.d2.svg) |
+| [<picture><source media="(prefers-color-scheme: dark)" srcset="docs/architecture/diagrams/showcase_cli_triage.2_triage.dark.d2.svg"><img alt="Stage 2 — Triage Overlay" src="docs/architecture/diagrams/showcase_cli_triage.2_triage.d2.svg"></picture>](docs/architecture/diagrams/showcase_cli_triage.2_triage.d2.svg) | [<picture><source media="(prefers-color-scheme: dark)" srcset="docs/architecture/diagrams/showcase_cli_triage.3_curated.dark.d2.svg"><img alt="Stage 3 — Curated Result" src="docs/architecture/diagrams/showcase_cli_triage.3_curated.d2.svg"></picture>](docs/architecture/diagrams/showcase_cli_triage.3_curated.d2.svg) |
 | *Crimson `[REMOVE]`, Amber `[BYPASS]`, Violet `[COLLAPSE]`, Emerald `[KEEP]` — computed from CLI rules ([full 3-stage showcase ->](docs/architecture/uml-and-curation-showcase.md))* | *Dual-mode transparent styling (`fill: transparent`) + 90° orthogonal ELK routing ([animated runtime playback ->](docs/architecture/diagrams/l3_runtime_pipeline_steps_d2.d2.svg))* |
 
 ## Why We Created ArchiGram
