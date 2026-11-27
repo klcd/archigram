@@ -97,6 +97,7 @@ flowchart TD
   n3 -.->|"imports"| n0
   n7 -->|"composes"| n4
   n8 -->|"composes"| n4
+  n6 -->|"calls"| n4
   n7 -->|"calls"| n4
   n5 -.->|"imports"| n4
   n5 -->|"composes"| n4
@@ -126,10 +127,10 @@ flowchart TD
   n7 -.->|"imports"| n11
   n8 -->|"composes"| n11
   n8 -->|"calls"| n11
-  linkStyle 0,4,6,9,10,12,15,17,19,20,22,25,27,29 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 1,2,5,8,13,30 stroke:#14b8a6,stroke-width:1.75px
-  linkStyle 3,7,11,14,16,18,21,23,24,31 stroke:#3b82f6,stroke-width:1.75px
-  linkStyle 26,28 stroke:#a855f7,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 0,5,7,10,11,13,16,18,20,21,23,26,28,30 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 1,2,6,9,14,31 stroke:#14b8a6,stroke-width:1.75px
+  linkStyle 3,4,8,12,15,17,19,22,24,25,32 stroke:#3b82f6,stroke-width:1.75px
+  linkStyle 27,29 stroke:#a855f7,stroke-width:1.75px,stroke-dasharray:5 5
 ```
 <!-- archigram:end l0_hexagonal_rings_mermaid -->
 
@@ -242,6 +243,10 @@ archigram."archigram.features".feature_digest -> archigram.domain_core: "compose
 archigram."archigram.features".feature_digest -> archigram.domain_core: "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
+}
+archigram."archigram.features".feature_emitters -> archigram.domain_core: "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
 }
 archigram."archigram.features".feature_emitters -> archigram.domain_core: "composes" {
   style.stroke: "#14b8a6"
@@ -418,6 +423,7 @@ n_3_cli_dataplane_493a5b -->[#3b82f6] n_10_mcp_controlplane_ff4d3b : calls
 n_3_cli_dataplane_493a5b ..>[#64748b] n_10_mcp_controlplane_ff4d3b : imports
 n_5_feature_digest_52876d *--[#14b8a6] n_4_domain_core_f195b2 : composes
 n_5_feature_digest_52876d ..>[#64748b] n_4_domain_core_f195b2 : imports
+n_6_feature_emitters_75a4c0 -->[#3b82f6] n_4_domain_core_f195b2 : calls
 n_6_feature_emitters_75a4c0 *--[#14b8a6] n_4_domain_core_f195b2 : composes
 n_6_feature_emitters_75a4c0 ..>[#64748b] n_4_domain_core_f195b2 : imports
 n_7_feature_ingestor_73234e -->[#3b82f6] n_4_domain_core_f195b2 : calls
@@ -600,6 +606,7 @@ model {
   archigram.archigram_entrypoints.mcp_controlplane -[imports]-> archigram.archigram_features.feature_reducers 'imports'
   archigram.archigram_features.feature_digest -[composes]-> archigram.domain_core 'composes'
   archigram.archigram_features.feature_digest -[imports]-> archigram.domain_core 'imports'
+  archigram.archigram_features.feature_emitters -[calls]-> archigram.domain_core 'calls'
   archigram.archigram_features.feature_emitters -[composes]-> archigram.domain_core 'composes'
   archigram.archigram_features.feature_emitters -[imports]-> archigram.domain_core 'imports'
   archigram.archigram_features.feature_ingestors -[calls]-> archigram.domain_core 'calls'
@@ -685,6 +692,7 @@ digraph "archigram" {
   "cli_dataplane" -> "mcp_controlplane" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
   "feature_digest" -> "domain_core" [xlabel="composes", _rel_kind="composes", _sync_kind="sync", style="solid", color="#14b8a6", arrowhead="diamond"];
   "feature_digest" -> "domain_core" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
+  "feature_emitters" -> "domain_core" [xlabel="calls", _rel_kind="calls", _sync_kind="sync", style="solid", color="#3b82f6", arrowhead="vee"];
   "feature_emitters" -> "domain_core" [xlabel="composes", _rel_kind="composes", _sync_kind="sync", style="solid", color="#14b8a6", arrowhead="diamond"];
   "feature_emitters" -> "domain_core" [xlabel="imports", _rel_kind="imports", _sync_kind="sync", style="dashed", color="#64748b", arrowhead="vee"];
   "feature_ingestors" -> "domain_core" [xlabel="calls", _rel_kind="calls", _sync_kind="sync", style="solid", color="#3b82f6", arrowhead="vee"];

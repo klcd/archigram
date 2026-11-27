@@ -369,7 +369,7 @@ def test_overlapping_concurrent_siblings_emit_d2_message_group(
             callee_id="svc_b",
             signature=sig_b,
             parent_event_id="root",
-            clock_domain_id="h1",
+            clock_domain_id="h0",
             start_ns=start_a + 1 + offset_b,
             end_ns=start_a + 1 + offset_b + dur_b,
             sync_kind=SyncKind.FORK_JOIN_BRANCH,
@@ -414,3 +414,143 @@ def test_interaction_trace_d2_steps_variant_determinism_and_cli_validity(
         assert "  step_13: {" not in out_first
     _assert_balanced_d2_braces(out_first)
     _assert_d2_cli_valid(out_first)
+
+
+def _make_isolation_participants(count: int) -> dict[str, TraceParticipant]:
+    stamp = ProvenanceStamp(grade=ProvenanceGrade.OBSERVED, extractor="otel", input_sha256=_SHA256)
+    pids = ["api", *[f"svc_{idx}" for idx in range(count)]]
+    return {
+        pid: TraceParticipant(
+            participant_id=pid,
+            symbol_id=pid,
+            label=pid,
+            kind=NodeKind.SERVICE,
+            provenance=stamp,
+        )
+        for pid in pids
+    }
+
+
+@settings(max_examples=60, deadline=None)
+@given(
+    base_start=st.integers(min_value=1, max_value=400),
+    offsets=st.lists(st.integers(min_value=0, max_value=25), min_size=2, max_size=7),
+    durations=st.lists(st.integers(min_value=40, max_value=250), min_size=2, max_size=7),
+)
+def test_different_clock_domains_never_group_or_fork(
+    base_start: int,
+    offsets: list[int],
+    durations: list[int],
+) -> None:
+    count = min(len(offsets), len(durations))
+    stamp = ProvenanceStamp(grade=ProvenanceGrade.OBSERVED, extractor="otel", input_sha256=_SHA256)
+    participants = _make_isolation_participants(count)
+    events: dict[str, TraceEvent] = {
+        "root": TraceEvent(
+            event_id="root",
+            caller_id="api",
+            callee_id="api",
+            signature="dispatch()",
+            clock_domain_id="host_root",
+            start_ns=0,
+            end_ns=2000,
+            provenance=stamp,
+        )
+    }
+    for idx in range(count):
+        start_ns = base_start + offsets[idx]
+        events[f"evt_{idx}"] = TraceEvent(
+            event_id=f"evt_{idx}",
+            caller_id="api",
+            callee_id=f"svc_{idx}",
+            signature=f"remote_call_{idx}()",
+            parent_event_id="root",
+            clock_domain_id=f"host_{idx}",
+            start_ns=start_ns,
+            end_ns=start_ns + durations[idx],
+            sync_kind=SyncKind.FORK_JOIN_BRANCH,
+            provenance=stamp,
+        )
+
+    seq_trace = InteractionTraceIR(trace_id="clock_iso", participants=participants, events=events)
+    act_trace = seq_trace.model_copy(update={"metadata": {"diagram_variant": "activity"}})
+    emitter = D2Emitter()
+    seq_out = emitter.emit(seq_trace)
+    act_out = emitter.emit(act_trace)
+
+    assert "concurrent_group_" not in seq_out
+    assert "Concurrent (" not in seq_out
+    assert "=== fork ===" not in act_out
+    _assert_balanced_d2_braces(seq_out)
+    _assert_balanced_d2_braces(act_out)
+    _assert_d2_cli_valid(seq_out)
+    _assert_d2_cli_valid(act_out)
+
+
+@settings(max_examples=60, deadline=None)
+@given(
+    count=st.integers(min_value=2, max_value=6),
+    skew_step=st.integers(min_value=10, max_value=45),
+    overlap_pad=st.integers(min_value=60, max_value=200),
+)
+def test_causal_links_prevent_grouping_and_preserve_skewed_order(
+    count: int,
+    skew_step: int,
+    overlap_pad: int,
+) -> None:
+    from archigram.features.emit_d2.emitter import order_d2_trace_events
+
+    stamp = ProvenanceStamp(grade=ProvenanceGrade.OBSERVED, extractor="otel", input_sha256=_SHA256)
+    participants = _make_isolation_participants(count)
+    events: dict[str, TraceEvent] = {
+        "root": TraceEvent(
+            event_id="root",
+            caller_id="api",
+            callee_id="api",
+            signature="dispatch()",
+            clock_domain_id="h0",
+            start_ns=0,
+            end_ns=5000,
+            provenance=stamp,
+        )
+    }
+    anchor_start = 400
+    for idx in range(count):
+        # Dependent events have strictly earlier skewed timestamps while overlapping predecessors.
+        start_ns = anchor_start - idx * skew_step
+        end_ns = anchor_start + overlap_pad + idx * 10
+        links = (f"evt_{idx - 1}",) if idx > 0 else ()
+        events[f"evt_{idx}"] = TraceEvent(
+            event_id=f"evt_{idx}",
+            caller_id="api",
+            callee_id=f"svc_{idx}",
+            signature=f"step_call_{idx}()",
+            parent_event_id="root",
+            causal_links=links,
+            clock_domain_id="h0",
+            start_ns=start_ns,
+            end_ns=end_ns,
+            sync_kind=SyncKind.FORK_JOIN_BRANCH,
+            provenance=stamp,
+        )
+
+    seq_trace = InteractionTraceIR(trace_id="causal_iso", participants=participants, events=events)
+    act_trace = seq_trace.model_copy(update={"metadata": {"diagram_variant": "activity"}})
+    emitter = D2Emitter()
+    seq_out = emitter.emit(seq_trace)
+    act_out = emitter.emit(act_trace)
+
+    assert "concurrent_group_" not in seq_out
+    assert "Concurrent (" not in seq_out
+    assert "=== fork ===" not in act_out
+    for idx in range(count - 1):
+        pred_sig = f"step_call_{idx}()"
+        dep_sig = f"step_call_{idx + 1}()"
+        assert seq_out.index(pred_sig) < seq_out.index(dep_sig)
+        assert act_out.index(pred_sig) < act_out.index(dep_sig)
+    dangling_subset = {k: v for k, v in events.items() if k not in {"root", "evt_0"}}
+    assert len(order_d2_trace_events(dangling_subset)) == len(dangling_subset)
+    _assert_balanced_d2_braces(seq_out)
+    _assert_balanced_d2_braces(act_out)
+    _assert_d2_cli_valid(seq_out)
+    _assert_d2_cli_valid(act_out)
