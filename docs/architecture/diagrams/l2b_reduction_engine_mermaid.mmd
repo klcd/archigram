@@ -12,53 +12,55 @@ flowchart TD
   classDef default fill:transparent,stroke:#64748b,stroke-width:1.5px
   subgraph n0["archigram"]
     subgraph n1["domain"]
-      n9["domain.concurrency (SP-Poset & Overlap Clustering)"]
-      n10["domain.ir & domain.spec (Canonical IR & Spec)"]
+      n2["glob"]
+      n10["domain.concurrency (SP-Poset & Overlap Clustering)"]
+      n11["domain.ir & domain.spec (Canonical IR & Spec)"]
     end
-    subgraph n2["entrypoints"]
-      n11["Driving Adapters (cli.pipeline & mcp.propose_loop)"]
+    subgraph n3["entrypoints"]
+      n12["Driving Adapters (cli.pipeline & mcp.propose_loop)"]
     end
-    subgraph n3["features"]
-      subgraph n4["reduce_structural"]
-        subgraph n5["reducer"]
-          n12["StructuralTopologicalReducer"]
-          n13["Structural Operators (k_hop, prune, bypass, collapse, SCC, TR)"]
+    subgraph n4["features"]
+      subgraph n5["reduce_structural"]
+        subgraph n6["reducer"]
+          n13["StructuralTopologicalReducer"]
+          n14["Structural Operators (k_hop, prune, bypass, collapse, SCC, TR)"]
         end
       end
-      subgraph n6["reduce_trace"]
-        subgraph n7["compactor"]
-          n14["TraceCompactionEngine (R1-R6 + SP-Poset)"]
-          n15["TraceFragment Tree Builder"]
+      subgraph n7["reduce_trace"]
+        subgraph n8["compactor"]
+          n15["TraceCompactionEngine (R1-R6 + SP-Poset)"]
+          n16["TraceFragment Tree Builder"]
         end
       end
-      n8["Other Concurrency Consumers (lint_budget, digest, emitters)"]
+      n9["Other Concurrency Consumers (lint_budget, digest, emitters)"]
     end
   end
   style n0 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   style n1 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
-  style n2 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   style n3 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   style n4 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   style n5 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   style n6 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   style n7 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
-  n11 -.->|"imports"| n4
-  n11 -.->|"imports"| n6
-  n7 -.->|"imports"| n9
-  n9 -.->|"imports"| n1
-  n14 -->|"calls"| n10
-  n5 -.->|"imports"| n10
-  n7 -.->|"imports"| n10
-  n10 -.->|"imports"| n1
-  n8 -.->|"imports"| n9
+  style n8 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  n12 -.->|"imports"| n5
+  n12 -.->|"imports"| n7
   n8 -.->|"imports"| n10
-  n11 -.->|"imports"| n8
-  n11 -->|"calls"| n12
+  n10 -.->|"imports"| n1
+  n15 -->|"calls"| n11
+  n6 -.->|"imports"| n11
+  n8 -.->|"imports"| n11
+  n11 -.->|"imports"| n1
+  n9 -.->|"imports"| n10
+  n9 -.->|"imports"| n11
+  n12 -.->|"imports"| n9
   n12 -->|"calls"| n13
-  n11 -->|"calls"| n14
-  n14 -->|"calls"| n15
-  n7 -->|"calls"| n15
-  n4 -.->|"imports"| n5
-  n6 -.->|"imports"| n7
-  linkStyle 0,1,2,3,5,6,7,8,9,10,16,17 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  n13 -->|"calls"| n14
+  n12 -->|"calls"| n15
+  n15 -->|"calls"| n16
+  n8 -->|"calls"| n16
+  n5 -.->|"imports"| n6
+  n6 -.->|"imports"| n2
+  n7 -.->|"imports"| n8
+  linkStyle 0,1,2,3,5,6,7,8,9,10,16,17,18 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
   linkStyle 4,11,12,13,14,15 stroke:#3b82f6,stroke-width:1.75px

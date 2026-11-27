@@ -101,6 +101,7 @@ specification {
 
 model {
   archigram_domain_diagnostics = module 'diagnostics'
+  archigram_domain_glob = module 'glob'
   archigram_domain_ir = module 'ir'
   archigram_domain_spec = module 'spec'
   archigram_domain_style = module 'style'

@@ -19,36 +19,37 @@ skinparam DatabaseBorderColor #64748b
 skinparam QueueBackgroundColor transparent
 skinparam QueueBorderColor #64748b
 rectangle ":diagnostics" as o_0_archigram_domain_71c3aa
-rectangle ":ir" as o_1_archigram_domain_ae7fc5
-rectangle ":spec" as o_2_archigram_domain_498ecc
-rectangle ":style" as o_3_archigram_domain_baf783
-rectangle ":pipeline" as o_4_archigram_entryp_8024d0
-rectangle ":propose_loop" as o_5_archigram_entryp_a3efe2
-rectangle ":generator" as o_6_archigram_featur_603002
-rectangle ":emit_d2.emitter" as o_7_archigram_featur_65f494
-rectangle ":emit_mermaid.emitter" as o_8_archigram_featur_4d345c
-rectangle ":emit_plantuml.emitter" as o_9_archigram_featur_ddda4c
-rectangle ":lint_budget.gate" as o_10_archigram_featur_9a2480
-rectangle ":gates" as o_11_archigram_featur_d444ee
-rectangle ":validators" as o_12_archigram_featur_d6e8be
-rectangle ":lint_topology.gate" as o_13_archigram_featur_2a23e8
-rectangle ":reducer" as o_14_archigram_featur_df5fa8
-o_4_archigram_entryp_8024d0 -->[#3b82f6] o_4_archigram_entryp_8024d0 : 1: compile_and_lint_pipeline
-o_4_archigram_entryp_8024d0 -->[#3b82f6] o_14_archigram_featur_df5fa8 : 1.1: StructuralTopologicalReducer.reduce, 1.3: StructuralTopologicalReducer.reduce, 1.5: StructuralTopologicalReducer.reduce
-o_4_archigram_entryp_8024d0 -->[#3b82f6] o_5_archigram_entryp_a3efe2 : 1.2: emit_view_source, 1.4: emit_view_source, 1.6: emit_view_source
-o_4_archigram_entryp_8024d0 -->[#3b82f6] o_11_archigram_featur_d444ee : 1.7: GroundingAndBoundaryGate.__init__, 1.8: GroundingAndBoundaryGate.check
-o_4_archigram_entryp_8024d0 -->[#3b82f6] o_13_archigram_featur_2a23e8 : 1.9: TopologicalInvariantGate.__init__, 1.10: TopologicalInvariantGate.check
-o_4_archigram_entryp_8024d0 -->[#3b82f6] o_10_archigram_featur_9a2480 : 1.11: CognitiveBudgetAndOrphanGate.check
-o_4_archigram_entryp_8024d0 -->[#3b82f6] o_12_archigram_featur_d6e8be : 1.12: build_default_validators, 1.13: Gate5SyntaxHarness.__init__, 1.14: Gate5SyntaxHarness.validate [loop x3
-o_4_archigram_entryp_8024d0 -->[#3b82f6] o_0_archigram_domain_71c3aa : 1.15: LintReport.from_diagnostics
-o_5_archigram_entryp_a3efe2 -->[#3b82f6] o_5_archigram_entryp_a3efe2 : 2: run_propose_loop
-o_5_archigram_entryp_a3efe2 -->[#3b82f6] o_6_archigram_featur_603002 : 2.1: GraphDigestGenerator.to_compact_mark
-o_5_archigram_entryp_a3efe2 -->[#3b82f6] o_2_archigram_domain_498ecc : 2.2: parse_curation_spec_yaml, 2.7: parse_curation_spec_yaml, 2.9: DiagramViewSpec._validate_unique_vie (+4)
-o_5_archigram_entryp_a3efe2 -->[#3b82f6] o_11_archigram_featur_d444ee : 2.3: GroundingAndBoundaryGate.check [loop, 2.8: collect_observed_symbols, 2.11: GroundingAndBoundaryGate.check (+3)
-o_5_archigram_entryp_a3efe2 -->[#3b82f6] o_13_archigram_featur_2a23e8 : 2.4: TopologicalInvariantGate.check, 2.14: TopologicalInvariantGate.check, 2.26: TopologicalInvariantGate.check
-o_5_archigram_entryp_a3efe2 -->[#3b82f6] o_0_archigram_domain_71c3aa : 2.5: LintReport.from_diagnostics, 2.6: LintReport._validate_passed_invarian, 2.19: LintReport.from_diagnostics (+3)
-o_5_archigram_entryp_a3efe2 -->[#3b82f6] o_14_archigram_featur_df5fa8 : 2.12: StructuralTopologicalReducer.reduce, 2.24: StructuralTopologicalReducer.reduce
-o_5_archigram_entryp_a3efe2 -->[#3b82f6] o_10_archigram_featur_9a2480 : 2.15: CognitiveBudgetAndOrphanGate.check, 2.27: CognitiveBudgetAndOrphanGate.check
-o_5_archigram_entryp_a3efe2 -->[#3b82f6] o_8_archigram_featur_4d345c : 2.16: MermaidEmitter.__init__, 2.17: MermaidEmitter.emit, 2.28: MermaidEmitter.__init__ (+1)
-o_5_archigram_entryp_a3efe2 -->[#3b82f6] o_12_archigram_featur_d6e8be : 2.18: Gate5SyntaxHarness.validate, 2.30: Gate5SyntaxHarness.validate
+rectangle ":glob" as o_1_archigram_domain_075592
+rectangle ":ir" as o_2_archigram_domain_ae7fc5
+rectangle ":spec" as o_3_archigram_domain_498ecc
+rectangle ":style" as o_4_archigram_domain_baf783
+rectangle ":pipeline" as o_5_archigram_entryp_8024d0
+rectangle ":propose_loop" as o_6_archigram_entryp_a3efe2
+rectangle ":generator" as o_7_archigram_featur_603002
+rectangle ":emit_d2.emitter" as o_8_archigram_featur_65f494
+rectangle ":emit_mermaid.emitter" as o_9_archigram_featur_4d345c
+rectangle ":emit_plantuml.emitter" as o_10_archigram_featur_ddda4c
+rectangle ":lint_budget.gate" as o_11_archigram_featur_9a2480
+rectangle ":gates" as o_12_archigram_featur_d444ee
+rectangle ":validators" as o_13_archigram_featur_d6e8be
+rectangle ":lint_topology.gate" as o_14_archigram_featur_2a23e8
+rectangle ":reducer" as o_15_archigram_featur_df5fa8
+o_5_archigram_entryp_8024d0 -->[#3b82f6] o_5_archigram_entryp_8024d0 : 1: compile_and_lint_pipeline
+o_5_archigram_entryp_8024d0 -->[#3b82f6] o_15_archigram_featur_df5fa8 : 1.1: StructuralTopologicalReducer.reduce, 1.3: StructuralTopologicalReducer.reduce, 1.5: StructuralTopologicalReducer.reduce
+o_5_archigram_entryp_8024d0 -->[#3b82f6] o_6_archigram_entryp_a3efe2 : 1.2: emit_view_source, 1.4: emit_view_source, 1.6: emit_view_source
+o_5_archigram_entryp_8024d0 -->[#3b82f6] o_12_archigram_featur_d444ee : 1.7: GroundingAndBoundaryGate.__init__, 1.8: GroundingAndBoundaryGate.check
+o_5_archigram_entryp_8024d0 -->[#3b82f6] o_14_archigram_featur_2a23e8 : 1.9: TopologicalInvariantGate.__init__, 1.10: TopologicalInvariantGate.check
+o_5_archigram_entryp_8024d0 -->[#3b82f6] o_11_archigram_featur_9a2480 : 1.11: CognitiveBudgetAndOrphanGate.check
+o_5_archigram_entryp_8024d0 -->[#3b82f6] o_13_archigram_featur_d6e8be : 1.12: build_default_validators, 1.13: Gate5SyntaxHarness.__init__, 1.14: Gate5SyntaxHarness.validate [loop x3
+o_5_archigram_entryp_8024d0 -->[#3b82f6] o_0_archigram_domain_71c3aa : 1.15: LintReport.from_diagnostics
+o_6_archigram_entryp_a3efe2 -->[#3b82f6] o_6_archigram_entryp_a3efe2 : 2: run_propose_loop
+o_6_archigram_entryp_a3efe2 -->[#3b82f6] o_7_archigram_featur_603002 : 2.1: GraphDigestGenerator.to_compact_mark
+o_6_archigram_entryp_a3efe2 -->[#3b82f6] o_3_archigram_domain_498ecc : 2.2: parse_curation_spec_yaml, 2.7: parse_curation_spec_yaml, 2.9: DiagramViewSpec._validate_unique_vie (+4)
+o_6_archigram_entryp_a3efe2 -->[#3b82f6] o_12_archigram_featur_d444ee : 2.3: GroundingAndBoundaryGate.check [loop, 2.8: collect_observed_symbols, 2.11: GroundingAndBoundaryGate.check (+3)
+o_6_archigram_entryp_a3efe2 -->[#3b82f6] o_14_archigram_featur_2a23e8 : 2.4: TopologicalInvariantGate.check, 2.14: TopologicalInvariantGate.check, 2.26: TopologicalInvariantGate.check
+o_6_archigram_entryp_a3efe2 -->[#3b82f6] o_0_archigram_domain_71c3aa : 2.5: LintReport.from_diagnostics, 2.6: LintReport._validate_passed_invarian, 2.19: LintReport.from_diagnostics (+3)
+o_6_archigram_entryp_a3efe2 -->[#3b82f6] o_15_archigram_featur_df5fa8 : 2.12: StructuralTopologicalReducer.reduce, 2.24: StructuralTopologicalReducer.reduce
+o_6_archigram_entryp_a3efe2 -->[#3b82f6] o_11_archigram_featur_9a2480 : 2.15: CognitiveBudgetAndOrphanGate.check, 2.27: CognitiveBudgetAndOrphanGate.check
+o_6_archigram_entryp_a3efe2 -->[#3b82f6] o_9_archigram_featur_4d345c : 2.16: MermaidEmitter.__init__, 2.17: MermaidEmitter.emit, 2.28: MermaidEmitter.__init__ (+1)
+o_6_archigram_entryp_a3efe2 -->[#3b82f6] o_13_archigram_featur_d6e8be : 2.18: Gate5SyntaxHarness.validate, 2.30: Gate5SyntaxHarness.validate
 @enduml

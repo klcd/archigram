@@ -11,36 +11,37 @@ config:
 flowchart LR
   classDef default fill:transparent,stroke:#64748b,stroke-width:1.5px
   o0[":diagnostics"]
-  o1[":ir"]
-  o2[":spec"]
-  o3[":style"]
-  o4[":pipeline"]
-  o5[":propose_loop"]
-  o6[":generator"]
-  o7[":emit_d2.emitter"]
-  o8[":emit_mermaid.emitter"]
-  o9[":emit_plantuml.emitter"]
-  o10[":lint_budget.gate"]
-  o11[":gates"]
-  o12[":validators"]
-  o13[":lint_topology.gate"]
-  o14[":reducer"]
-  o4 -->|"1: compile_and_lint_pipeline"| o4
-  o4 -->|"1.1: StructuralTopologicalReducer.reduce, 1.3: StructuralTopologicalReducer.reduce, 1.5: StructuralTopologicalReducer.reduce"| o14
-  o4 -->|"1.2: emit_view_source, 1.4: emit_view_source, 1.6: emit_view_source"| o5
-  o4 -->|"1.7: GroundingAndBoundaryGate.__init__, 1.8: GroundingAndBoundaryGate.check"| o11
-  o4 -->|"1.9: TopologicalInvariantGate.__init__, 1.10: TopologicalInvariantGate.check"| o13
-  o4 -->|"1.11: CognitiveBudgetAndOrphanGate.check"| o10
-  o4 -->|"1.12: build_default_validators, 1.13: Gate5SyntaxHarness.__init__, 1.14: Gate5SyntaxHarness.validate (loop x3"| o12
-  o4 -->|"1.15: LintReport.from_diagnostics"| o0
-  o5 -->|"2: run_propose_loop"| o5
-  o5 -->|"2.1: GraphDigestGenerator.to_compact_mark"| o6
-  o5 -->|"2.2: parse_curation_spec_yaml, 2.7: parse_curation_spec_yaml, 2.9: DiagramViewSpec._validate_unique_vie (+4)"| o2
-  o5 -->|"2.3: GroundingAndBoundaryGate.check (loop, 2.8: collect_observed_symbols, 2.11: GroundingAndBoundaryGate.check (+3)"| o11
-  o5 -->|"2.4: TopologicalInvariantGate.check, 2.14: TopologicalInvariantGate.check, 2.26: TopologicalInvariantGate.check"| o13
-  o5 -->|"2.5: LintReport.from_diagnostics, 2.6: LintReport._validate_passed_invarian, 2.19: LintReport.from_diagnostics (+3)"| o0
-  o5 -->|"2.12: StructuralTopologicalReducer.reduce, 2.24: StructuralTopologicalReducer.reduce"| o14
-  o5 -->|"2.15: CognitiveBudgetAndOrphanGate.check, 2.27: CognitiveBudgetAndOrphanGate.check"| o10
-  o5 -->|"2.16: MermaidEmitter.__init__, 2.17: MermaidEmitter.emit, 2.28: MermaidEmitter.__init__ (+1)"| o8
-  o5 -->|"2.18: Gate5SyntaxHarness.validate, 2.30: Gate5SyntaxHarness.validate"| o12
+  o1[":glob"]
+  o2[":ir"]
+  o3[":spec"]
+  o4[":style"]
+  o5[":pipeline"]
+  o6[":propose_loop"]
+  o7[":generator"]
+  o8[":emit_d2.emitter"]
+  o9[":emit_mermaid.emitter"]
+  o10[":emit_plantuml.emitter"]
+  o11[":lint_budget.gate"]
+  o12[":gates"]
+  o13[":validators"]
+  o14[":lint_topology.gate"]
+  o15[":reducer"]
+  o5 -->|"1: compile_and_lint_pipeline"| o5
+  o5 -->|"1.1: StructuralTopologicalReducer.reduce, 1.3: StructuralTopologicalReducer.reduce, 1.5: StructuralTopologicalReducer.reduce"| o15
+  o5 -->|"1.2: emit_view_source, 1.4: emit_view_source, 1.6: emit_view_source"| o6
+  o5 -->|"1.7: GroundingAndBoundaryGate.__init__, 1.8: GroundingAndBoundaryGate.check"| o12
+  o5 -->|"1.9: TopologicalInvariantGate.__init__, 1.10: TopologicalInvariantGate.check"| o14
+  o5 -->|"1.11: CognitiveBudgetAndOrphanGate.check"| o11
+  o5 -->|"1.12: build_default_validators, 1.13: Gate5SyntaxHarness.__init__, 1.14: Gate5SyntaxHarness.validate (loop x3"| o13
+  o5 -->|"1.15: LintReport.from_diagnostics"| o0
+  o6 -->|"2: run_propose_loop"| o6
+  o6 -->|"2.1: GraphDigestGenerator.to_compact_mark"| o7
+  o6 -->|"2.2: parse_curation_spec_yaml, 2.7: parse_curation_spec_yaml, 2.9: DiagramViewSpec._validate_unique_vie (+4)"| o3
+  o6 -->|"2.3: GroundingAndBoundaryGate.check (loop, 2.8: collect_observed_symbols, 2.11: GroundingAndBoundaryGate.check (+3)"| o12
+  o6 -->|"2.4: TopologicalInvariantGate.check, 2.14: TopologicalInvariantGate.check, 2.26: TopologicalInvariantGate.check"| o14
+  o6 -->|"2.5: LintReport.from_diagnostics, 2.6: LintReport._validate_passed_invarian, 2.19: LintReport.from_diagnostics (+3)"| o0
+  o6 -->|"2.12: StructuralTopologicalReducer.reduce, 2.24: StructuralTopologicalReducer.reduce"| o15
+  o6 -->|"2.15: CognitiveBudgetAndOrphanGate.check, 2.27: CognitiveBudgetAndOrphanGate.check"| o11
+  o6 -->|"2.16: MermaidEmitter.__init__, 2.17: MermaidEmitter.emit, 2.28: MermaidEmitter.__init__ (+1)"| o9
+  o6 -->|"2.18: Gate5SyntaxHarness.validate, 2.30: Gate5SyntaxHarness.validate"| o13
   linkStyle 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17 stroke:#3b82f6,stroke-width:1.75px

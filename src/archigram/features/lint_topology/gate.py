@@ -11,7 +11,6 @@ from __future__ import annotations
 
 from collections import deque
 from dataclasses import dataclass, field
-from fnmatch import fnmatchcase
 from itertools import pairwise
 from typing import TYPE_CHECKING
 
@@ -24,6 +23,7 @@ from archigram.domain.diagnostics import (
     LintDiagnostic,
     LintReport,
 )
+from archigram.domain.glob import matches_any_glob
 from archigram.domain.ir import (
     CanonicalIR,
     InteractionTraceIR,
@@ -137,7 +137,7 @@ def _get_filtered_digraph(
 
 
 def _matches_globs(symbol_id: str, globs: tuple[str, ...]) -> bool:
-    return any(fnmatchcase(symbol_id, pattern) for pattern in globs)
+    return matches_any_glob(symbol_id, globs)
 
 
 def _collapse_members(
