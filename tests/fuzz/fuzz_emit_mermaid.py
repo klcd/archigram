@@ -413,3 +413,279 @@ def test_sequence_diagram_par_loop_and_end_aliasing_invariants(
     assert "\n  and " in first
     assert "\n  loop [" in first
     assert "-)" in first
+
+
+def _build_demo_participants(count: int) -> tuple[list[str], dict[str, TraceParticipant]]:
+    pids = [f"p_{idx}" for idx in range(count)]
+    participants = {
+        pid: TraceParticipant(
+            participant_id=pid,
+            symbol_id=f"sym_{idx}",
+            label=f"Svc{idx}",
+            kind=NodeKind.SERVICE,
+            provenance=_STAMP,
+        )
+        for idx, pid in enumerate(pids)
+    }
+    return pids, participants
+
+
+@st.composite
+def skewed_causal_trace_strategy(draw: st.DrawFn) -> InteractionTraceIR:
+    """Generate traces with skewed/inverted timestamps across causal_links and parent_event_id."""
+    pids, participants = _build_demo_participants(draw(st.integers(min_value=2, max_value=4)))
+    count = draw(st.integers(min_value=2, max_value=7))
+    events: dict[str, TraceEvent] = {}
+    by_parent: dict[str | None, list[str]] = {None: []}
+    for idx in range(count):
+        eid = f"ev_{idx}"
+        # Deliberately invert timestamps so predecessors have later timestamps than dependents.
+        base_start = (count - idx) * 1000 + draw(st.integers(min_value=0, max_value=200))
+        duration = draw(st.integers(min_value=10, max_value=300))
+        parent_id: str | None = None
+        causal_links: tuple[str, ...] = ()
+        if idx > 0:
+            if draw(st.booleans()):
+                parent_id = draw(st.sampled_from([f"ev_{j}" for j in range(idx)]))
+                siblings = by_parent.get(parent_id, [])
+                if siblings and draw(st.booleans()):
+                    causal_links = tuple(
+                        draw(
+                            st.lists(
+                                st.sampled_from(siblings),
+                                min_size=1,
+                                max_size=min(2, len(siblings)),
+                                unique=True,
+                            )
+                        )
+                    )
+            else:
+                causal_links = tuple(
+                    draw(
+                        st.lists(
+                            st.sampled_from([f"ev_{j}" for j in range(idx)]),
+                            min_size=1,
+                            max_size=min(2, idx),
+                            unique=True,
+                        )
+                    )
+                )
+        by_parent.setdefault(parent_id, []).append(eid)
+        events[eid] = TraceEvent(
+            event_id=eid,
+            caller_id=pids[idx % len(pids)],
+            callee_id=pids[(idx + 1) % len(pids)],
+            signature=f"step_{idx:02d}()",
+            parent_event_id=parent_id,
+            causal_links=causal_links,
+            clock_domain_id=f"clock_{draw(st.integers(min_value=0, max_value=2))}",
+            start_ns=base_start,
+            end_ns=base_start + duration,
+            sync_kind=draw(st.sampled_from([SyncKind.SYNC, SyncKind.ASYNC_FIRE_FORGET])),
+            status=EventStatus.OK,
+            provenance=_STAMP,
+        )
+    return InteractionTraceIR(trace_id="skewed_causal", participants=participants, events=events)
+
+
+@st.composite
+def causally_linked_overlap_strategy(draw: st.DrawFn) -> tuple[InteractionTraceIR, bool]:
+    """Generate overlapping same-clock siblings with causal_links (full chain or partial DAG)."""
+    pids, participants = _build_demo_participants(draw(st.integers(min_value=2, max_value=4)))
+    count = draw(st.integers(min_value=2, max_value=5))
+    full_chain = draw(st.booleans())
+    events: dict[str, TraceEvent] = {}
+    for idx in range(count):
+        eid = f"ov_{idx}"
+        start = 100 + draw(st.integers(min_value=0, max_value=40))
+        end = 500 + draw(st.integers(min_value=0, max_value=80))
+        if idx == 0:
+            links: tuple[str, ...] = ()
+        elif full_chain:
+            links = (f"ov_{idx - 1}",)
+        else:
+            candidates = [f"ov_{j}" for j in range(idx)]
+            min_links = 1 if idx == count - 1 else 0
+            links = tuple(
+                draw(
+                    st.lists(
+                        st.sampled_from(candidates), min_size=min_links, max_size=idx, unique=True
+                    )
+                )
+            )
+        events[eid] = TraceEvent(
+            event_id=eid,
+            caller_id=pids[0],
+            callee_id=pids[(idx % (len(pids) - 1)) + 1],
+            signature=f"ovstep_{idx:02d}()",
+            parent_event_id=None,
+            causal_links=links,
+            clock_domain_id="clock_0",
+            start_ns=start,
+            end_ns=end,
+            sync_kind=SyncKind.SYNC,
+            status=EventStatus.OK,
+            provenance=_STAMP,
+        )
+    return InteractionTraceIR(
+        trace_id="overlap_causal", participants=participants, events=events
+    ), full_chain
+
+
+@st.composite
+def loop_guard_trace_strategy(draw: st.DrawFn) -> tuple[InteractionTraceIR, str]:
+    """Generate identical consecutive calls blocked from loop folding by clock or causal_links."""
+    pids, participants = _build_demo_participants(2)
+    count = draw(st.integers(min_value=2, max_value=5))
+    guard_mode = draw(st.sampled_from(["diff_clock", "adjacent_causal", "back_link_causal"]))
+    if guard_mode == "back_link_causal" and count < 3:
+        count = 3
+    events: dict[str, TraceEvent] = {}
+    for idx in range(count):
+        eid = f"lp_{idx}"
+        start = 100 + idx * 100
+        clock = f"clock_{idx % 2}" if guard_mode == "diff_clock" else "clock_0"
+        links: tuple[str, ...] = ()
+        if guard_mode == "adjacent_causal" and idx > 0:
+            links = (f"lp_{idx - 1}",)
+        elif guard_mode == "back_link_causal" and idx == count - 1:
+            links = ("lp_0",)
+        events[eid] = TraceEvent(
+            event_id=eid,
+            caller_id=pids[0],
+            callee_id=pids[1],
+            signature="repeat_op()",
+            parent_event_id=None,
+            causal_links=links,
+            clock_domain_id=clock,
+            start_ns=start,
+            end_ns=start + 40,
+            sync_kind=SyncKind.SYNC,
+            status=EventStatus.OK,
+            provenance=_STAMP,
+        )
+    return InteractionTraceIR(
+        trace_id="loop_guard", participants=participants, events=events
+    ), guard_mode
+
+
+def _find_line_index(lines: list[str], needle: str) -> int:
+    for idx, line in enumerate(lines):
+        if needle in line:
+            return idx
+    msg = f"Missing expected marker {needle!r}"
+    raise AssertionError(msg)
+
+
+def _extract_par_groups(seq_src: str) -> list[list[str]]:
+    groups: list[list[str]] = []
+    current: list[str] | None = None
+    for raw in seq_src.splitlines():
+        line = raw.strip()
+        if line.startswith("par "):
+            current = []
+        elif line == "end" and current is not None:
+            groups.append(current)
+            current = None
+        elif current is not None and (match := re.search(r":\s*(ovstep_\d+\(\))", line)):
+            current.append(match.group(1))
+    return groups
+
+
+def _extract_fork_groups(act_src: str) -> list[list[str]]:
+    sig_by_node: dict[str, str] = {}
+    fork_edges: dict[str, list[str]] = {}
+    for raw in act_src.splitlines():
+        line = raw.strip()
+        if node_m := re.match(r'(a\d+)\(".*?: (ovstep_\d+\(\))"\)', line):
+            sig_by_node[node_m.group(1)] = node_m.group(2)
+        elif edge_m := re.match(r"(fk\d+)\s*-->\s*(a\d+)", line):
+            fork_edges.setdefault(edge_m.group(1), []).append(edge_m.group(2))
+    return [[sig_by_node[n] for n in nodes if n in sig_by_node] for nodes in fork_edges.values()]
+
+
+@settings(max_examples=50)
+@given(trace=skewed_causal_trace_strategy())
+def test_causal_ordering_overrides_skewed_timestamps(trace: InteractionTraceIR) -> None:
+    from archigram.features.lint_syntax import MermaidSyntaxValidator
+
+    emitter = MermaidEmitter()
+    seq_src = emitter.emit(trace)
+    act_trace = InteractionTraceIR(
+        trace_id=trace.trace_id,
+        participants=trace.participants,
+        events=trace.events,
+        metadata={"diagram_variant": "activity"},
+    )
+    act_src = emitter.emit(act_trace)
+
+    assert MermaidSyntaxValidator().validate(seq_src).valid
+    assert MermaidSyntaxValidator().validate(act_src).valid
+
+    seq_lines = seq_src.splitlines()
+    act_lines = act_src.splitlines()
+    for ev in trace.events.values():
+        preds = list(ev.causal_links)
+        if ev.parent_event_id is not None:
+            preds.append(ev.parent_event_id)
+        dep_sig = ev.signature
+        for pred_id in preds:
+            pred_sig = trace.events[pred_id].signature
+            assert _find_line_index(seq_lines, f": {pred_sig}") < _find_line_index(
+                seq_lines, f": {dep_sig}"
+            )
+            assert _find_line_index(act_lines, f': {pred_sig}")') < _find_line_index(
+                act_lines, f': {dep_sig}")'
+            )
+
+
+@settings(max_examples=50)
+@given(payload=causally_linked_overlap_strategy())
+def test_causally_linked_overlapping_siblings_never_par_or_fork(
+    payload: tuple[InteractionTraceIR, bool],
+) -> None:
+    from archigram.features.lint_syntax import MermaidSyntaxValidator
+
+    trace, full_chain = payload
+    emitter = MermaidEmitter()
+    seq_src = emitter.emit(trace)
+    act_src = emitter.emit(
+        InteractionTraceIR(
+            trace_id=trace.trace_id,
+            participants=trace.participants,
+            events=trace.events,
+            metadata={"diagram_variant": "activity"},
+        )
+    )
+
+    assert MermaidSyntaxValidator().validate(seq_src).valid
+    assert MermaidSyntaxValidator().validate(act_src).valid
+
+    if full_chain:
+        assert "\n  par " not in seq_src
+        assert "\n  and " not in seq_src
+        assert "=== fork ===" not in act_src
+        assert "=== join ===" not in act_src
+
+    ev_by_sig = {ev.signature: ev for ev in trace.events.values()}
+    for group in _extract_par_groups(seq_src) + _extract_fork_groups(act_src):
+        ids = {ev_by_sig[sig].event_id for sig in group}
+        for sig in group:
+            assert not (set(ev_by_sig[sig].causal_links) & ids)
+
+
+@settings(max_examples=50)
+@given(payload=loop_guard_trace_strategy())
+def test_loop_folding_blocked_across_clock_domains_and_causal_links(
+    payload: tuple[InteractionTraceIR, str],
+) -> None:
+    from archigram.features.lint_syntax import MermaidSyntaxValidator
+
+    trace, guard_mode = payload
+    emitter = MermaidEmitter()
+    seq_src = emitter.emit(trace)
+    assert MermaidSyntaxValidator().validate(seq_src).valid
+    if guard_mode in {"diff_clock", "adjacent_causal"}:
+        assert "\n  loop [" not in seq_src
+    else:
+        assert f"loop [{len(trace.events)} times]" not in seq_src

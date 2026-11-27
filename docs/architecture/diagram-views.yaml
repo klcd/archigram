@@ -966,9 +966,10 @@ views:
       - op: collapse_partition
         id: l2b_mmd_lint_consumers
         target_node_id: concurrency_consumers
-        label: "Other Concurrency Consumers (lint_budget, digest)"
+        label: "Other Concurrency Consumers (lint_budget, digest, emitters)"
         member_globs:
           - archigram.features.lint_*
+          - archigram.features.emit_*
           - archigram.features.digest
           - archigram.features.digest.*
     simplify:
@@ -1065,9 +1066,10 @@ views:
       - op: collapse_partition
         id: l2b_d2_lint_consumers
         target_node_id: concurrency_consumers
-        label: "Other Concurrency Consumers (lint_budget, digest)"
+        label: "Other Concurrency Consumers (lint_budget, digest, emitters)"
         member_globs:
           - archigram.features.lint_*
+          - archigram.features.emit_*
           - archigram.features.digest
           - archigram.features.digest.*
     simplify:

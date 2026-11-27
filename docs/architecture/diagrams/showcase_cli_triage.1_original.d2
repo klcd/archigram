@@ -2074,6 +2074,16 @@ archigram: "archigram" {
           "+__init__(events: dict[str, TraceEvent])": "None"
           "+property has_links()": "bool"
           "+touches(event_id: str)": "bool"
+          "-_ensure_graph()": "dict[str, int] | None"
+          "-_find(idx: int)": "int"
+          "-_contract_node(ru: int, rv: int)": "None"
+          "-_repair_ranks(lo: int, hi: int)": "None"
+          "-_sync_folded(id_to_idx: dict[str, int])": "None"
+          "-_build_cand_map(candidate: dict[str, str], id_to_idx: dict[str, int])": "dict[int, int]"
+          "-_rank_window(affected: set[int])": "tuple[int, int]"
+          "-_visit_quotient_neighbors(node: int, cand_map: dict[int, int], groups: dict[int, list[int]], window: tuple[int, int], traversal: tuple[dict[in..."
+          "-_dfs_is_acyclic(cand_map: dict[int, int], groups: dict[int, list[int]], window: tuple[int, int])": "bool"
+          "-_allows_candidate(candidate: dict[str, str], id_to_idx: dict[str, int])": "bool"
           "+allows(candidate: dict[str, str], scope: Iterable[str])": "bool"
           "+commit(scope: Iterable[str])": "None"
         }
@@ -3692,6 +3702,10 @@ archigram."archigram.features"."archigram.features.emit_mermaid" -> archigram."a
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }
+archigram."archigram.features"."archigram.features.emit_mermaid"."archigram.features.emit_mermaid.emitter" -> archigram."archigram.domain"."archigram.domain.concurrency": "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
 archigram."archigram.features"."archigram.features.emit_mermaid"."archigram.features.emit_mermaid.emitter" -> archigram."archigram.domain"."archigram.domain.ir": "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
@@ -3728,6 +3742,10 @@ archigram."archigram.features"."archigram.features.emit_mermaid"."archigram.feat
 archigram."archigram.features"."archigram.features.emit_mermaid"."archigram.features.emit_mermaid.emitter"."archigram.features.emit_mermaid.emitter.sanitize_sequence_text" -> archigram."archigram.features"."archigram.features.emit_mermaid"."archigram.features.emit_mermaid.emitter"."archigram.features.emit_mermaid.emitter.sanitize_mermaid_text": "calls" {
   style.stroke: "#3b82f6"
   style.animated: true
+}
+archigram."archigram.features"."archigram.features.emit_mermaid"."archigram.features.emit_mermaid.uml_variants" -> archigram."archigram.domain"."archigram.domain.concurrency": "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
 }
 archigram."archigram.features"."archigram.features.emit_mermaid"."archigram.features.emit_mermaid.uml_variants" -> archigram."archigram.domain"."archigram.domain.ir": "imports" {
   style.stroke: "#64748b"

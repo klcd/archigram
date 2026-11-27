@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from archigram.domain.concurrency import find_causal_overlap_span, order_trace_events
 from archigram.domain.ir import (
     EdgeRelation,
     InteractionTraceIR,
@@ -61,7 +62,7 @@ def _alias_map(ids: Sequence[str], prefix: str) -> dict[str, str]:
 
 
 def _ordered_events(trace: InteractionTraceIR) -> list[TraceEvent]:
-    return sorted(trace.events.values(), key=lambda ev: (ev.start_ns, ev.end_ns, ev.event_id))
+    return order_trace_events(trace.events)
 
 
 def _number_trace_events(trace: InteractionTraceIR) -> list[tuple[str, TraceEvent]]:
@@ -234,14 +235,7 @@ def _emit_activity_trace_nodes(
     idx = 0
     while idx < len(capped):
         ev = capped[idx]
-        overlap_end = idx + 1
-        while (
-            overlap_end < len(capped)
-            and capped[overlap_end].parent_event_id == ev.parent_event_id
-            and capped[overlap_end].clock_domain_id == ev.clock_domain_id
-            and capped[overlap_end].start_ns < ev.end_ns
-        ):
-            overlap_end += 1
+        overlap_end = find_causal_overlap_span(capped, idx)
         if overlap_end - idx > 1:
             prev_id = _emit_mermaid_fork_region(
                 trace, capped, (idx, overlap_end), prev_id, node_lines, edges
