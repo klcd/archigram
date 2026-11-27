@@ -106,7 +106,7 @@ archigram: "archigram" {
   domain: "domain" {
     style.fill: transparent
     style.stroke: "#64748b"
-    tooltip: "Derived via l1_d2_domain (75 backing nodes: archigram.domain, archigram.domain.ProvenanceGrade, archigram.domain.ProvenanceStamp, archigram.domain.concurrency, archigram.domain.concurrency.CausalTraceEvent, ...)"
+    tooltip: "Derived via l1_d2_domain (82 backing nodes: archigram.domain, archigram.domain.ProvenanceGrade, archigram.domain.ProvenanceStamp, archigram.domain.concurrency, archigram.domain.concurrency.CausalTraceEvent, ...)"
   }
   ports: "ports" {
     style.fill: transparent
@@ -155,6 +155,10 @@ archigram."archigram.features".emit_dsl -> archigram.domain: "composes" {
 archigram."archigram.features".emit_dsl -> archigram.domain: "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
+}
+archigram."archigram.features".emit_mermaid -> archigram.domain: "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
 }
 archigram."archigram.features".emit_mermaid -> archigram.domain: "composes" {
   style.stroke: "#14b8a6"
