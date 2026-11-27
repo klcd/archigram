@@ -1,0 +1,36 @@
+---
+config:
+  layout: elk
+  elk:
+    mergeEdges: false
+    nodePlacementStrategy: BRANDES_KOEPF
+  flowchart:
+    defaultRenderer: elk
+    curve: linear
+---
+flowchart TD
+  classDef default fill:transparent,stroke:#64748b,stroke-width:1.5px
+  subgraph n0["shop"]
+    subgraph n1["api"]
+      n2["place_order"]
+    end
+    subgraph n3["audit"]
+      n4["record"]
+    end
+    subgraph n5["service"]
+      n6["create_order"]
+    end
+    n7["Storage"]
+  end
+  style n0 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  style n1 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  style n3 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  style n5 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  n5 -.->|"imports"| n7
+  n6 -->|"calls"| n7
+  n1 -.->|"imports"| n5
+  n2 -->|"calls"| n6
+  n5 -.->|"imports"| n3
+  n6 -->|"calls"| n4
+  linkStyle 0,2,4 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 1,3,5 stroke:#3b82f6,stroke-width:1.75px

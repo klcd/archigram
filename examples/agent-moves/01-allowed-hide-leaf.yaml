@@ -1,0 +1,23 @@
+# Allowed: hide a leaf. Nothing depends on shop.audit, so pruning it
+# removes a box without cutting any path. Passes all five gates.
+#
+# Run it:
+#   uv run archigram lint examples/python-quickstart/shop --spec examples/agent-moves/01-allowed-hide-leaf.yaml
+schema_version: '1.0'
+views:
+  - id: hide_leaf
+    title: "Allowed: hide a leaf"
+    ir_mode: structural_graph
+    target_renderer: mermaid
+    diagram_variant: architecture
+    rules:
+      - op: prune_leaves
+        id: hide_audit
+        node_id_globs: [shop.audit, shop.audit.*]
+    # The contract: the same for every move. Rules may reshape the diagram, but never break it.
+    invariants:
+      protected_nodes: [shop.api, shop.repository]  # these boxes must stay visible
+      require_reachability:  # shop.api must still import its way to shop.repository
+        - {from_node: shop.api, to_node: shop.repository, via_relations: [imports]}
+      node_budget: {min_count: 1, max_count: 12}  # at most 12 boxes
+      edge_budget_max: 20

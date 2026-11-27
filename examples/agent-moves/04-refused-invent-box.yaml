@@ -1,0 +1,24 @@
+# Refused: use a box the code does not have. The agent assumes a cache layer
+# between the service and the repository and asks to skip it, but the code has
+# no shop.cache. Gate 1 (grounding) fails with ZERO_MATCH_GLOB, so nothing is written.
+#
+# Run it:
+#   uv run archigram lint examples/python-quickstart/shop --spec examples/agent-moves/04-refused-invent-box.yaml
+schema_version: '1.0'
+views:
+  - id: invent_box
+    title: "Refused: use a box the code does not have"
+    ir_mode: structural_graph
+    target_renderer: mermaid
+    diagram_variant: architecture
+    rules:
+      - op: bypass_vertices
+        id: skip_cache
+        node_id_globs: [shop.cache]
+    # The contract: the same for every move. Rules may reshape the diagram, but never break it.
+    invariants:
+      protected_nodes: [shop.api, shop.repository]  # these boxes must stay visible
+      require_reachability:  # shop.api must still import its way to shop.repository
+        - {from_node: shop.api, to_node: shop.repository, via_relations: [imports]}
+      node_budget: {min_count: 1, max_count: 12}  # at most 12 boxes
+      edge_budget_max: 20

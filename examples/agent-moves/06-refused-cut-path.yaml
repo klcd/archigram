@@ -1,0 +1,25 @@
+# Refused: cut a required path. Like 03, but the bypass splices only `calls`,
+# so the import path shop.api -> shop.service -> shop.repository is cut. Gate 3
+# fails with REACHABILITY_SEVERED and names the path and the rule that cut it.
+#
+# Run it:
+#   uv run archigram lint examples/python-quickstart/shop --spec examples/agent-moves/06-refused-cut-path.yaml
+schema_version: '1.0'
+views:
+  - id: cut_path
+    title: "Refused: cut a required path"
+    ir_mode: structural_graph
+    target_renderer: mermaid
+    diagram_variant: architecture
+    rules:
+      - op: bypass_vertices
+        id: skip_service
+        node_id_globs: [shop.service, shop.service.*]
+        preserve_edge_relations: [calls]
+    # The contract: the same for every move. Rules may reshape the diagram, but never break it.
+    invariants:
+      protected_nodes: [shop.api, shop.repository]  # these boxes must stay visible
+      require_reachability:  # shop.api must still import its way to shop.repository
+        - {from_node: shop.api, to_node: shop.repository, via_relations: [imports]}
+      node_budget: {min_count: 1, max_count: 12}  # at most 12 boxes
+      edge_budget_max: 20

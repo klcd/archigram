@@ -37,6 +37,40 @@ Software teams face three recurring failure modes whenever they try to keep arch
 - **5-Gate Mathematical Verification Before Emission:** Every view must pass **Gate 1** (100% symbol grounding—zero hallucinations), **Gate 2** (protected boundary survival), **Gate 3** (transitive reachability, cycle discipline & concurrency happens-before preservation with concrete witness counterexamples), **Gate 4** (cognitive node/edge budgets), and **Gate 5** (headless target syntax validation).
 - **Bounded Self-Healing AI Loop + Zero-Cost Deterministic CI:** When the local heuristic `archigram propose` loop or an LLM client of the stdio MCP server curates views, it only proposes `CurationSpecV1` rules inside a bounded 3-turn lint-and-repair loop guided by formal counterexamples. Once committed, `archigram apply --check` enforces **zero documentation drift** in CI and Git hooks in milliseconds with zero LLM calls and byte-identical output across Mermaid (`< 5,000` chars for Gitea/GitHub), D2 (+ animated `.d2.svg`), PlantUML, LikeC4, and Graphviz DOT.
 
+## What an Agent May Do to a Diagram
+
+An agent (or a person) never draws a diagram and never writes Mermaid or D2. It may only add rules to a view's spec. ArchiGram then recompiles the diagram from the code and runs the five gates, and a refused move writes nothing.
+
+The examples use the six-module `shop` package from the [quickstart](docs/quickstart.md). Every move starts from the same diagram and is checked against the same contract: `shop.api` and `shop.repository` stay visible, `shop.api` still imports its way to `shop.repository`, and the view has at most 12 boxes.
+
+**Allowed:** rules that reshape the facts the code already has.
+
+| Move | Rule the agent adds | Result |
+| --- | --- | --- |
+| Hide a leaf | `prune_leaves` on `shop.audit*` | `audit` disappears; nothing depended on it |
+| Group boxes | `collapse_partition` of `shop.repository*` and `shop.models*` | one `Storage` box takes over their arrows |
+| Skip a layer | `bypass_vertices` on `shop.service*`, keeping `imports` and `calls` | `shop.api` points straight at what the service used |
+
+**Refused:** moves that would make the diagram wrong.
+
+| The agent tries to | Rule | Refused by |
+| --- | --- | --- |
+| Use a box the code does not have | `bypass_vertices` on `shop.cache` | Gate 1: `ZERO_MATCH_GLOB` |
+| Hide a protected box | `prune_leaves` on `shop.repository*` and `shop.models*` | Gate 2: `PROTECTED_NODE_DROPPED` (and Gate 3) |
+| Cut a required path | `bypass_vertices` on `shop.service*`, keeping only `calls` | Gate 3: `REACHABILITY_SEVERED` |
+| Draw an arrow itself | `op: add_edge` | The spec schema: no such rule exists |
+
+A refused move names the gate, the rule and the path, so the agent can repair its spec:
+
+```text
+$ uv run archigram lint examples/python-quickstart/shop --spec examples/agent-moves/06-refused-cut-path.yaml
+ArchiGram 5-Gate Linter: FAILED (1 error(s), 0 warning(s))
+  [ERROR] REACHABILITY_SEVERED (gate_3_topology_poset, view=cut_path, rule=skip_service): Reachability from 'shop.api' to 'shop.repository' via relations ['imports'] was severed in view 'cut_path'; ...
+    Witness: shop.api -> shop.service -> shop.repository
+```
+
+Each move is one runnable spec in [`examples/agent-moves/`](examples/agent-moves/README.md), with the resulting diagrams. The [website](https://klcd.github.io/archigram/#moves) plays them as an animation. The gates check rules against the contract, not the contract against your intent: an agent that edits the contract itself is caught only in review, so review spec changes like code.
+
 ## Architecture Documentation (4 Zoom Levels + UML 2.5 Showcase)
 
 ArchiGram dogfoods itself to generate and lint its own architecture docs (`0` hand-drawn drift, verified by `--sync-md --check` across all 5 Gates). Start at **[docs/architecture/README.md](docs/architecture/README.md)** or jump straight to the abstraction level you need:

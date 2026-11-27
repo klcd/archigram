@@ -1,0 +1,25 @@
+# Refused: draw an arrow. There is no rule that adds an edge (or a node, or
+# diagram syntax), so the spec does not even load: the only rule types are
+# prune_leaves, bypass_vertices and collapse_partition. No gate runs.
+#
+# Run it:
+#   uv run archigram lint examples/python-quickstart/shop --spec examples/agent-moves/07-refused-draw-arrow.yaml
+schema_version: '1.0'
+views:
+  - id: draw_arrow
+    title: "Refused: draw an arrow"
+    ir_mode: structural_graph
+    target_renderer: mermaid
+    diagram_variant: architecture
+    rules:
+      - op: add_edge
+        id: draw_shortcut
+        source: shop.api
+        target: shop.repository
+    # The contract: the same for every move. Rules may reshape the diagram, but never break it.
+    invariants:
+      protected_nodes: [shop.api, shop.repository]  # these boxes must stay visible
+      require_reachability:  # shop.api must still import its way to shop.repository
+        - {from_node: shop.api, to_node: shop.repository, via_relations: [imports]}
+      node_budget: {min_count: 1, max_count: 12}  # at most 12 boxes
+      edge_budget_max: 20
