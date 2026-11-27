@@ -146,6 +146,7 @@ model {
   archigram.archigram_entrypoints.mcp_controlplane -[imports]-> archigram.archigram_features.feature_reducers 'imports'
   archigram.archigram_features.feature_digest -[composes]-> archigram.domain_core 'composes'
   archigram.archigram_features.feature_digest -[imports]-> archigram.domain_core 'imports'
+  archigram.archigram_features.feature_emitters -[calls]-> archigram.domain_core 'calls'
   archigram.archigram_features.feature_emitters -[composes]-> archigram.domain_core 'composes'
   archigram.archigram_features.feature_emitters -[imports]-> archigram.domain_core 'imports'
   archigram.archigram_features.feature_ingestors -[calls]-> archigram.domain_core 'calls'

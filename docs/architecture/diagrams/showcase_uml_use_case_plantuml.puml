@@ -48,6 +48,7 @@ u_14_uc_verify_gates_a83ee9 ..>[#3b82f6] u_9_uc_domain_contra_aeea6c : <<include
 u_11_uc_ingest_ir_5b7061 ..>[#3b82f6] u_9_uc_domain_contra_aeea6c : <<include>>
 u_10_uc_emit_targets_a564a8 ..>[#3b82f6] u_9_uc_domain_contra_aeea6c : <<include>>
 u_13_uc_reduce_compac_3a534b ..>[#3b82f6] u_9_uc_domain_contra_aeea6c : <<include>>
+u_10_uc_emit_targets_a564a8 ..>[#3b82f6] u_9_uc_domain_contra_aeea6c : <<include>>
 u_11_uc_ingest_ir_5b7061 ..>[#3b82f6] u_9_uc_domain_contra_aeea6c : <<include>>
 u_14_uc_verify_gates_a83ee9 ..>[#3b82f6] u_9_uc_domain_contra_aeea6c : <<include>>
 u_13_uc_reduce_compac_3a534b ..>[#3b82f6] u_9_uc_domain_contra_aeea6c : <<include>>

@@ -35,7 +35,7 @@ archigram: "archigram" {
     feature_emitters: "Emitter Slices" {
       style.fill: transparent
       style.stroke: "#64748b"
-      tooltip: "Derived via l0_d2_feature_emitters (54 backing nodes: archigram.features.emit_d2, archigram.features.emit_d2.emitter, archigram.features.emit_d2.emitter.D2Emitter, archigram.features.emit_d2.emitter._D2StructuralCtx, archigram.features.emit_d2.emitter._StepEdge, ...)"
+      tooltip: "Derived via l0_d2_feature_emitters (53 backing nodes: archigram.features.emit_d2, archigram.features.emit_d2.emitter, archigram.features.emit_d2.emitter.D2Emitter, archigram.features.emit_d2.emitter._D2StructuralCtx, archigram.features.emit_d2.emitter._StepEdge, ...)"
     }
     feature_ingestors: "Ingestor Slices" {
       style.fill: transparent
@@ -95,6 +95,10 @@ archigram."archigram.features".feature_digest -> archigram.domain_core: "compose
 archigram."archigram.features".feature_digest -> archigram.domain_core: "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
+}
+archigram."archigram.features".feature_emitters -> archigram.domain_core: "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
 }
 archigram."archigram.features".feature_emitters -> archigram.domain_core: "composes" {
   style.stroke: "#14b8a6"

@@ -40,6 +40,7 @@ n_3_cli_dataplane_493a5b -->[#3b82f6] n_10_mcp_controlplane_ff4d3b : calls
 n_3_cli_dataplane_493a5b ..>[#64748b] n_10_mcp_controlplane_ff4d3b : imports
 n_5_feature_digest_52876d *--[#14b8a6] n_4_domain_core_f195b2 : composes
 n_5_feature_digest_52876d ..>[#64748b] n_4_domain_core_f195b2 : imports
+n_6_feature_emitters_75a4c0 -->[#3b82f6] n_4_domain_core_f195b2 : calls
 n_6_feature_emitters_75a4c0 *--[#14b8a6] n_4_domain_core_f195b2 : composes
 n_6_feature_emitters_75a4c0 ..>[#64748b] n_4_domain_core_f195b2 : imports
 n_7_feature_ingestor_73234e -->[#3b82f6] n_4_domain_core_f195b2 : calls

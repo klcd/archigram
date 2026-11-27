@@ -176,8 +176,8 @@
         "input_sha256": "5acbad70e70812d3f1a8cec593c4046c57fd6a00812a750e1adb0017a077b8c0",
         "file_path": "src/archigram/features/emit_plantuml/emitter.py",
         "line_span": [
-          758,
-          768
+          688,
+          698
         ],
         "rule_id": null,
         "backing_ids": []
@@ -3028,8 +3028,8 @@
         "input_sha256": "5acbad70e70812d3f1a8cec593c4046c57fd6a00812a750e1adb0017a077b8c0",
         "file_path": "src/archigram/features/emit_plantuml/emitter.py",
         "line_span": [
-          758,
-          768
+          688,
+          698
         ],
         "rule_id": null,
         "backing_ids": []

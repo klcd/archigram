@@ -966,11 +966,12 @@ views:
       - op: collapse_partition
         id: l2b_mmd_lint_consumers
         target_node_id: concurrency_consumers
-        label: "Other Concurrency Consumers (lint_budget, digest)"
+        label: "Other Concurrency Consumers (lint_budget, digest, emitters)"
         member_globs:
           - archigram.features.lint_*
           - archigram.features.digest
           - archigram.features.digest.*
+          - archigram.features.emit_*
     simplify:
       condense_sccs: true
       transitive_reduction: true
@@ -1065,11 +1066,12 @@ views:
       - op: collapse_partition
         id: l2b_d2_lint_consumers
         target_node_id: concurrency_consumers
-        label: "Other Concurrency Consumers (lint_budget, digest)"
+        label: "Other Concurrency Consumers (lint_budget, digest, emitters)"
         member_globs:
           - archigram.features.lint_*
           - archigram.features.digest
           - archigram.features.digest.*
+          - archigram.features.emit_*
     simplify:
       condense_sccs: true
       transitive_reduction: true
