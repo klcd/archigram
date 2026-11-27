@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import string
 from typing import TYPE_CHECKING, Any
 
@@ -38,6 +39,7 @@ from archigram.domain.spec import (
     dump_curation_spec_yaml,
     export_curation_spec_json_schema,
     parse_curation_spec_yaml,
+    validate_safe_view_id,
 )
 from archigram.ports.contracts import (
     DigestGeneratorPort,
@@ -54,6 +56,46 @@ if TYPE_CHECKING:
 _ID_ALPHABET = string.ascii_lowercase + string.digits + "_-:"
 _GLOB_ALPHABET = _ID_ALPHABET + ".*?"
 _SAFE_ID = st.text(alphabet=_ID_ALPHABET, min_size=1, max_size=16)
+_SAFE_VIEW_ID_RE = re.compile(r"\A[A-Za-z0-9._-]+\Z")
+_SAFE_VIEW_ID = st.from_regex(r"[A-Za-z0-9_-][A-Za-z0-9._-]{0,20}", fullmatch=True).filter(
+    lambda s: ".." not in s and not s.startswith(".") and not s.endswith(".")
+)
+_UNSAFE_VIEW_ID = st.one_of(
+    st.sampled_from(
+        [
+            "",
+            " ",
+            ".",
+            "..",
+            "...",
+            "../../README",
+            "../outside",
+            "..\\outside",
+            "sub/view",
+            "sub\\view",
+            "/etc/passwd",
+            "\\windows\\system32",
+            "a..b",
+            ".hidden",
+            "trailing.",
+            "view\x00id",
+            "view\nid",
+            "view\tid",
+            "view id",
+            "C:view",
+            "view:sub",
+        ]
+    ),
+    st.text(min_size=0, max_size=24).filter(
+        lambda s: (
+            not s.strip()
+            or not _SAFE_VIEW_ID_RE.fullmatch(s)
+            or ".." in s
+            or s.startswith(".")
+            or s.endswith(".")
+        )
+    ),
+)
 _SAFE_GLOB = st.text(alphabet=_GLOB_ALPHABET, min_size=1, max_size=24)
 _SAFE_LABEL = st.text(
     alphabet=string.ascii_letters + string.digits + " _-:/()[]",
@@ -407,9 +449,14 @@ def test_trace_compaction_rejects_invalid_bounds(
 @settings(max_examples=25)
 @given(
     dup_id=_SAFE_ID,
+    view_dup_id=_SAFE_VIEW_ID,
     collision_mode=st.sampled_from(["global_dup", "view_dup", "view_rule_dup", "global_shadow"]),
 )
-def test_duplicate_rule_and_view_ids_rejected(dup_id: str, collision_mode: str) -> None:
+def test_duplicate_rule_and_view_ids_rejected(
+    dup_id: str,
+    view_dup_id: str,
+    collision_mode: str,
+) -> None:
     rule = PruneLeavesRule(id=dup_id, node_id_globs=("svc.*",))
     if collision_mode == "global_dup":
         with pytest.raises(ValidationError):
@@ -427,7 +474,7 @@ def test_duplicate_rule_and_view_ids_rejected(dup_id: str, collision_mode: str) 
         return
     if collision_mode == "view_dup":
         view = DiagramViewSpec(
-            id=dup_id,
+            id=view_dup_id,
             title="Duplicate View",
             ir_mode=IRMode.STRUCTURAL_GRAPH,
             target_renderer=TargetRenderer.MERMAID,
@@ -611,3 +658,62 @@ def test_require_and_preserve_reachability_are_independent_fields(
     assert inv.require_reachability == required
     restored = ViewInvariants.model_validate_json(inv.model_dump_json())
     assert restored == inv
+
+
+@settings(max_examples=80, deadline=None)
+@given(bad_view_id=_UNSAFE_VIEW_ID)
+def test_view_id_rejects_path_traversal_and_unsafe_characters(bad_view_id: str) -> None:
+    """DiagramViewSpec.id rejects '/', '\\', '..', NUL, control chars, and whitespace."""
+    with pytest.raises(ValueError):
+        validate_safe_view_id(bad_view_id)
+
+    with pytest.raises(ValidationError):
+        DiagramViewSpec(
+            id=bad_view_id,
+            title="Unsafe View",
+            ir_mode=IRMode.STRUCTURAL_GRAPH,
+            target_renderer=TargetRenderer.MERMAID,
+        )
+
+    raw_yaml = yaml.safe_dump(
+        {
+            "schema_version": "1.0",
+            "views": [
+                {
+                    "id": bad_view_id,
+                    "title": "Unsafe YAML View",
+                    "ir_mode": "structural_graph",
+                    "target_renderer": "mermaid",
+                }
+            ],
+        },
+        sort_keys=False,
+    )
+    with pytest.raises(ValidationError):
+        parse_curation_spec_yaml(raw_yaml)
+
+
+@settings(max_examples=50, deadline=None)
+@given(
+    safe_view_id=_SAFE_VIEW_ID,
+    renderer=st.sampled_from(list(TargetRenderer)),
+)
+def test_view_id_accepts_safe_single_segment_identifiers(
+    safe_view_id: str,
+    renderer: TargetRenderer,
+) -> None:
+    """Safe single-segment view IDs pass validation and YAML round-trip cleanly."""
+    assert validate_safe_view_id(safe_view_id) == safe_view_id
+    spec = CurationSpecV1(
+        views=(
+            DiagramViewSpec(
+                id=safe_view_id,
+                title="Safe View",
+                ir_mode=IRMode.STRUCTURAL_GRAPH,
+                target_renderer=renderer,
+            ),
+        )
+    )
+    restored = parse_curation_spec_yaml(dump_curation_spec_yaml(spec))
+    assert restored == spec
+    assert restored.views[0].id == safe_view_id

@@ -30,6 +30,17 @@ archigram: "archigram" {
     "archigram.domain.concurrency": "concurrency" {
       style.fill: transparent
       style.stroke: "#64748b"
+      "archigram.domain.concurrency.CausalTraceEvent": "CausalTraceEvent" {
+        shape: class
+        "+property event_id()": "str"
+        "+property caller_id()": "str"
+        "+property callee_id()": "str"
+        "+property parent_event_id()": "str | None"
+        "+property causal_links()": "tuple[str, ...]"
+        "+property clock_domain_id()": "str"
+        "+property start_ns()": "int"
+        "+property end_ns()": "int"
+      }
       "archigram.domain.concurrency.ConcurrencyMode": "ConcurrencyMode" {
         style.fill: transparent
         style.stroke: "#64748b"
@@ -96,11 +107,27 @@ archigram: "archigram" {
         style.fill: transparent
         style.stroke: "#64748b"
       }
+      "archigram.domain.concurrency.events_overlap": "events_overlap" {
+        style.fill: transparent
+        style.stroke: "#64748b"
+      }
+      "archigram.domain.concurrency.find_causal_overlap_span": "find_causal_overlap_span" {
+        style.fill: transparent
+        style.stroke: "#64748b"
+      }
       "archigram.domain.concurrency.find_induced_n_witness": "find_induced_n_witness" {
         style.fill: transparent
         style.stroke: "#64748b"
       }
       "archigram.domain.concurrency.fold_parallel_map": "fold_parallel_map" {
+        style.fill: transparent
+        style.stroke: "#64748b"
+      }
+      "archigram.domain.concurrency.group_concurrent_siblings": "group_concurrent_siblings" {
+        style.fill: transparent
+        style.stroke: "#64748b"
+      }
+      "archigram.domain.concurrency.order_trace_events": "order_trace_events" {
         style.fill: transparent
         style.stroke: "#64748b"
       }
@@ -349,7 +376,7 @@ archigram: "archigram" {
       }
       "archigram.domain.spec.DiagramViewSpec": "DiagramViewSpec" {
         shape: class
-        "+id": "NonBlankStr"
+        "+id": "SafeViewId"
         "+title": "NonBlankStr"
         "+ir_mode": "IRMode"
         "+target_renderer": "TargetRenderer"
@@ -432,6 +459,10 @@ archigram: "archigram" {
         style.stroke: "#64748b"
       }
       "archigram.domain.spec.parse_curation_spec_yaml": "parse_curation_spec_yaml" {
+        style.fill: transparent
+        style.stroke: "#64748b"
+      }
+      "archigram.domain.spec.validate_safe_view_id": "validate_safe_view_id" {
         style.fill: transparent
         style.stroke: "#64748b"
       }
@@ -525,6 +556,10 @@ archigram: "archigram" {
         style.fill: transparent
         style.stroke: "#64748b"
       }
+    }
+    "archigram.domain.validate_non_blank": "validate_non_blank" {
+      style.fill: transparent
+      style.stroke: "#64748b"
     }
   }
   "archigram.entrypoints": "entrypoints" {
@@ -933,6 +968,10 @@ archigram: "archigram" {
           style.stroke: "#64748b"
         }
         "archigram.entrypoints.cli.pipeline.renderer_file_extension": "renderer_file_extension" {
+          style.fill: transparent
+          style.stroke: "#64748b"
+        }
+        "archigram.entrypoints.cli.pipeline.resolve_contained_output_path": "resolve_contained_output_path" {
           style.fill: transparent
           style.stroke: "#64748b"
         }
@@ -2182,6 +2221,10 @@ archigram."archigram.domain"."archigram.domain.ProvenanceStamp" -> archigram."ar
     style.filled: true
   }
 }
+archigram."archigram.domain"."archigram.domain.concurrency" -> archigram."archigram.domain": "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
 archigram."archigram.domain"."archigram.domain.concurrency" -> archigram."archigram.domain"."archigram.domain.concurrency"."archigram.domain.concurrency.PosetCotreeNode": "calls" {
   style.stroke: "#3b82f6"
   style.animated: true
@@ -2212,6 +2255,10 @@ archigram."archigram.domain"."archigram.domain.concurrency"."archigram.domain.co
   style.animated: true
 }
 archigram."archigram.domain"."archigram.domain.concurrency"."archigram.domain.concurrency.fold_parallel_map" -> archigram."archigram.domain"."archigram.domain.concurrency"."archigram.domain.concurrency.cluster_overlapping_siblings": "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.domain"."archigram.domain.concurrency"."archigram.domain.concurrency.group_concurrent_siblings" -> archigram."archigram.domain"."archigram.domain.concurrency"."archigram.domain.concurrency.find_causal_overlap_span": "calls" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
@@ -3173,11 +3220,19 @@ archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypo
     style.filled: true
   }
 }
+archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.compute_triage_stages" -> archigram."archigram.domain"."archigram.domain.spec"."archigram.domain.spec.validate_safe_view_id": "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
 archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.compute_triage_stages" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.compile_and_lint_pipeline": "calls" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
 archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.compute_triage_stages" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.TriageOutcome": "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.execute_triage" -> archigram."archigram.domain"."archigram.domain.spec"."archigram.domain.spec.validate_safe_view_id": "calls" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
@@ -3190,6 +3245,10 @@ archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypo
   style.animated: true
 }
 archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.execute_triage" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.load_mermaid_theme": "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.execute_triage" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.resolve_contained_output_path": "calls" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
