@@ -1,0 +1,20 @@
+# Start: no rules. The diagram shows every module and function ArchiGram
+# extracted from examples/python-quickstart/shop. Every move below starts here.
+#
+# Run it:
+#   uv run archigram lint examples/python-quickstart/shop --spec examples/agent-moves/00-start.yaml
+schema_version: '1.0'
+views:
+  - id: start
+    title: "Start: what the code says"
+    ir_mode: structural_graph
+    target_renderer: mermaid
+    diagram_variant: architecture
+    rules: []
+    # The contract: the same for every move. Rules may reshape the diagram, but never break it.
+    invariants:
+      protected_nodes: [shop.api, shop.repository]  # these boxes must stay visible
+      require_reachability:  # shop.api must still import its way to shop.repository
+        - {from_node: shop.api, to_node: shop.repository, via_relations: [imports]}
+      node_budget: {min_count: 1, max_count: 12}  # at most 12 boxes
+      edge_budget_max: 20

@@ -1,0 +1,26 @@
+# Allowed: group boxes. shop.repository and shop.models become one
+# Storage box. Arrows into either member now point at Storage, and the
+# protected shop.repository stays visible inside it. Passes all five gates.
+#
+# Run it:
+#   uv run archigram lint examples/python-quickstart/shop --spec examples/agent-moves/02-allowed-group.yaml
+schema_version: '1.0'
+views:
+  - id: group_boxes
+    title: "Allowed: group boxes"
+    ir_mode: structural_graph
+    target_renderer: mermaid
+    diagram_variant: architecture
+    rules:
+      - op: collapse_partition
+        id: storage
+        target_node_id: shop.storage
+        label: Storage
+        member_globs: [shop.repository, shop.repository.*, shop.models, shop.models.*]
+    # The contract: the same for every move. Rules may reshape the diagram, but never break it.
+    invariants:
+      protected_nodes: [shop.api, shop.repository]  # these boxes must stay visible
+      require_reachability:  # shop.api must still import its way to shop.repository
+        - {from_node: shop.api, to_node: shop.repository, via_relations: [imports]}
+      node_budget: {min_count: 1, max_count: 12}  # at most 12 boxes
+      edge_budget_max: 20

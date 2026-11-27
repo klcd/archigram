@@ -1,0 +1,25 @@
+# Allowed: skip a layer. shop.service disappears and its arrows are spliced
+# through, so shop.api now points straight at what the service used. Both
+# relations are kept, so the required import path survives. Passes all five gates.
+#
+# Run it:
+#   uv run archigram lint examples/python-quickstart/shop --spec examples/agent-moves/03-allowed-skip-layer.yaml
+schema_version: '1.0'
+views:
+  - id: skip_layer
+    title: "Allowed: skip a layer"
+    ir_mode: structural_graph
+    target_renderer: mermaid
+    diagram_variant: architecture
+    rules:
+      - op: bypass_vertices
+        id: skip_service
+        node_id_globs: [shop.service, shop.service.*]
+        preserve_edge_relations: [imports, calls]
+    # The contract: the same for every move. Rules may reshape the diagram, but never break it.
+    invariants:
+      protected_nodes: [shop.api, shop.repository]  # these boxes must stay visible
+      require_reachability:  # shop.api must still import its way to shop.repository
+        - {from_node: shop.api, to_node: shop.repository, via_relations: [imports]}
+      node_budget: {min_count: 1, max_count: 12}  # at most 12 boxes
+      edge_budget_max: 20

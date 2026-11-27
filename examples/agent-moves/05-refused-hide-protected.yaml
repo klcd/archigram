@@ -1,0 +1,24 @@
+# Refused: hide a protected box. The agent prunes the storage layer, which
+# removes the protected shop.repository. Gate 2 fails with PROTECTED_NODE_DROPPED,
+# and Gate 3 with REACHABILITY_SEVERED because the required path is gone too.
+#
+# Run it:
+#   uv run archigram lint examples/python-quickstart/shop --spec examples/agent-moves/05-refused-hide-protected.yaml
+schema_version: '1.0'
+views:
+  - id: hide_protected
+    title: "Refused: hide a protected box"
+    ir_mode: structural_graph
+    target_renderer: mermaid
+    diagram_variant: architecture
+    rules:
+      - op: prune_leaves
+        id: hide_storage
+        node_id_globs: [shop.repository, shop.repository.*, shop.models, shop.models.*]
+    # The contract: the same for every move. Rules may reshape the diagram, but never break it.
+    invariants:
+      protected_nodes: [shop.api, shop.repository]  # these boxes must stay visible
+      require_reachability:  # shop.api must still import its way to shop.repository
+        - {from_node: shop.api, to_node: shop.repository, via_relations: [imports]}
+      node_budget: {min_count: 1, max_count: 12}  # at most 12 boxes
+      edge_budget_max: 20
