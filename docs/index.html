@@ -221,7 +221,7 @@
     }
 
     .topbar-inner {
-      max-width: 1180px;
+      max-width: 1320px;
       margin: 0 auto;
       padding: 0.75rem 1.5rem;
       display: flex;
@@ -257,6 +257,13 @@
       flex-wrap: wrap;
       gap: 0.55rem 1.1rem;
       font-size: 0.88rem;
+    }
+
+    /* The six nav links need about 1,230px next to the brand; drop the decorative tag first. */
+    @media (max-width: 1279px) {
+      .brand-mark {
+        display: none;
+      }
     }
 
     .nav-links a {
@@ -721,8 +728,9 @@
 
     .film-card-head {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.2rem;
       font-family: var(--font-mono);
       font-size: 0.76rem;
       color: var(--ink-muted);
@@ -730,7 +738,9 @@
 
     .film-card img {
       width: 100%;
-      height: 250px;
+      height: 260px;
+      box-sizing: border-box;
+      padding: 0.5rem;
       object-fit: contain;
       cursor: zoom-in;
     }
@@ -895,13 +905,18 @@
       inset: 0;
       z-index: 100;
       background: color-mix(in srgb, var(--bg) 94%, transparent);
-      backdrop-filter: blur(8px);
       display: none;
       flex-direction: column;
     }
 
     .lightbox.open {
       display: flex;
+    }
+
+    /* The overlay is opaque enough to hide the page, so stop painting and animating it while
+       the inspector is open. visibility keeps the layout, so the scroll position survives. */
+    body.lb-open > :not(.lightbox):not(script) {
+      visibility: hidden;
     }
 
     .lightbox-bar {
@@ -958,7 +973,6 @@
       max-width: 92vw;
       max-height: 84vh;
       transform-origin: center center;
-      will-change: transform;
       user-select: none;
       -webkit-user-drag: none;
     }
@@ -973,6 +987,233 @@
     .prealpha-banner strong {
       color: var(--amber);
     }
+
+    /* ---------- Aligned cards ----------
+       Cards that sit side by side share their rows (kicker / title / body), so a title that
+       wraps onto a second line in one card never pushes its neighbours' text or images out of
+       line. Without subgrid support the title gets a two-line minimum height instead. */
+    .card h3,
+    .doc-link-card h3,
+    .pattern-card h3,
+    .pipeline-step h4 {
+      min-height: 2.7em;
+    }
+
+    .metrics-strip .pill {
+      display: inline-block;
+      max-width: 100%;
+      line-height: 1.45;
+    }
+
+    @supports (grid-template-rows: subgrid) {
+      .card h3,
+      .doc-link-card h3,
+      .pattern-card h3,
+      .pipeline-step h4 {
+        min-height: 0;
+      }
+
+      .trilemma-grid > .card,
+      .docs-grid > .doc-link-card {
+        display: grid;
+        grid-row: span 3;
+        grid-template-rows: subgrid;
+        row-gap: 0;
+      }
+
+      .pattern-grid > .pattern-card,
+      .pipeline-strip > .pipeline-step {
+        display: grid;
+        grid-row: span 4;
+        grid-template-rows: subgrid;
+        row-gap: 0;
+      }
+
+      .triage-filmstrip > .film-card {
+        display: grid;
+        grid-row: span 2;
+        grid-template-rows: subgrid;
+        row-gap: 0.6rem;
+      }
+
+      .trilemma-grid > .card .card-num {
+        justify-self: start;
+      }
+    }
+
+    /* ---------- ArchiGram on ArchiGram ---------- */
+    .section-lede {
+      max-width: 780px;
+      color: var(--ink-muted);
+      font-size: 1.05rem;
+      margin: 0.4rem 0 0;
+    }
+
+    .tour-heading {
+      font-size: 1.35rem;
+      margin: 3.25rem 0 1rem;
+    }
+
+    .pipeline-strip,
+    .pattern-grid {
+      display: grid;
+      gap: 1rem;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .pipeline-strip {
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+
+    .pattern-grid {
+      grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+    }
+
+    .pipeline-step,
+    .pattern-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.1rem 1.2rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .step-label,
+    .pattern-kicker {
+      font-family: var(--font-mono);
+      font-size: 0.74rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.45rem;
+    }
+
+    .pipeline-step h4 {
+      font-size: 1.02rem;
+      margin: 0 0 0.45rem;
+    }
+
+    .pattern-card h3 {
+      font-size: 1.12rem;
+      margin: 0 0 0.5rem;
+    }
+
+    .pipeline-step p,
+    .pattern-card p {
+      font-size: 0.9rem;
+      color: var(--ink-muted);
+      margin: 0 0 0.85rem;
+    }
+
+    .step-slices,
+    .pattern-enforced {
+      font-family: var(--font-mono);
+      font-size: 0.74rem;
+      color: var(--ink-faint);
+      border-top: 1px dashed var(--border-strong);
+      padding-top: 0.6rem;
+      align-self: end;
+    }
+
+    .pattern-enforced strong {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .tour-row {
+      display: grid;
+      grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+      gap: 1.5rem 2.5rem;
+      align-items: start;
+      margin: 0 0 3.25rem;
+    }
+
+    .tour-text {
+      position: sticky;
+      top: 5.5rem;
+    }
+
+    .tour-text h3 {
+      font-size: 1.5rem;
+      margin: 0.15rem 0 0.7rem;
+    }
+
+    .tour-text p {
+      color: var(--ink-muted);
+      margin: 0 0 0.9rem;
+    }
+
+    .tour-facts {
+      list-style: none;
+      margin: 1.1rem 0 0.9rem;
+      padding: 0;
+      display: grid;
+      gap: 0.7rem;
+    }
+
+    .tour-facts li {
+      display: grid;
+      grid-template-columns: 6.5rem minmax(0, 1fr);
+      gap: 0.7rem;
+      font-size: 0.9rem;
+    }
+
+    .fact-label {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--ink-faint);
+      padding-top: 0.2rem;
+    }
+
+    .tour-link {
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .tour-link:hover {
+      text-decoration: underline;
+    }
+
+    .tour-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem 1.4rem;
+    }
+
+    .tour-diagram .diagram-canvas {
+      min-height: 0;
+      padding: 1.1rem;
+    }
+
+    .tour-diagram .diagram-canvas img {
+      width: 100%;
+      max-height: 780px;
+      object-fit: contain;
+    }
+
+    /* Where the nav wraps onto two rows the sticky header is taller, so sit lower. */
+    @media (max-width: 1099px) {
+      .tour-text {
+        top: 8rem;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .tour-row {
+        grid-template-columns: 1fr;
+      }
+
+      .tour-text {
+        position: static;
+      }
+    }
   </style>
 </head>
 <body>
@@ -984,6 +1225,7 @@
       </a>
       <nav class="nav-links" aria-label="Primary">
         <a href="#why">Why ArchiGram</a>
+        <a href="#architecture">Architecture</a>
         <a href="#triage">3-Stage Triage</a>
         <a href="#animated">Animated Traces</a>
         <a href="#theming">Central Theme</a>
@@ -1051,7 +1293,7 @@
             <h3>Naive extractors emit unreadable hairballs</h3>
             <p>
               Raw AST, dependency, and OpenTelemetry visualizers swing to the opposite extreme:
-              dumping <code>334</code> symbols or <code>1,000</code> spans onto a single canvas. The
+              dumping <code>361</code> symbols or <code>1,000</code> spans onto a single canvas. The
               output exceeds both human cognition and platform caps like Gitea’s
               <code>5,000</code>-character Mermaid limit.
             </p>
@@ -1137,10 +1379,248 @@
       </div>
     </section>
 
+    <!-- 3. ARCHIGRAM ON ARCHIGRAM: WHAT IT DOES AND HOW IT IS BUILT -->
+    <section id="architecture">
+      <div class="wide-wrap">
+        <div class="section-kicker">03 · ArchiGram on ArchiGram</div>
+        <h2>The Architecture, Drawn by the Tool Itself</h2>
+        <p class="section-lede">
+          Every picture in this tour was compiled from ArchiGram’s own source tree, or from one
+          recorded run of itself. Each one is curated by a declarative spec, checked by the five
+          gates, and re-verified on every push, so when the code changes and a picture would
+          become wrong, the build fails. These maps are as trustworthy as the tests.
+        </p>
+
+        <h3 class="tour-heading">What it does: one pipeline from code to a verified diagram</h3>
+        <ol class="pipeline-strip">
+          <li class="pipeline-step">
+            <span class="step-label">1 · Ingest</span>
+            <h4>Read facts, never guess</h4>
+            <p>
+              Deterministic extractors read the Python AST, OpenTelemetry spans, SCIP indexes, DOT
+              graphs and class models.
+            </p>
+            <span class="step-slices">ingest_python · ingest_otel · ingest_scip · ingest_dot · ingest_class</span>
+          </li>
+          <li class="pipeline-step">
+            <span class="step-label">2 · Canonical IR</span>
+            <h4>One provenance-stamped IR</h4>
+            <p>
+              Everything becomes a <code>CanonicalIR</code>, a structural graph or an interaction
+              trace, with every node stamped by where it came from.
+            </p>
+            <span class="step-slices">src/archigram/domain</span>
+          </li>
+          <li class="pipeline-step">
+            <span class="step-label">3 · Reduce</span>
+            <h4>Shrink it by declared rules</h4>
+            <p>
+              A YAML spec (<code>CurationSpecV1</code>) prunes, bypasses and collapses the graph.
+              Traces are compacted by <code>R1–R6</code> loop folding and ordering rules.
+            </p>
+            <span class="step-slices">reduce_structural · reduce_trace</span>
+          </li>
+          <li class="pipeline-step">
+            <span class="step-label">4 · Lint</span>
+            <h4>Five gates must pass</h4>
+            <p>
+              Grounding, protected boundaries, topology and ordering, size budgets and syntax are
+              all checked before a single byte is written.
+            </p>
+            <span class="step-slices">lint_grounding · lint_topology · lint_budget · lint_syntax</span>
+          </li>
+          <li class="pipeline-step">
+            <span class="step-label">5 · Emit</span>
+            <h4>Render the same IR anywhere</h4>
+            <p>
+              Mermaid, D2, PlantUML, LikeC4 and Graphviz DOT are rendered deterministically, so a
+              rerun produces identical files.
+            </p>
+            <span class="step-slices">emit_mermaid · emit_d2 · emit_plantuml · emit_likec4</span>
+          </li>
+        </ol>
+
+        <h3 class="tour-heading">The architectural patterns, and what keeps each one true</h3>
+        <div class="pattern-grid">
+          <article class="pattern-card">
+            <span class="pattern-kicker">Pattern 1 · Structure</span>
+            <h3>Dependencies only point inward</h3>
+            <p>
+              Four rings: entrypoints, features, ports and domain. Every import points toward the
+              domain, so the CLI and the MCP server are replaceable adapters around a core that
+              knows nothing about them.
+            </p>
+            <span class="pattern-enforced"><strong>Enforced by</strong> import-linter · layers contract</span>
+          </article>
+          <article class="pattern-card">
+            <span class="pattern-kicker">Pattern 2 · Slices</span>
+            <h3>16 slices that cannot import each other</h3>
+            <p>
+              Each ingestor, reducer, gate and emitter lives in its own vertical slice and may only
+              import the domain and ports. Adding a seventeenth slice never touches its siblings.
+            </p>
+            <span class="pattern-enforced"><strong>Enforced by</strong> import-linter · independence contract</span>
+          </article>
+          <article class="pattern-card">
+            <span class="pattern-kicker">Pattern 3 · Purity</span>
+            <h3>A core that cannot touch the outside</h3>
+            <p>
+              The domain and ports layers may not import <code>typer</code>, <code>mcp</code> or
+              <code>subprocess</code>, nor any feature or entrypoint. They hold pure types and
+              protocols, which makes them easy to test.
+            </p>
+            <span class="pattern-enforced"><strong>Enforced by</strong> import-linter · forbidden contract</span>
+          </article>
+          <article class="pattern-card">
+            <span class="pattern-kicker">Pattern 4 · Two planes</span>
+            <h3>Programs observe, models only propose</h3>
+            <p>
+              Facts come from deterministic extractors. A model may only propose declarative
+              curation rules through the MCP server, inside a bounded three-turn repair loop that
+              is guided by the gates’ counterexamples.
+            </p>
+            <span class="pattern-enforced"><strong>Enforced by</strong> the 5 gates · bounded propose loop</span>
+          </article>
+          <article class="pattern-card">
+            <span class="pattern-kicker">Pattern 5 · Hub</span>
+            <h3>Many inputs, one canonical hub</h3>
+            <p>
+              Every ingestor produces the same <code>CanonicalIR</code> and every emitter reads it,
+              so supporting a new input or output format means adding one slice, not rewriting the
+              pipeline.
+            </p>
+            <span class="pattern-enforced"><strong>Enforced by</strong> ports · <code>Protocol</code> contracts</span>
+          </article>
+          <article class="pattern-card">
+            <span class="pattern-kicker">Pattern 6 · Zero drift</span>
+            <h3>Diagrams that fail the build when wrong</h3>
+            <p>
+              Docs are generated, not drawn. CI reruns <code>archigram apply --check</code> and
+              fails if one byte of any committed diagram differs from what the code now produces.
+            </p>
+            <span class="pattern-enforced"><strong>Enforced by</strong> gate 8 · zero-drift check</span>
+          </article>
+        </div>
+
+        <h3 class="tour-heading">Zoom in: four levels, each compiled from the real code</h3>
+
+        <article class="tour-row">
+          <div class="tour-text">
+            <div class="section-kicker">Zoom 0 · System</div>
+            <h3>The whole system on one page</h3>
+            <p>
+              Nine capability groups inside the four rings. Read it from the outside in: the CLI
+              and the MCP server call features, features call ports, and ports describe the
+              domain.
+            </p>
+            <ul class="tour-facts">
+              <li><span class="fact-label">Pattern</span><span>Hexagonal rings, inward-only imports</span></li>
+              <li><span class="fact-label">Kept true by</span><span>the layers and purity contracts, on every commit</span></li>
+              <li><span class="fact-label">Use it to</span><span>learn the system, or to plug in the CLI or MCP server</span></li>
+            </ul>
+            <a class="tour-link" href="https://github.com/klcd/archigram/blob/main/docs/architecture/L0-system-and-rings.md">Read the L0 guide →</a>
+          </div>
+          <div class="diagram-frame tour-diagram">
+            <div class="diagram-header">
+              <span class="mono-title">l0_hexagonal_rings_d2.d2.svg</span>
+              <button class="zoom-hint" type="button" data-zoom-src="./architecture/diagrams/l0_hexagonal_rings_d2.d2.svg" data-zoom-title="Zoom 0 · System &amp; Hexagonal Rings">Inspect ⤢</button>
+            </div>
+            <div class="diagram-canvas" data-zoom-src="./architecture/diagrams/l0_hexagonal_rings_d2.d2.svg" data-zoom-title="Zoom 0 · System &amp; Hexagonal Rings">
+              <img data-dual-svg data-still src="./architecture/diagrams/l0_hexagonal_rings_d2.d2.svg" alt="ArchiGram system map: nine capability groups inside the four hexagonal rings" />
+            </div>
+          </div>
+        </article>
+
+        <article class="tour-row">
+          <div class="tour-text">
+            <div class="section-kicker">Zoom 1 · Slices</div>
+            <h3>Sixteen isolated vertical slices</h3>
+            <p>
+              Ingestors, reducers, gates and emitters side by side, each importing only the domain
+              and ports. A contributor adding an input format, a diagram target or a lint rule
+              works inside one slice and breaks no other.
+            </p>
+            <ul class="tour-facts">
+              <li><span class="fact-label">Pattern</span><span>Vertical slices with no cross-slice imports</span></li>
+              <li><span class="fact-label">Kept true by</span><span>the independence contract, on every commit</span></li>
+              <li><span class="fact-label">Use it to</span><span>find where a new ingestor, emitter or gate belongs</span></li>
+            </ul>
+            <a class="tour-link" href="https://github.com/klcd/archigram/blob/main/docs/architecture/L1-feature-slices.md">Read the L1 guide →</a>
+          </div>
+          <div class="diagram-frame tour-diagram">
+            <div class="diagram-header">
+              <span class="mono-title">l1_feature_slices_d2.d2.svg</span>
+              <button class="zoom-hint" type="button" data-zoom-src="./architecture/diagrams/l1_feature_slices_d2.d2.svg" data-zoom-title="Zoom 1 · The 16 Independent Feature Slices">Inspect ⤢</button>
+            </div>
+            <div class="diagram-canvas" data-zoom-src="./architecture/diagrams/l1_feature_slices_d2.d2.svg" data-zoom-title="Zoom 1 · The 16 Independent Feature Slices">
+              <img data-dual-svg data-still src="./architecture/diagrams/l1_feature_slices_d2.d2.svg" alt="ArchiGram feature-slice map: sixteen independent slices and the four rings" />
+            </div>
+          </div>
+        </article>
+
+        <article class="tour-row">
+          <div class="tour-text">
+            <div class="section-kicker">Zoom 2 · Subsystem</div>
+            <h3>Inside the reduction engine</h3>
+            <p>
+              A focused neighbourhood of the reducers: graph simplification by strongly connected
+              components and transitive reduction, and the <code>R1–R6</code> rules that compact a
+              runtime trace while keeping its causal order.
+            </p>
+            <ul class="tour-facts">
+              <li><span class="fact-label">Pattern</span><span>Pure functions from one IR to a smaller IR</span></li>
+              <li><span class="fact-label">Kept true by</span><span>the topology gate and the property-based fuzz suite</span></li>
+              <li><span class="fact-label">Use it to</span><span>change how graphs or traces are simplified</span></li>
+            </ul>
+            <a class="tour-link" href="https://github.com/klcd/archigram/blob/main/docs/architecture/L2-subsystem-guides.md#l2b-reduction--concurrency-compaction-engine">Read the L2 guide →</a>
+          </div>
+          <div class="diagram-frame tour-diagram">
+            <div class="diagram-header">
+              <span class="mono-title">l2b_reduction_engine_d2.d2.svg</span>
+              <button class="zoom-hint" type="button" data-zoom-src="./architecture/diagrams/l2b_reduction_engine_d2.d2.svg" data-zoom-title="Zoom 2 · Reduction &amp; Concurrency Compaction Engine">Inspect ⤢</button>
+            </div>
+            <div class="diagram-canvas" data-zoom-src="./architecture/diagrams/l2b_reduction_engine_d2.d2.svg" data-zoom-title="Zoom 2 · Reduction &amp; Concurrency Compaction Engine">
+              <img data-dual-svg data-still src="./architecture/diagrams/l2b_reduction_engine_d2.d2.svg" alt="ArchiGram reduction engine: how graphs and traces are simplified" />
+            </div>
+          </div>
+        </article>
+
+        <article class="tour-row">
+          <div class="tour-text">
+            <div class="section-kicker">Zoom 3 · Runtime</div>
+            <h3>One real run, recorded from itself</h3>
+            <p>
+              ArchiGram runs itself under Python’s <code>sys.monitoring</code>, records the call
+              tree, compacts it to 15 participants and 48 events, and draws it with the same
+              pipeline you just saw. Nobody typed this sequence diagram.
+            </p>
+            <ul class="tour-facts">
+              <li><span class="fact-label">Pattern</span><span>Observed runtime behaviour, not documented intent</span></li>
+              <li><span class="fact-label">Kept true by</span><span>the zero-drift check against a recorded trace snapshot</span></li>
+              <li><span class="fact-label">Use it to</span><span>trace how a lint run or a repair loop actually executes</span></li>
+            </ul>
+            <div class="tour-links">
+              <a class="tour-link" href="#animated">Watch it animated →</a>
+              <a class="tour-link" href="https://github.com/klcd/archigram/blob/main/docs/architecture/L3-runtime-traces.md">Read the L3 guide →</a>
+            </div>
+          </div>
+          <div class="diagram-frame tour-diagram">
+            <div class="diagram-header">
+              <span class="mono-title">l3_runtime_pipeline_d2.d2.svg</span>
+              <button class="zoom-hint" type="button" data-zoom-src="./architecture/diagrams/l3_runtime_pipeline_d2.d2.svg" data-zoom-title="Zoom 3 · Runtime Pipeline Sequence (recorded from ArchiGram itself)">Inspect ⤢</button>
+            </div>
+            <div class="diagram-canvas" data-zoom-src="./architecture/diagrams/l3_runtime_pipeline_d2.d2.svg" data-zoom-title="Zoom 3 · Runtime Pipeline Sequence (recorded from ArchiGram itself)">
+              <img data-dual-svg data-still src="./architecture/diagrams/l3_runtime_pipeline_d2.d2.svg" alt="Sequence diagram of ArchiGram's own pipeline run, recorded at runtime" />
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
     <!-- 3. INTERACTIVE 3-STAGE TRIAGE EXPLORER -->
     <section id="triage">
       <div class="wide-wrap">
-        <div class="section-kicker">03 · Program-First Extraction → CLI-Only Curation</div>
+        <div class="section-kicker">04 · Program-First Extraction → CLI-Only Curation</div>
         <h2>Interactive 3-Stage Triage: Before, What Gets Removed, and After</h2>
         <p style="max-width: 780px; color: var(--ink-muted);">
           When ArchiGram ingests its own <code>src/archigram</code> Python AST, the unedited graph
@@ -1195,7 +1675,7 @@
     <!-- 4. LIVE ANIMATED D2 RUNTIME & UML SHOWCASE -->
     <section id="animated">
       <div class="wide-wrap">
-        <div class="section-kicker">04 · Moving Architecture Diagrams</div>
+        <div class="section-kicker">05 · Moving Architecture Diagrams</div>
         <h2>Self-Contained Animated Runtime Traces &amp; UML 2.5 Flows</h2>
         <p style="max-width: 780px; color: var(--ink-muted);">
           Static boxes struggle to convey order of execution, concurrency fan-out, and state
@@ -1257,6 +1737,7 @@
                 class="zoom-hint"
                 type="button"
                 id="anim-zoom-btn"
+                data-keep-animation
                 data-zoom-src="./architecture/diagrams/l3_runtime_pipeline_steps_d2.d2.svg"
                 data-zoom-title="Step-by-Step Pipeline & Self-Repair Playback"
               >
@@ -1267,6 +1748,7 @@
               class="diagram-canvas"
               id="anim-canvas"
               style="min-height: 480px;"
+              data-keep-animation
               data-zoom-src="./architecture/diagrams/l3_runtime_pipeline_steps_d2.d2.svg"
               data-zoom-title="Step-by-Step Pipeline & Self-Repair Playback"
             >
@@ -1285,7 +1767,7 @@
     <!-- 5. CENTRALIZED MERMAID & DUAL-MODE GOVERNANCE -->
     <section id="theming">
       <div class="wide-wrap">
-        <div class="section-kicker">05 · Centralized Dual-Mode Governance</div>
+        <div class="section-kicker">06 · Centralized Dual-Mode Governance</div>
         <h2>One Human-Owned Theme Policy—Never Per-Diagram AI Colors</h2>
         <p style="max-width: 800px; color: var(--ink-muted);">
           Letting an AI agent invent <code>themeVariables</code> or custom colors per diagram causes
@@ -1403,7 +1885,7 @@ flowchart TD
     <!-- 6. ARCHITECTURE DOCS MATRIX -->
     <section id="docs">
       <div class="wide-wrap">
-        <div class="section-kicker">06 · Self-Dogfooded Documentation</div>
+        <div class="section-kicker">07 · Self-Dogfooded Documentation</div>
         <h2>Explore All Four Zoom Levels &amp; Benchmarks</h2>
         <p style="max-width: 740px; color: var(--ink-muted);">
           Every diagram in this repository is compiled from ArchiGram’s own source tree and verified
@@ -1617,11 +2099,23 @@ flowchart TD
         return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
       }
 
-      async function resolveSvgUrlForMode(canonicalSrc, choice) {
-        if (!canonicalSrc || choice === "auto" || !canonicalSrc.endsWith(".svg")) {
+      // D2 marks some edges as animated, which adds an infinite CSS animation per edge. For a
+      // diagram you study, not watch, that is pure cost: the giant triage graphs have 252 of them,
+      // and the browser repaints the whole image on every frame. `still` removes those
+      // declarations; the animated-trace demos keep theirs.
+      function stripSvgAnimations(svgText) {
+        return svgText.replace(/animation:\s*[^;"}]*;?/g, "");
+      }
+
+      async function resolveSvgUrlForMode(canonicalSrc, choice, still = false) {
+        if (
+          !canonicalSrc ||
+          !canonicalSrc.endsWith(".svg") ||
+          (choice === "auto" && !still)
+        ) {
           return canonicalSrc;
         }
-        const key = canonicalSrc + "::" + choice;
+        const key = canonicalSrc + "::" + choice + (still ? "::still" : "");
         if (svgBlobCache.has(key)) {
           return svgBlobCache.get(key);
         }
@@ -1633,8 +2127,14 @@ flowchart TD
             rawSvg = await resp.text();
             svgRawCache.set(canonicalSrc, rawSvg);
           }
-          const replacement = choice === "dark" ? "(min-width: 0px)" : "(max-width: 0px)";
-          const rewritten = rawSvg.replace(/\(prefers-color-scheme:\s*dark\)/gi, replacement);
+          let rewritten = rawSvg;
+          if (choice !== "auto") {
+            const replacement = choice === "dark" ? "(min-width: 0px)" : "(max-width: 0px)";
+            rewritten = rewritten.replace(/\(prefers-color-scheme:\s*dark\)/gi, replacement);
+          }
+          if (still) {
+            rewritten = stripSvgAnimations(rewritten);
+          }
           const blobUrl = URL.createObjectURL(new Blob([rewritten], { type: "image/svg+xml" }));
           svgBlobCache.set(key, blobUrl);
           return blobUrl;
@@ -1650,7 +2150,8 @@ flowchart TD
             canonical = img.getAttribute("src") || "";
             img.setAttribute("data-canonical-src", canonical);
           }
-          resolveSvgUrlForMode(canonical, activeThemeChoice).then((resolvedUrl) => {
+          const still = img.hasAttribute("data-still");
+          resolveSvgUrlForMode(canonical, activeThemeChoice, still).then((resolvedUrl) => {
             if (img.getAttribute("data-canonical-src") === canonical) {
               img.src = resolvedUrl;
             }
@@ -1712,7 +2213,7 @@ flowchart TD
         if (st.preview) {
           return `src="${st.preview}"`;
         }
-        return `data-dual-svg data-canonical-src="${st.src}" src="${st.src}"`;
+        return `data-dual-svg data-still data-canonical-src="${st.src}" src="${st.src}"`;
       }
 
       function renderTriage() {
@@ -1873,13 +2374,16 @@ flowchart TD
       const lbZoomLabel = document.getElementById("lb-zoom-label");
       // Zoom/pan state: lbTarget is where the view is heading, lbView is what is drawn.
       // Each frame eases lbView toward lbTarget, so wheel, buttons and double-click all
-      // glide instead of jumping. Dragging writes both, so panning stays 1:1 with the pointer.
+      // glide instead of jumping. The easing uses a time constant, not a per-frame factor, so
+      // it takes the same wall-clock time on a slow frame rate. Dragging writes both, so
+      // panning stays 1:1 with the pointer.
       const LB_MIN_SCALE = 0.5;
       const LB_MAX_SCALE = 80;
-      const LB_EASE = 0.22;
+      const LB_TAU_MS = 70;
       const lbView = { scale: 1, x: 0, y: 0 };
       const lbTarget = { scale: 1, x: 0, y: 0 };
       let lbFrame = 0;
+      let lbLastTime = 0;
       let dragging = false;
       let startX = 0;
       let startY = 0;
@@ -1889,10 +2393,13 @@ flowchart TD
         lbZoomLabel.textContent = `${Math.round(lbView.scale * 100)}%`;
       }
 
-      function lbTick() {
-        lbView.scale += (lbTarget.scale - lbView.scale) * LB_EASE;
-        lbView.x += (lbTarget.x - lbView.x) * LB_EASE;
-        lbView.y += (lbTarget.y - lbView.y) * LB_EASE;
+      function lbTick(now) {
+        const dt = Math.min(64, now - (lbLastTime || now - 16));
+        lbLastTime = now;
+        const ease = 1 - Math.exp(-dt / LB_TAU_MS);
+        lbView.scale += (lbTarget.scale - lbView.scale) * ease;
+        lbView.x += (lbTarget.x - lbView.x) * ease;
+        lbView.y += (lbTarget.y - lbView.y) * ease;
         const settled =
           Math.abs(lbTarget.scale - lbView.scale) < 0.0005 * lbTarget.scale &&
           Math.abs(lbTarget.x - lbView.x) < 0.05 &&
@@ -1900,14 +2407,24 @@ flowchart TD
         if (settled) {
           Object.assign(lbView, lbTarget);
           lbFrame = 0;
+          lbLastTime = 0;
+          if (!dragging) lbSetMoving(false);
         } else {
           lbFrame = requestAnimationFrame(lbTick);
         }
         lbRender();
       }
 
+      // `will-change: transform` makes the browser scale a cached bitmap, which is smooth but
+      // blurry. Apply it only while the image is moving; once it settles the browser re-renders
+      // the vector SVG at the final scale, so zoomed-in detail stays crisp.
+      function lbSetMoving(moving) {
+        lbImg.style.willChange = moving ? "transform" : "auto";
+      }
+
       function lbAnimate() {
         if (!lbFrame) {
+          lbSetMoving(true);
           lbFrame = requestAnimationFrame(lbTick);
         }
       }
@@ -1917,6 +2434,7 @@ flowchart TD
         lbFrame = 0;
         Object.assign(lbTarget, { scale, x, y });
         Object.assign(lbView, lbTarget);
+        lbSetMoving(false);
         lbRender();
       }
 
@@ -1939,12 +2457,14 @@ flowchart TD
         lbZoomAt(factor, rect.left + rect.width / 2, rect.top + rect.height / 2);
       }
 
-      function openLightbox(src, title) {
+      function openLightbox(src, title, keepAnimation) {
         lbTitle.textContent = title || "Diagram Inspector";
         lbJump(1, 0, 0);
         lb.classList.add("open");
-        // The inspector always sits on a cream panel, so always show the light palette.
-        resolveSvgUrlForMode(src, "light").then((resolved) => {
+        document.body.classList.add("lb-open");
+        // The inspector always sits on a cream panel, so always show the light palette, and
+        // show it still unless the trigger is an animated-trace demo.
+        resolveSvgUrlForMode(src, "light", !keepAnimation).then((resolved) => {
           lbImg.src = resolved;
         });
       }
@@ -1953,6 +2473,7 @@ flowchart TD
         cancelAnimationFrame(lbFrame);
         lbFrame = 0;
         lb.classList.remove("open");
+        document.body.classList.remove("lb-open");
         lbImg.src = "";
       }
 
@@ -1961,7 +2482,8 @@ flowchart TD
         if (trigger) {
           openLightbox(
             trigger.getAttribute("data-zoom-src"),
-            trigger.getAttribute("data-zoom-title")
+            trigger.getAttribute("data-zoom-title"),
+            trigger.hasAttribute("data-keep-animation")
           );
         }
       });
@@ -1993,6 +2515,7 @@ flowchart TD
       lbStage.addEventListener("pointerdown", (e) => {
         if (e.target.closest("button") || e.button !== 0) return;
         dragging = true;
+        lbSetMoving(true);
         lbStage.setPointerCapture(e.pointerId);
         startX = e.clientX - lbTarget.x;
         startY = e.clientY - lbTarget.y;
@@ -2015,6 +2538,7 @@ flowchart TD
           lbStage.releasePointerCapture(e.pointerId);
         }
         lbStage.classList.remove("dragging");
+        if (!lbFrame) lbSetMoving(false);
       }
       lbStage.addEventListener("pointerup", endDrag);
       lbStage.addEventListener("pointercancel", endDrag);
