@@ -735,6 +735,13 @@
       cursor: zoom-in;
     }
 
+    /* Opaque preview PNGs stay readable on the dark theme: a white panel, not transparent ink. */
+    .preview-img,
+    .film-card img[src$=".png"] {
+      background: #ffffff;
+      border-radius: 6px;
+    }
+
     .stage-caption {
       max-width: 760px;
       text-align: center;
@@ -1475,12 +1482,14 @@ flowchart TD
               label: "Stage 1 · Raw AST Graph",
               meta: "342 nodes · 51,814 chars",
               src: "./architecture/diagrams/showcase_cli_triage.1_original.d2.svg",
+              preview: "./architecture/diagrams/showcase_cli_triage.1_original.png",
               caption: "Unedited deterministic Python AST extraction of src/archigram (342 symbols, 495 edges). Honest, complete, and completely unreadable at a glance."
             },
             "2": {
               label: "Stage 2 · Triage Overlay",
               meta: "Computed Action Map",
               src: "./architecture/diagrams/showcase_cli_triage.2_triage.d2.svg",
+              preview: "./architecture/diagrams/showcase_cli_triage.2_triage.png",
               caption: "Before removing a single node, archigram triage highlights every symbol on the raw graph: Crimson [REMOVE], Amber [BYPASS], Violet [COLLAPSE], and Emerald [KEEP]."
             },
             "3": {
@@ -1693,6 +1702,15 @@ flowchart TD
       const viewportEl = document.getElementById("triage-viewport");
       const cliEl = document.getElementById("triage-cli");
 
+      // Stages whose canvas is far too large to read as a thumbnail (the raw and triage
+      // overlays) show an opaque preview PNG; the zoom inspector still opens the full SVG.
+      function triageImgSource(st) {
+        if (st.preview) {
+          return `src="${st.preview}"`;
+        }
+        return `data-dual-svg data-canonical-src="${st.src}" src="${st.src}"`;
+      }
+
       function renderTriage() {
         const data = TRIAGE_DATA[activeDataset];
         const pillsHtml = data.pills
@@ -1719,9 +1737,7 @@ flowchart TD
                     <span>${st.meta}</span>
                   </div>
                   <img
-                    data-dual-svg
-                    data-canonical-src="${st.src}"
-                    src="${st.src}"
+                    ${triageImgSource(st)}
                     alt="${st.label}"
                     data-zoom-src="${st.src}"
                     data-zoom-title="${st.label} (${st.meta})"
@@ -1740,10 +1756,8 @@ flowchart TD
           const st = data.stages[activeStage];
           viewportEl.innerHTML = `
             <img
-              class="triage-single-img"
-              data-dual-svg
-              data-canonical-src="${st.src}"
-              src="${st.src}"
+              class="triage-single-img${st.preview ? " preview-img" : ""}"
+              ${triageImgSource(st)}
               alt="${st.label}"
               data-zoom-src="${st.src}"
               data-zoom-title="${st.label} (${st.meta})"
