@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import string
 import tempfile
 from dataclasses import dataclass
@@ -425,3 +426,126 @@ def test_ingest_class_rejects_blank_input(bad_text: str) -> None:
     except ValueError:
         return
     raise AssertionError("Expected ValueError for blank input")
+
+
+_INVALID_WEIGHT_VALUES: st.SearchStrategy[Any] = st.one_of(
+    st.none(),
+    st.booleans(),
+    st.integers(max_value=0),
+    st.floats(max_value=0.0, allow_nan=False, allow_infinity=True),
+    st.just(float("nan")),
+    st.just(float("inf")),
+    st.just(float("-inf")),
+    st.just(10**400),
+    st.just(-(10**400)),
+    st.sampled_from(["", " ", "heavy", "nan", "NaN", "inf", "-inf", "Infinity", "0", "-3.5"]),
+    st.lists(st.integers(min_value=-5, max_value=5), max_size=3),
+    st.dictionaries(
+        st.text(alphabet=string.ascii_lowercase, min_size=1, max_size=4),
+        st.integers(),
+        max_size=2,
+    ),
+)
+
+_ARBITRARY_WEIGHT_VALUES: st.SearchStrategy[Any] = st.one_of(
+    _INVALID_WEIGHT_VALUES,
+    st.integers(min_value=1, max_value=1_000_000),
+    st.floats(min_value=1e-6, max_value=1e6, allow_nan=False, allow_infinity=False),
+    st.text(max_size=16),
+)
+
+
+@settings(max_examples=80, deadline=None)
+@given(
+    class_rel_weight=_ARBITRARY_WEIGHT_VALUES,
+    top_edge_weight=_ARBITRARY_WEIGHT_VALUES,
+)
+def test_ingest_class_json_sanitizes_arbitrary_edge_weights(
+    class_rel_weight: Any,
+    top_edge_weight: Any,
+) -> None:
+    payload = {
+        "classes": [
+            {
+                "name": "SourceCls",
+                "associates": [{"target": "TargetCls", "weight": class_rel_weight}],
+            },
+            {"name": "TargetCls"},
+        ],
+        "relations": [
+            {
+                "source": "SourceCls",
+                "target": "TargetCls",
+                "relation": "uses",
+                "weight": top_edge_weight,
+            }
+        ],
+    }
+    ir = ClassHierarchyIngestor().ingest(json.dumps(payload))
+    assert len(ir.edges) == 2
+    for edge in ir.edges:
+        assert math.isfinite(edge.weight)
+        assert edge.weight > 0.0
+
+
+@settings(max_examples=60, deadline=None)
+@given(
+    invalid_weight=_INVALID_WEIGHT_VALUES,
+    valid_weight=st.floats(min_value=1e-4, max_value=1e4, allow_nan=False, allow_infinity=False),
+    as_string=st.booleans(),
+)
+def test_ingest_class_json_invalid_weights_default_to_one(
+    invalid_weight: Any,
+    valid_weight: float,
+    as_string: bool,
+) -> None:
+    encoded_valid: float | str = str(valid_weight) if as_string else valid_weight
+    payload = {
+        "classes": [
+            {
+                "name": "ChildCls",
+                "bases": [{"target": "BaseCls", "weight": invalid_weight}],
+            },
+            {"name": "BaseCls"},
+        ],
+        "relations": [
+            {
+                "source": "ChildCls",
+                "target": "BaseCls",
+                "relation": "associates",
+                "weight": invalid_weight,
+            },
+            {
+                "source": "ChildCls",
+                "target": "BaseCls",
+                "relation": "calls",
+                "weight": encoded_valid,
+            },
+        ],
+    }
+    ir = ClassHierarchyIngestor().ingest(json.dumps(payload))
+    assert len(ir.edges) == 3
+    assert ir.edges[0].weight == 1.0
+    assert ir.edges[1].weight == 1.0
+    assert ir.edges[2].weight == valid_weight
+
+
+@settings(max_examples=30, deadline=None)
+@given(
+    raw_weight=st.one_of(
+        st.sampled_from(["", "heavy", "nan", "inf", "-2", "0"]),
+        st.floats(min_value=1e-3, max_value=100.0, allow_nan=False, allow_infinity=False).map(str),
+    )
+)
+def test_ingest_class_dot_sanitizes_edge_weights(raw_weight: str) -> None:
+    dot_src = (
+        "digraph Classes {\n"
+        '  "Alpha" [shape="record", label="{Alpha||}"];\n'
+        '  "Beta" [shape="record", label="{Beta||}"];\n'
+        f'  "Alpha" -> "Beta" [arrowhead="vee", weight={json.dumps(raw_weight)}];\n'
+        "}\n"
+    )
+    ir = ClassHierarchyIngestor().ingest(dot_src)
+    assert len(ir.edges) == 1
+    assert math.isfinite(ir.edges[0].weight)
+    assert ir.edges[0].weight > 0.0
