@@ -158,8 +158,8 @@
         "input_sha256": "5acbad70e70812d3f1a8cec593c4046c57fd6a00812a750e1adb0017a077b8c0",
         "file_path": "src/archigram/features/emit_mermaid/emitter.py",
         "line_span": [
-          573,
-          574
+          576,
+          577
         ],
         "rule_id": null,
         "backing_ids": []
@@ -1078,8 +1078,8 @@
         "input_sha256": "5acbad70e70812d3f1a8cec593c4046c57fd6a00812a750e1adb0017a077b8c0",
         "file_path": "src/archigram/features/emit_mermaid/emitter.py",
         "line_span": [
-          573,
-          574
+          576,
+          577
         ],
         "rule_id": null,
         "backing_ids": []
@@ -1108,8 +1108,8 @@
         "input_sha256": "5acbad70e70812d3f1a8cec593c4046c57fd6a00812a750e1adb0017a077b8c0",
         "file_path": "src/archigram/features/emit_mermaid/emitter.py",
         "line_span": [
-          586,
-          596
+          589,
+          599
         ],
         "rule_id": null,
         "backing_ids": []
@@ -4798,8 +4798,8 @@
         "input_sha256": "5acbad70e70812d3f1a8cec593c4046c57fd6a00812a750e1adb0017a077b8c0",
         "file_path": "src/archigram/features/emit_mermaid/emitter.py",
         "line_span": [
-          586,
-          596
+          589,
+          599
         ],
         "rule_id": null,
         "backing_ids": []
@@ -5698,8 +5698,8 @@
         "input_sha256": "5acbad70e70812d3f1a8cec593c4046c57fd6a00812a750e1adb0017a077b8c0",
         "file_path": "src/archigram/features/emit_mermaid/emitter.py",
         "line_span": [
-          586,
-          596
+          589,
+          599
         ],
         "rule_id": null,
         "backing_ids": []

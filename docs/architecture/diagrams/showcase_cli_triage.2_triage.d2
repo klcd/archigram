@@ -3771,6 +3771,10 @@ archigram."archigram.features"."archigram.features.emit_mermaid" -> archigram."a
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }
+archigram."archigram.features"."archigram.features.emit_mermaid"."archigram.features.emit_mermaid.emitter" -> archigram."archigram.domain"."archigram.domain.concurrency": "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
 archigram."archigram.features"."archigram.features.emit_mermaid"."archigram.features.emit_mermaid.emitter" -> archigram."archigram.domain"."archigram.domain.ir": "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
@@ -3807,6 +3811,10 @@ archigram."archigram.features"."archigram.features.emit_mermaid"."archigram.feat
 archigram."archigram.features"."archigram.features.emit_mermaid"."archigram.features.emit_mermaid.emitter"."archigram.features.emit_mermaid.emitter.sanitize_sequence_text" -> archigram."archigram.features"."archigram.features.emit_mermaid"."archigram.features.emit_mermaid.emitter"."archigram.features.emit_mermaid.emitter.sanitize_mermaid_text": "calls" {
   style.stroke: "#3b82f6"
   style.animated: true
+}
+archigram."archigram.features"."archigram.features.emit_mermaid"."archigram.features.emit_mermaid.uml_variants" -> archigram."archigram.domain"."archigram.domain.concurrency": "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
 }
 archigram."archigram.features"."archigram.features.emit_mermaid"."archigram.features.emit_mermaid.uml_variants" -> archigram."archigram.domain"."archigram.domain.ir": "imports" {
   style.stroke: "#64748b"
@@ -6406,6 +6414,8 @@ archigram."archigram.ports"."archigram.ports.contracts"."archigram.ports.contrac
 (archigram."archigram.features"."archigram.features.emit_likec4"."archigram.features.emit_likec4.emitter" -> archigram."archigram.domain"."archigram.domain.style")[0].style.stroke-dash: 5
 (archigram."archigram.features"."archigram.features.emit_mermaid" -> archigram."archigram.features"."archigram.features.emit_mermaid"."archigram.features.emit_mermaid.emitter")[0].style.stroke: "#f59e0b"
 (archigram."archigram.features"."archigram.features.emit_mermaid" -> archigram."archigram.features"."archigram.features.emit_mermaid"."archigram.features.emit_mermaid.emitter")[0].style.stroke-dash: 5
+(archigram."archigram.features"."archigram.features.emit_mermaid"."archigram.features.emit_mermaid.emitter" -> archigram."archigram.domain"."archigram.domain.concurrency")[0].style.stroke: "#ef4444"
+(archigram."archigram.features"."archigram.features.emit_mermaid"."archigram.features.emit_mermaid.emitter" -> archigram."archigram.domain"."archigram.domain.concurrency")[0].style.stroke-dash: 5
 (archigram."archigram.features"."archigram.features.emit_mermaid"."archigram.features.emit_mermaid.emitter" -> archigram."archigram.domain"."archigram.domain.ir")[0].style.stroke: "#8b5cf6"
 (archigram."archigram.features"."archigram.features.emit_mermaid"."archigram.features.emit_mermaid.emitter" -> archigram."archigram.domain"."archigram.domain.ir")[0].style.stroke-dash: 5
 (archigram."archigram.features"."archigram.features.emit_mermaid"."archigram.features.emit_mermaid.emitter" -> archigram."archigram.domain"."archigram.domain.style")[0].style.stroke: "#8b5cf6"
@@ -6420,6 +6430,8 @@ archigram."archigram.ports"."archigram.ports.contracts"."archigram.ports.contrac
 (archigram."archigram.features"."archigram.features.emit_mermaid"."archigram.features.emit_mermaid.emitter"."archigram.features.emit_mermaid.emitter._SingleStep" -> archigram."archigram.domain"."archigram.domain.ir"."archigram.domain.ir.TraceEvent")[0].style.stroke-dash: 5
 (archigram."archigram.features"."archigram.features.emit_mermaid"."archigram.features.emit_mermaid.emitter"."archigram.features.emit_mermaid.emitter.sanitize_sequence_text" -> archigram."archigram.features"."archigram.features.emit_mermaid"."archigram.features.emit_mermaid.emitter"."archigram.features.emit_mermaid.emitter.sanitize_mermaid_text")[0].style.stroke: "#ef4444"
 (archigram."archigram.features"."archigram.features.emit_mermaid"."archigram.features.emit_mermaid.emitter"."archigram.features.emit_mermaid.emitter.sanitize_sequence_text" -> archigram."archigram.features"."archigram.features.emit_mermaid"."archigram.features.emit_mermaid.emitter"."archigram.features.emit_mermaid.emitter.sanitize_mermaid_text")[0].style.stroke-dash: 5
+(archigram."archigram.features"."archigram.features.emit_mermaid"."archigram.features.emit_mermaid.uml_variants" -> archigram."archigram.domain"."archigram.domain.concurrency")[0].style.stroke: "#ef4444"
+(archigram."archigram.features"."archigram.features.emit_mermaid"."archigram.features.emit_mermaid.uml_variants" -> archigram."archigram.domain"."archigram.domain.concurrency")[0].style.stroke-dash: 5
 (archigram."archigram.features"."archigram.features.emit_mermaid"."archigram.features.emit_mermaid.uml_variants" -> archigram."archigram.domain"."archigram.domain.ir")[0].style.stroke: "#ef4444"
 (archigram."archigram.features"."archigram.features.emit_mermaid"."archigram.features.emit_mermaid.uml_variants" -> archigram."archigram.domain"."archigram.domain.ir")[0].style.stroke-dash: 5
 (archigram."archigram.features"."archigram.features.emit_mermaid"."archigram.features.emit_mermaid.uml_variants" -> archigram."archigram.domain"."archigram.domain.style")[0].style.stroke: "#ef4444"
