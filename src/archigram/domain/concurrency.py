@@ -2,25 +2,20 @@
 
 from __future__ import annotations
 
+import heapq
 from collections import deque
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import TYPE_CHECKING, Annotated
+from typing import TYPE_CHECKING, Protocol
 
-from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+from archigram.domain import NonBlankStr, validate_non_blank
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Mapping, Sequence
 
-
-def _validate_non_blank(value: str) -> str:
-    if not value.strip():
-        msg = "Identifier must not be blank"
-        raise ValueError(msg)
-    return value
-
-
-NonBlankStr = Annotated[str, AfterValidator(_validate_non_blank)]
+_validate_non_blank = validate_non_blank
 
 
 class ConcurrencyMode(StrEnum):
@@ -688,3 +683,198 @@ def reconstruct_causal_order(root: PosetCotreeNode) -> frozenset[tuple[str, str]
     """Reconstruct the exact strict partial order (u < v pairs) represented by a PosetCotreeNode."""
     _, pairs = _reconstruct_recursive(root)
     return frozenset(pairs)
+
+
+class CausalTraceEvent(Protocol):
+    """Minimal structural contract for causal trace ordering and sibling concurrency grouping."""
+
+    @property
+    def event_id(self) -> str: ...
+
+    @property
+    def caller_id(self) -> str: ...
+
+    @property
+    def callee_id(self) -> str: ...
+
+    @property
+    def parent_event_id(self) -> str | None: ...
+
+    @property
+    def causal_links(self) -> tuple[str, ...]: ...
+
+    @property
+    def clock_domain_id(self) -> str: ...
+
+    @property
+    def start_ns(self) -> int: ...
+
+    @property
+    def end_ns(self) -> int: ...
+
+
+def _event_heap_key(eid: str, event: CausalTraceEvent) -> tuple[int, int, str, str, str]:
+    return (event.start_ns, event.end_ns, event.caller_id, event.callee_id, eid)
+
+
+def _collect_in_scope_preds(
+    eid: str,
+    event: CausalTraceEvent,
+    events: Mapping[str, CausalTraceEvent],
+) -> set[str]:
+    preds: set[str] = {link for link in event.causal_links if link in events and link != eid}
+    parent_id = event.parent_event_id
+    if parent_id is not None and parent_id in events and parent_id != eid:
+        preds.add(parent_id)
+    return preds
+
+
+def _build_trace_dependency_graph(
+    events: Mapping[str, CausalTraceEvent],
+) -> tuple[dict[str, list[str]], dict[str, int]]:
+    dependents: dict[str, list[str]] = {eid: [] for eid in events}
+    indegree: dict[str, int] = dict.fromkeys(events, 0)
+
+    for eid, event in events.items():
+        preds = _collect_in_scope_preds(eid, event, events)
+        indegree[eid] = len(preds)
+        for pred in preds:
+            dependents[pred].append(eid)
+
+    return dependents, indegree
+
+
+def _pop_or_break_cycle(
+    heap: list[tuple[int, int, str, str, str]],
+    events: Mapping[str, CausalTraceEvent],
+    emitted: set[str],
+) -> str | None:
+    while heap:
+        _, _, _, _, eid = heapq.heappop(heap)
+        if eid not in emitted:
+            return eid
+    remaining = [eid for eid in events if eid not in emitted]
+    if not remaining:
+        return None
+    return min(remaining, key=lambda eid: _event_heap_key(eid, events[eid]))
+
+
+def _push_ready_dependents(
+    dep_ids: Sequence[str],
+    indegree: dict[str, int],
+    emitted: set[str],
+    events: Mapping[str, CausalTraceEvent],
+    heap: list[tuple[int, int, str, str, str]],
+) -> None:
+    for dep_id in dep_ids:
+        if dep_id in emitted:
+            continue
+        indegree[dep_id] -= 1
+        if indegree[dep_id] == 0:
+            heapq.heappush(heap, _event_heap_key(dep_id, events[dep_id]))
+
+
+def order_trace_events[TEvent: CausalTraceEvent](
+    events: Mapping[str, TEvent],
+) -> list[TEvent]:
+    """Deterministically topologically order trace events by parent_event_id and causal_links.
+
+    Dangling predecessor references (not present in ``events``) are safely ignored. Ready events
+    are popped via min-heap on ``(start_ns, end_ns, caller_id, callee_id, event_id)``, and any
+    causal cycle in unvalidated mappings is broken deterministically under the same key.
+    """
+    if not events:
+        return []
+
+    dependents, indegree = _build_trace_dependency_graph(events)
+    heap: list[tuple[int, int, str, str, str]] = [
+        _event_heap_key(eid, ev) for eid, ev in events.items() if indegree[eid] == 0
+    ]
+    heapq.heapify(heap)
+
+    emitted: set[str] = set()
+    ordered: list[TEvent] = []
+    while len(ordered) < len(events):
+        eid = _pop_or_break_cycle(heap, events, emitted)
+        if eid is None:
+            break
+        emitted.add(eid)
+        ordered.append(events[eid])
+        _push_ready_dependents(dependents[eid], indegree, emitted, events, heap)
+    return ordered
+
+
+def events_overlap(first: CausalTraceEvent, second: CausalTraceEvent) -> bool:
+    """Return True iff two events share a clock_domain_id and have overlapping intervals."""
+    if first.clock_domain_id != second.clock_domain_id:
+        return False
+    if first.start_ns == second.start_ns:
+        return True
+    return max(first.start_ns, second.start_ns) < min(first.end_ns, second.end_ns)
+
+
+def _can_join_sibling_group(
+    candidate: CausalTraceEvent,
+    group: Sequence[CausalTraceEvent],
+    group_ids: set[str],
+    group_links: set[str],
+) -> bool:
+    anchor = group[0]
+    if candidate.parent_event_id != anchor.parent_event_id:
+        return False
+    if candidate.clock_domain_id != anchor.clock_domain_id:
+        return False
+    if (set(candidate.causal_links) & group_ids) or (candidate.event_id in group_links):
+        return False
+    return any(events_overlap(member, candidate) for member in group)
+
+
+def find_causal_overlap_span(
+    ordered: Sequence[CausalTraceEvent],
+    start_idx: int,
+) -> int:
+    """Return exclusive end index of the maximal causally-independent concurrent sibling span.
+
+    Starting at ``start_idx``, extends while subsequent events share ``parent_event_id`` and
+    ``clock_domain_id``, overlap at least one member already in the span, and introduce no
+    ``causal_links`` dependency with any member already in the span.
+    """
+    if start_idx < 0 or start_idx >= len(ordered):
+        msg = f"start_idx {start_idx} out of bounds for sequence of length {len(ordered)}"
+        raise IndexError(msg)
+
+    first = ordered[start_idx]
+    group: list[CausalTraceEvent] = [first]
+    group_ids: set[str] = {first.event_id}
+    group_links: set[str] = set(first.causal_links)
+
+    idx = start_idx + 1
+    while idx < len(ordered):
+        candidate = ordered[idx]
+        if not _can_join_sibling_group(candidate, group, group_ids, group_links):
+            break
+        group.append(candidate)
+        group_ids.add(candidate.event_id)
+        group_links.update(candidate.causal_links)
+        idx += 1
+    return idx
+
+
+def group_concurrent_siblings[TEvent: CausalTraceEvent](
+    ordered: Sequence[TEvent],
+) -> list[list[TEvent]]:
+    """Partition topologically ordered events into adjacent concurrent sibling groups.
+
+    Every group enforces ``same_parent``, ``same_clock_domain``, overlapping execution
+    intervals, and mutual causal independence (no ``causal_links`` edges inside a group).
+    """
+    if not ordered:
+        return []
+
+    groups: list[list[TEvent]] = []
+    idx = 0
+    while idx < len(ordered):
+        end_idx = find_causal_overlap_span(ordered, idx)
+        groups.append(list(ordered[idx:end_idx]))
+        idx = end_idx
+    return groups
