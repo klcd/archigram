@@ -7,6 +7,7 @@ import json
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import StrEnum
+from itertools import islice
 from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -208,6 +209,67 @@ def _quotient_is_acyclic(events: dict[str, TraceEvent], mapping: dict[str, str])
     return visited == len(indegree)
 
 
+def _build_indexed_edges(
+    events: dict[str, TraceEvent],
+    id_to_idx: dict[str, int],
+) -> tuple[list[set[int]], list[set[int]]]:
+    n = len(id_to_idx)
+    succ: list[set[int]] = [set() for _ in range(n)]
+    pred: list[set[int]] = [set() for _ in range(n)]
+    for dst, ev in enumerate(events.values()):
+        if ev.parent_event_id is not None:
+            p_idx = id_to_idx.get(ev.parent_event_id)
+            if p_idx is not None and p_idx != dst:
+                succ[p_idx].add(dst)
+                pred[dst].add(p_idx)
+        for link in ev.causal_links:
+            l_idx = id_to_idx.get(link)
+            if l_idx is not None and l_idx != dst:
+                succ[l_idx].add(dst)
+                pred[dst].add(l_idx)
+    return succ, pred
+
+
+def _kahn_initial_order(
+    succ: list[set[int]],
+    pred: list[set[int]],
+) -> tuple[list[int], list[int]] | None:
+    n = len(succ)
+    indegree = [len(p) for p in pred]
+    ready = [idx for idx, deg in enumerate(indegree) if deg == 0]
+    rank = [0] * n
+    rank_to_node = [0] * n
+    pos = 0
+    while ready:
+        curr = ready.pop()
+        rank[curr] = pos
+        rank_to_node[pos] = curr
+        pos += 1
+        for nxt in succ[curr]:
+            indegree[nxt] -= 1
+            if indegree[nxt] == 0:
+                ready.append(nxt)
+    if pos != n:
+        return None
+    return rank, rank_to_node
+
+
+def _flatten_cand_map(raw: dict[int, int]) -> dict[int, int]:
+    resolved: dict[int, int] = {}
+    for ru, rv in raw.items():
+        if rv not in raw:
+            resolved[ru] = rv
+            continue
+        curr = rv
+        seen = {ru}
+        while curr in raw and curr not in seen:
+            seen.add(curr)
+            curr = raw[curr]
+        if curr != ru:
+            resolved[ru] = curr
+    return resolved
+
+
 class _ContractionGuard:
     """Veto contractions whose quotient would contain a causal cycle (non-convex groups).
 
@@ -221,11 +283,31 @@ class _ContractionGuard:
     ``causal_links`` edge. Candidates whose scope touches no link endpoint skip the traversal.
     """
 
-    __slots__ = ("_events", "_touched", "folded_to_rep")
+    __slots__ = (
+        "_base_acyclic",
+        "_events",
+        "_id_to_idx",
+        "_pred",
+        "_rank",
+        "_rank_to_node",
+        "_rep",
+        "_succ",
+        "_synced_count",
+        "_touched",
+        "folded_to_rep",
+    )
 
     def __init__(self, events: dict[str, TraceEvent]) -> None:
         self._events = events
         self.folded_to_rep: dict[str, str] = {}
+        self._id_to_idx: dict[str, int] | None = None
+        self._succ: list[set[int]] = []
+        self._pred: list[set[int]] = []
+        self._rep: list[int] = []
+        self._rank: list[int] = []
+        self._rank_to_node: list[int] = []
+        self._base_acyclic = True
+        self._synced_count = 0
         touched: set[str] = set()
         for eid, ev in events.items():
             if ev.causal_links:
@@ -242,6 +324,206 @@ class _ContractionGuard:
         """Return True if ``event_id`` is a known link endpoint or part of a guarded fold."""
         return event_id in self._touched
 
+    def _ensure_graph(self) -> dict[str, int] | None:
+        if not self._base_acyclic:
+            return None
+        if self._id_to_idx is None:
+            id_to_idx = {eid: idx for idx, eid in enumerate(self._events)}
+            succ, pred = _build_indexed_edges(self._events, id_to_idx)
+            order = _kahn_initial_order(succ, pred)
+            if order is None:
+                self._base_acyclic = False
+                return None
+            rank, rank_to_node = order
+            self._id_to_idx = id_to_idx
+            self._succ = succ
+            self._pred = pred
+            self._rep = list(range(len(id_to_idx)))
+            self._rank = rank
+            self._rank_to_node = rank_to_node
+        return self._id_to_idx
+
+    def _find(self, idx: int) -> int:
+        curr = idx
+        rep = self._rep
+        while rep[curr] != curr:
+            rep[curr] = rep[rep[curr]]
+            curr = rep[curr]
+        return curr
+
+    def _contract_node(self, ru: int, rv: int) -> None:
+        self._rep[ru] = rv
+        succ_ru = self._succ[ru]
+        pred_ru = self._pred[ru]
+        succ_rv = self._succ[rv]
+        pred_rv = self._pred[rv]
+        succ_rv.discard(ru)
+        pred_rv.discard(ru)
+        succ_ru.discard(rv)
+        pred_ru.discard(rv)
+        for nxt in succ_ru:
+            self._pred[nxt].discard(ru)
+            succ_rv.add(nxt)
+            self._pred[nxt].add(rv)
+        for prv in pred_ru:
+            self._succ[prv].discard(ru)
+            pred_rv.add(prv)
+            self._succ[prv].add(rv)
+        succ_ru.clear()
+        pred_ru.clear()
+
+    def _repair_ranks(self, lo: int, hi: int) -> None:
+        slots: list[int] = []
+        nodes: list[int] = []
+        for pos in range(lo, hi + 1):
+            node = self._rank_to_node[pos]
+            if node != -1:
+                slots.append(pos)
+                nodes.append(node)
+        if len(nodes) <= 1:
+            return
+        node_set = set(nodes)
+        indeg = {u: sum(1 for p in self._pred[u] if p in node_set) for u in nodes}
+        ready = [u for u, deg in indeg.items() if deg == 0]
+        idx = 0
+        while ready:
+            curr = ready.pop()
+            slot = slots[idx]
+            self._rank_to_node[slot] = curr
+            self._rank[curr] = slot
+            idx += 1
+            for nxt in self._succ[curr]:
+                if nxt in indeg:
+                    indeg[nxt] -= 1
+                    if indeg[nxt] == 0:
+                        ready.append(nxt)
+
+    def _sync_folded(self, id_to_idx: dict[str, int]) -> None:
+        pairs: list[tuple[int, int]] = []
+        lo = len(self._rank)
+        hi = -1
+        for u_str, v_str in islice(self.folded_to_rep.items(), self._synced_count, None):
+            u_idx = id_to_idx.get(u_str)
+            v_idx = id_to_idx.get(_resolve_rep_id(v_str, self.folded_to_rep))
+            if u_idx is None or v_idx is None:
+                continue
+            ru = self._find(u_idx)
+            rv = self._find(v_idx)
+            if ru == rv:
+                continue
+            pairs.append((ru, rv))
+            lo = min(lo, self._rank[ru], self._rank[rv])
+            hi = max(hi, self._rank[ru], self._rank[rv])
+        for ru, rv in pairs:
+            ru_cur = self._find(ru)
+            rv_cur = self._find(rv)
+            if ru_cur != rv_cur:
+                self._contract_node(ru_cur, rv_cur)
+                self._rank_to_node[self._rank[ru_cur]] = -1
+        if hi >= lo:
+            self._repair_ranks(lo, hi)
+        self._synced_count = len(self.folded_to_rep)
+
+    def _build_cand_map(
+        self, candidate: dict[str, str], id_to_idx: dict[str, int]
+    ) -> dict[int, int]:
+        raw: dict[int, int] = {}
+        for u_str, v_str in candidate.items():
+            u_idx = id_to_idx.get(u_str)
+            v_idx = id_to_idx.get(v_str)
+            if u_idx is None or v_idx is None:
+                continue
+            ru = self._find(u_idx)
+            rv = self._find(v_idx)
+            if ru != rv:
+                raw[ru] = rv
+        if not raw or all(rv not in raw for rv in raw.values()):
+            return raw
+        return _flatten_cand_map(raw)
+
+    def _rank_window(self, affected: set[int]) -> tuple[int, int]:
+        t_out_min = len(self._rank)
+        t_in_max = -1
+        for u in affected:
+            for s in self._succ[u]:
+                if s not in affected and self._rank[s] < t_out_min:
+                    t_out_min = self._rank[s]
+            for p in self._pred[u]:
+                if p not in affected and self._rank[p] > t_in_max:
+                    t_in_max = self._rank[p]
+        return t_out_min, t_in_max
+
+    def _visit_quotient_neighbors(
+        self,
+        node: int,
+        cand_map: dict[int, int],
+        groups: dict[int, list[int]],
+        window: tuple[int, int],
+        traversal: tuple[dict[int, int], list[int]],
+    ) -> bool:
+        t_out_min, t_in_max = window
+        state, stack = traversal
+        sources: Sequence[int] = groups.get(node) or (node,)
+        for src in sources:
+            for raw_nxt in self._succ[src]:
+                nxt = cand_map.get(raw_nxt, raw_nxt)
+                if nxt == node:
+                    continue
+                if nxt not in groups and not (
+                    t_out_min <= self._rank[nxt] <= t_in_max and self._succ[nxt]
+                ):
+                    continue
+                nxt_st = state.get(nxt, 0)
+                if nxt_st == 1:
+                    return False
+                if nxt_st == 0:
+                    stack.append(nxt)
+        return True
+
+    def _dfs_is_acyclic(
+        self,
+        cand_map: dict[int, int],
+        groups: dict[int, list[int]],
+        window: tuple[int, int],
+    ) -> bool:
+        state: dict[int, int] = {}
+        stack: list[int] = []
+        traversal = (state, stack)
+        for start in groups:
+            if start in state:
+                continue
+            stack.append(start)
+            while stack:
+                node = stack.pop()
+                if node < 0:
+                    state[~node] = 2
+                    continue
+                if state.get(node, 0) != 0:
+                    continue
+                state[node] = 1
+                stack.append(~node)
+                if not self._visit_quotient_neighbors(node, cand_map, groups, window, traversal):
+                    return False
+        return True
+
+    def _allows_candidate(self, candidate: dict[str, str], id_to_idx: dict[str, int]) -> bool:
+        cand_map = self._build_cand_map(candidate, id_to_idx)
+        if not cand_map:
+            return True
+        groups: dict[int, list[int]] = {}
+        for ru, rv in cand_map.items():
+            grp = groups.get(rv)
+            if grp is None:
+                groups[rv] = [rv, ru]
+            else:
+                grp.append(ru)
+        affected: set[int] = set(cand_map)
+        affected.update(groups)
+        t_out_min, t_in_max = self._rank_window(affected)
+        if len(groups) == 1 and t_out_min > t_in_max:
+            return True
+        return self._dfs_is_acyclic(cand_map, groups, (t_out_min, t_in_max))
+
     def allows(self, candidate: dict[str, str], scope: Iterable[str]) -> bool:
         """Return True if contracting ``candidate`` (id -> rep) keeps the graph acyclic.
 
@@ -249,7 +531,14 @@ class _ContractionGuard:
         """
         if not candidate or self._touched.isdisjoint(scope):
             return True
-        return _quotient_is_acyclic(self._events, {**self.folded_to_rep, **candidate})
+        if self.folded_to_rep and any(k in self.folded_to_rep for k in candidate):
+            return _quotient_is_acyclic(self._events, {**self.folded_to_rep, **candidate})
+        id_to_idx = self._ensure_graph()
+        if id_to_idx is None:
+            return False
+        if len(self.folded_to_rep) != self._synced_count:
+            self._sync_folded(id_to_idx)
+        return self._allows_candidate(candidate, id_to_idx)
 
     def commit(self, scope: Iterable[str]) -> None:
         """Record that a candidate over ``scope`` was applied (keeps the fast path sound)."""
@@ -515,10 +804,25 @@ def _select_convex_members(
     if guard.allows(candidate, scope):
         return members
     chosen: list[TraceEvent] = []
+    chosen_cand: dict[str, str] = {}
+    chosen_scope: list[str] = []
+    rep_id: str | None = None
     for member in members:
-        trial = [*chosen, member]
-        if guard.allows(*_members_fold_candidate(trial, subtree_ids)):
-            chosen = trial
+        m_ids = subtree_ids[member.event_id]
+        target = rep_id if rep_id is not None else member.event_id
+        added_keys = [sid for sid in m_ids if sid != target]
+        for sid in added_keys:
+            chosen_cand[sid] = target
+        prev_len = len(chosen_scope)
+        chosen_scope.extend(m_ids)
+        if guard.allows(chosen_cand, chosen_scope):
+            chosen.append(member)
+            if rep_id is None:
+                rep_id = member.event_id
+        else:
+            for sid in added_keys:
+                del chosen_cand[sid]
+            del chosen_scope[prev_len:]
     return chosen
 
 
@@ -973,22 +1277,37 @@ def _fold_loop_run(run: list[TraceEvent], ctx: _LoopFoldContext) -> None:
     )
 
 
+def _max_convex_prefix_len(run: list[TraceEvent], ctx: _LoopFoldContext) -> int:
+    if _loop_run_is_convex(run, ctx):
+        return len(run)
+    lo = 1
+    hi = len(run)
+    while lo + 1 < hi:
+        mid = (lo + hi) // 2
+        if _loop_run_is_convex(run[:mid], ctx):
+            lo = mid
+        else:
+            hi = mid
+    return lo
+
+
 def _fold_sibling_runs(siblings: list[TraceEvent], ctx: _LoopFoldContext) -> None:
     idx = 0
     while idx < len(siblings):
         run = [siblings[idx]]
-        run_touched = siblings[idx].event_id in ctx.touched_subtrees
+        any_touched = siblings[idx].event_id in ctx.touched_subtrees
         nxt = idx + 1
         while nxt < len(siblings) and _can_join_loop_run(
             run, siblings[nxt], ctx.children_map, ctx.hashes, ctx.config
         ):
             cand = siblings[nxt]
-            cand_touched = cand.event_id in ctx.touched_subtrees
-            if (run_touched or cand_touched) and not _loop_run_is_convex([*run, cand], ctx):
-                break
             run.append(cand)
-            run_touched = run_touched or cand_touched
+            any_touched = any_touched or (cand.event_id in ctx.touched_subtrees)
             nxt += 1
+        if len(run) >= 2 and any_touched:
+            kept_len = _max_convex_prefix_len(run, ctx)
+            nxt = idx + kept_len
+            run = run[:kept_len]
         if len(run) >= 2:
             _fold_loop_run(run, ctx)
         idx = nxt
