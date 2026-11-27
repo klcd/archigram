@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import tempfile
 from pathlib import Path
+from typing import Literal
+from unittest.mock import patch
 
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
@@ -35,17 +37,25 @@ from archigram.domain.spec import (
     ViewInvariants,
     dump_curation_spec_yaml,
 )
+from archigram.domain.style import (
+    MermaidThemeConfig,
+    dump_mermaid_theme_yaml,
+)
+from archigram.entrypoints.cli import diff_report as _diff_report_mod
 from archigram.entrypoints.cli.app import (
     EXIT_CLEAN,
     EXIT_LINT_OR_DRIFT,
     EXIT_USAGE_ERROR,
+    DiffOptions,
     app,
+    execute_diff,
 )
 from archigram.entrypoints.cli.diff_report import (
     PrDiffSummary,
     RelationshipStatus,
     compute_pr_regression_diff,
 )
+from archigram.entrypoints.cli.pipeline import compile_and_lint_pipeline
 
 _RUNNER = CliRunner()
 _DECLARED_CODES = {"REACHABILITY_NOT_OBSERVED", "REACHABILITY_SEVERED"}
@@ -419,3 +429,111 @@ def test_fuzz_pr_diff_cli_unavailable_base_exit_status(
             app, ["diff", "--head", str(head_file), "--spec", str(tmp / "gone.yaml")]
         )
         assert gone_spec.exit_code == EXIT_USAGE_ERROR
+
+
+@given(
+    layout_engine=st.sampled_from(["elk", "dagre"]),
+    curve=st.sampled_from(["linear", "basis", "stepBefore", "stepAfter"]),
+    border_hex=st.sampled_from(["#64748b", "#3b82f6", "#14b8a6", "#8b5cf6"]),
+    head_broken=st.booleans(),
+    use_explicit_flag=st.booleans(),
+)
+@settings(max_examples=20, deadline=None, suppress_health_check=[HealthCheck.too_slow])
+def test_fuzz_pr_diff_mermaid_theme_sibling_and_cli_flag(
+    layout_engine: Literal["elk", "dagre"],
+    curve: Literal["linear", "basis", "stepBefore", "stepAfter"],
+    border_hex: str,
+    head_broken: bool,
+    use_explicit_flag: bool,
+) -> None:
+    """`diff` loads sibling `mermaid-theme.yaml`, honors `--mermaid-theme`, and fails missing."""
+    theme = MermaidThemeConfig(
+        layout_engine=layout_engine,
+        flowchart_curve=curve,
+        node_border_hex=border_hex,
+        subgraph_border_hex=border_hex,
+    )
+    sibling_fallback = MermaidThemeConfig(
+        layout_engine="dagre" if layout_engine == "elk" else "elk",
+        flowchart_curve="basis" if curve == "linear" else "linear",
+        node_border_hex="#10b981",
+        subgraph_border_hex="#10b981",
+    )
+    spec = _spec(4, mode="not_observed")
+    base = _graph(4, mode="not_observed", broken=False)
+    head = _graph(4, mode="not_observed", broken=head_broken)
+
+    with tempfile.TemporaryDirectory() as tmp_str:
+        tmp = Path(tmp_str)
+        base_file = tmp / "base.json"
+        base_file.write_text(base.model_dump_json(), encoding="utf-8")
+        head_file, spec_file = _write_inputs(tmp, head, spec)
+
+        explicit_theme_path: Path | None = None
+        if use_explicit_flag:
+            (tmp / "mermaid-theme.yaml").write_text(
+                dump_mermaid_theme_yaml(sibling_fallback), encoding="utf-8"
+            )
+            explicit_theme_path = tmp / "custom-dir" / "override-theme.yaml"
+            explicit_theme_path.parent.mkdir(parents=True, exist_ok=True)
+            explicit_theme_path.write_text(dump_mermaid_theme_yaml(theme), encoding="utf-8")
+        else:
+            (tmp / "mermaid-theme.yaml").write_text(
+                dump_mermaid_theme_yaml(theme), encoding="utf-8"
+            )
+
+        with patch.object(
+            _diff_report_mod, "compile_and_lint_pipeline", wraps=compile_and_lint_pipeline
+        ) as spy:
+            exec_one = execute_diff(
+                DiffOptions(
+                    base_path=base_file,
+                    head_path=head_file,
+                    spec_path=spec_file,
+                    mermaid_theme=explicit_theme_path,
+                )
+            )
+            exec_two = execute_diff(
+                DiffOptions(
+                    base_path=base_file,
+                    head_path=head_file,
+                    spec_path=spec_file,
+                    mermaid_theme=explicit_theme_path,
+                )
+            )
+            assert exec_one == exec_two
+            assert exec_one.markdown_report == exec_two.markdown_report
+            assert spy.call_count == 4
+            assert all(call.kwargs["mermaid_theme"] == theme for call in spy.call_args_list)
+
+        cli_args = [
+            "diff",
+            "--base",
+            str(base_file),
+            "--head",
+            str(head_file),
+            "--spec",
+            str(spec_file),
+            "--json",
+        ]
+        if explicit_theme_path is not None:
+            cli_args += ["--mermaid-theme", str(explicit_theme_path)]
+
+        res = _RUNNER.invoke(app, cli_args)
+        expected = EXIT_LINT_OR_DRIFT if head_broken else EXIT_CLEAN
+        assert res.exit_code == expected, res.output
+        assert PrDiffSummary.model_validate_json(res.stdout) == exec_one
+
+        missing_res = _RUNNER.invoke(
+            app,
+            [
+                "diff",
+                "--head",
+                str(head_file),
+                "--spec",
+                str(spec_file),
+                "--mermaid-theme",
+                str(tmp / "missing-theme.yaml"),
+            ],
+        )
+        assert missing_res.exit_code == EXIT_USAGE_ERROR

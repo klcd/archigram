@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import importlib
 import json
 import tempfile
 from pathlib import Path
+from typing import Literal
+from unittest.mock import patch
 
 import pytest
 import yaml
@@ -38,11 +41,14 @@ from archigram.domain.spec import (
     ViewInvariants,
     dump_curation_spec_yaml,
 )
+from archigram.domain.style import MermaidThemeConfig, dump_mermaid_theme_yaml
 from archigram.entrypoints.cli.app import (
     EXIT_CLEAN,
     EXIT_LINT_OR_DRIFT,
     EXIT_USAGE_ERROR,
+    ApplyOptions,
     app,
+    apply_regeneration_command,
 )
 from archigram.entrypoints.cli.diff_report import PrDiffSummary, compute_pr_regression_diff
 from archigram.entrypoints.cli.pipeline import (
@@ -65,6 +71,7 @@ from archigram.entrypoints.cli.triage import (
 )
 
 _RUNNER = CliRunner()
+_cli_app_mod = importlib.import_module("archigram.entrypoints.cli.app")
 _RENDERERS: tuple[TargetRenderer, ...] = (
     TargetRenderer.MERMAID,
     TargetRenderer.D2,
@@ -896,3 +903,135 @@ def test_fuzz_collapse_induced_cycle_fails_pipeline_and_blocks_apply(
         )
         assert apply_res.exit_code == EXIT_LINT_OR_DRIFT
         assert not out_dir.exists() or not any(out_dir.rglob("*"))
+
+
+@given(
+    graph=_connected_structural_graphs(),
+    layout_engine=st.sampled_from(["elk", "dagre"]),
+    curve=st.sampled_from(["linear", "basis", "stepBefore", "stepAfter"]),
+    border_hex=st.sampled_from(["#64748b", "#3b82f6", "#14b8a6", "#8b5cf6"]),
+    use_explicit_flag=st.booleans(),
+)
+@settings(max_examples=20, deadline=None, suppress_health_check=[HealthCheck.too_slow])
+def test_fuzz_cli_apply_and_lint_mermaid_theme_flag(
+    graph: StructuralGraphIR,
+    layout_engine: Literal["elk", "dagre"],
+    curve: Literal["linear", "basis", "stepBefore", "stepAfter"],
+    border_hex: str,
+    use_explicit_flag: bool,
+) -> None:
+    """`apply` and `lint` consistently honor `--mermaid-theme` and sibling `mermaid-theme.yaml`."""
+    theme = MermaidThemeConfig(
+        layout_engine=layout_engine,
+        flowchart_curve=curve,
+        node_border_hex=border_hex,
+        subgraph_border_hex=border_hex,
+    )
+    sibling_fallback = MermaidThemeConfig(
+        layout_engine="dagre" if layout_engine == "elk" else "elk",
+        flowchart_curve="basis" if curve == "linear" else "linear",
+        node_border_hex="#10b981",
+        subgraph_border_hex="#10b981",
+    )
+    spec = _build_valid_spec(graph, TargetRenderer.MERMAID)
+
+    with tempfile.TemporaryDirectory() as tmp_str:
+        tmp = Path(tmp_str)
+        input_file = tmp / "input.ir.json"
+        input_file.write_text(graph.model_dump_json(), encoding="utf-8")
+        spec_file = tmp / "diagram-views.yaml"
+        spec_file.write_text(dump_curation_spec_yaml(spec), encoding="utf-8")
+        out_dir = tmp / "out"
+
+        explicit_theme: Path | None = None
+        if use_explicit_flag:
+            (tmp / "mermaid-theme.yaml").write_text(
+                dump_mermaid_theme_yaml(sibling_fallback), encoding="utf-8"
+            )
+            explicit_theme = tmp / "themes" / "custom-mermaid.yaml"
+            explicit_theme.parent.mkdir(parents=True, exist_ok=True)
+            explicit_theme.write_text(dump_mermaid_theme_yaml(theme), encoding="utf-8")
+        else:
+            (tmp / "mermaid-theme.yaml").write_text(
+                dump_mermaid_theme_yaml(theme), encoding="utf-8"
+            )
+
+        regen_cmd = apply_regeneration_command(
+            ApplyOptions(
+                input_path=input_file,
+                spec_path=spec_file,
+                out_dir=out_dir,
+                mermaid_theme=explicit_theme,
+            )
+        )
+        assert ("--mermaid-theme" in regen_cmd) is (explicit_theme is not None)
+
+        theme_args = ["--mermaid-theme", str(explicit_theme)] if explicit_theme is not None else []
+        apply_res = _RUNNER.invoke(
+            app,
+            [
+                "apply",
+                str(input_file),
+                "--spec",
+                str(spec_file),
+                "--out-dir",
+                str(out_dir),
+                *theme_args,
+            ],
+        )
+        assert apply_res.exit_code == EXIT_CLEAN, apply_res.output
+
+        emitted = (out_dir / "arch_overview.mmd").read_text(encoding="utf-8")
+        assert f"layout: {layout_engine}" in emitted
+        assert f"curve: {curve}" in emitted
+        assert f"stroke:{border_hex}" in emitted
+
+        check_res = _RUNNER.invoke(
+            app,
+            [
+                "apply",
+                str(input_file),
+                "--spec",
+                str(spec_file),
+                "--out-dir",
+                str(out_dir),
+                "--check",
+                *theme_args,
+            ],
+        )
+        assert check_res.exit_code == EXIT_CLEAN, check_res.output
+
+        with patch.object(
+            _cli_app_mod, "compile_and_lint_pipeline", wraps=compile_and_lint_pipeline
+        ) as spy:
+            lint_res = _RUNNER.invoke(
+                app,
+                ["lint", str(input_file), "--spec", str(spec_file), "--json", *theme_args],
+            )
+            assert lint_res.exit_code == EXIT_CLEAN, lint_res.output
+            assert LintReport.model_validate_json(lint_res.stdout).passed
+            assert spy.call_count == 1
+            assert spy.call_args_list[0].kwargs["mermaid_theme"] == theme
+
+        missing_theme = str(tmp / "missing-theme.yaml")
+        for cmd in (
+            [
+                "apply",
+                str(input_file),
+                "--spec",
+                str(spec_file),
+                "--out-dir",
+                str(out_dir),
+                "--mermaid-theme",
+                missing_theme,
+            ],
+            [
+                "lint",
+                str(input_file),
+                "--spec",
+                str(spec_file),
+                "--mermaid-theme",
+                missing_theme,
+            ],
+        ):
+            assert _RUNNER.invoke(app, cmd).exit_code == EXIT_USAGE_ERROR
