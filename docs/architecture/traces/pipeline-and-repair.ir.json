@@ -50,8 +50,8 @@
         "input_sha256": "5acbad70e70812d3f1a8cec593c4046c57fd6a00812a750e1adb0017a077b8c0",
         "file_path": "src/archigram/domain/spec.py",
         "line_span": [
-          261,
-          264
+          284,
+          287
         ],
         "rule_id": null,
         "backing_ids": []
@@ -86,8 +86,8 @@
         "input_sha256": "5acbad70e70812d3f1a8cec593c4046c57fd6a00812a750e1adb0017a077b8c0",
         "file_path": "src/archigram/entrypoints/cli/pipeline.py",
         "line_span": [
-          627,
-          684
+          628,
+          685
         ],
         "rule_id": null,
         "backing_ids": []
@@ -298,8 +298,8 @@
         "input_sha256": "5acbad70e70812d3f1a8cec593c4046c57fd6a00812a750e1adb0017a077b8c0",
         "file_path": "src/archigram/entrypoints/cli/pipeline.py",
         "line_span": [
-          627,
-          684
+          628,
+          685
         ],
         "rule_id": null,
         "backing_ids": []
@@ -3628,8 +3628,8 @@
         "input_sha256": "5acbad70e70812d3f1a8cec593c4046c57fd6a00812a750e1adb0017a077b8c0",
         "file_path": "src/archigram/domain/spec.py",
         "line_span": [
-          261,
-          264
+          284,
+          287
         ],
         "rule_id": null,
         "backing_ids": []
@@ -4198,8 +4198,8 @@
         "input_sha256": "5acbad70e70812d3f1a8cec593c4046c57fd6a00812a750e1adb0017a077b8c0",
         "file_path": "src/archigram/domain/spec.py",
         "line_span": [
-          261,
-          264
+          284,
+          287
         ],
         "rule_id": null,
         "backing_ids": []
@@ -4258,8 +4258,8 @@
         "input_sha256": "5acbad70e70812d3f1a8cec593c4046c57fd6a00812a750e1adb0017a077b8c0",
         "file_path": "src/archigram/domain/spec.py",
         "line_span": [
-          225,
-          228
+          248,
+          251
         ],
         "rule_id": null,
         "backing_ids": []
@@ -4288,8 +4288,8 @@
         "input_sha256": "5acbad70e70812d3f1a8cec593c4046c57fd6a00812a750e1adb0017a077b8c0",
         "file_path": "src/archigram/domain/spec.py",
         "line_span": [
-          241,
-          258
+          264,
+          281
         ],
         "rule_id": null,
         "backing_ids": []
@@ -5158,8 +5158,8 @@
         "input_sha256": "5acbad70e70812d3f1a8cec593c4046c57fd6a00812a750e1adb0017a077b8c0",
         "file_path": "src/archigram/domain/spec.py",
         "line_span": [
-          267,
-          270
+          290,
+          293
         ],
         "rule_id": null,
         "backing_ids": []
@@ -5188,8 +5188,8 @@
         "input_sha256": "5acbad70e70812d3f1a8cec593c4046c57fd6a00812a750e1adb0017a077b8c0",
         "file_path": "src/archigram/domain/spec.py",
         "line_span": [
-          261,
-          264
+          284,
+          287
         ],
         "rule_id": null,
         "backing_ids": []
@@ -6058,8 +6058,8 @@
         "input_sha256": "5acbad70e70812d3f1a8cec593c4046c57fd6a00812a750e1adb0017a077b8c0",
         "file_path": "src/archigram/domain/spec.py",
         "line_span": [
-          267,
-          270
+          290,
+          293
         ],
         "rule_id": null,
         "backing_ids": []

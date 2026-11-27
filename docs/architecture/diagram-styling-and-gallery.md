@@ -163,7 +163,7 @@ archigram: "archigram" {
     cli_dataplane: "CLI Data Plane" {
       style.fill: transparent
       style.stroke: "#64748b"
-      tooltip: "Derived via l0_d2_cli_dataplane (84 backing nodes: archigram.entrypoints.cli, archigram.entrypoints.cli.app, archigram.entrypoints.cli.app.ApplyOptions, archigram.entrypoints.cli.app.DiffOptions, archigram.entrypoints.cli.app.LintOptions, ...)"
+      tooltip: "Derived via l0_d2_cli_dataplane (85 backing nodes: archigram.entrypoints.cli, archigram.entrypoints.cli.app, archigram.entrypoints.cli.app.ApplyOptions, archigram.entrypoints.cli.app.DiffOptions, archigram.entrypoints.cli.app.LintOptions, ...)"
     }
     mcp_controlplane: "MCP Control Plane" {
       style.fill: transparent
@@ -203,7 +203,7 @@ archigram: "archigram" {
   domain_core: "Domain Core" {
     style.fill: transparent
     style.stroke: "#64748b"
-    tooltip: "Derived via l0_d2_domain_core (75 backing nodes: archigram.domain, archigram.domain.ProvenanceGrade, archigram.domain.ProvenanceStamp, archigram.domain.concurrency, archigram.domain.concurrency.ConcurrencyMode, ...)"
+    tooltip: "Derived via l0_d2_domain_core (76 backing nodes: archigram.domain, archigram.domain.ProvenanceGrade, archigram.domain.ProvenanceStamp, archigram.domain.concurrency, archigram.domain.concurrency.ConcurrencyMode, ...)"
   }
   ports_contracts: "Ports & Contracts" {
     style.fill: transparent

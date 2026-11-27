@@ -6,6 +6,8 @@ import json
 import tempfile
 from pathlib import Path
 
+import pytest
+import yaml
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 from typer.testing import CliRunner
@@ -42,13 +44,22 @@ from archigram.entrypoints.cli.app import (
 )
 from archigram.entrypoints.cli.diff_report import PrDiffSummary, compute_pr_regression_diff
 from archigram.entrypoints.cli.pipeline import (
+    CompiledViewArtifact,
     InputFormat,
+    PipelineCompilationResult,
     compile_and_lint_pipeline,
     detect_input_format,
     emit_deterministic_dot,
     load_canonical_ir,
     load_curation_spec,
     renderer_file_extension,
+    resolve_contained_output_path,
+    sync_compiled_artifacts,
+)
+from archigram.entrypoints.cli.triage import (
+    TriageOptions,
+    compute_triage_stages,
+    execute_triage,
 )
 
 _RUNNER = CliRunner()
@@ -513,3 +524,230 @@ def test_fuzz_multi_format_ingestion_and_usage_errors(fmt_choice: InputFormat) -
     )
     assert bad_res.exit_code == EXIT_USAGE_ERROR
     assert load_curation_spec("schema_version: '1.0'\nviews: []\n").schema_version == "1.0"
+
+
+_TRAVERSAL_VIEW_IDS = st.one_of(
+    st.sampled_from(
+        [
+            "../../README",
+            "../outside",
+            "..\\outside",
+            "nested/view",
+            "nested\\view",
+            "/etc/passwd",
+            ".",
+            "..",
+            ".hidden",
+            "a..b",
+            "trailing.",
+            "view\x00id",
+            "view\nid",
+            "C:drive",
+        ]
+    ),
+    st.text(alphabet="/\\.abcABC01_\x00\n:", min_size=1, max_size=16).filter(
+        lambda s: "/" in s or "\\" in s or ".." in s or "\x00" in s or "\n" in s or ":" in s
+    ),
+)
+
+_SAFE_VIEW_IDS = st.from_regex(r"[a-z][a-z0-9_-]{1,12}", fullmatch=True)
+
+
+def _minimal_graph() -> StructuralGraphIR:
+    stamp = _obs_stamp()
+    return StructuralGraphIR(
+        graph_id="contain_graph",
+        nodes={
+            "svc_a": IRNode(
+                symbol_id="svc_a", label="Service A", kind=NodeKind.SERVICE, provenance=stamp
+            ),
+            "svc_b": IRNode(
+                symbol_id="svc_b", label="Service B", kind=NodeKind.SERVICE, provenance=stamp
+            ),
+        },
+        edges=(
+            IREdge(
+                edge_id="e0",
+                source="svc_a",
+                target="svc_b",
+                relation=EdgeRelation.CALLS,
+                sync_kind=SyncKind.SYNC,
+                provenance=stamp,
+            ),
+        ),
+    )
+
+
+def _tamper_compilation_view_id(
+    comp: PipelineCompilationResult,
+    bad_id: str,
+) -> PipelineCompilationResult:
+    orig_art = next(iter(comp.views.values()))
+    tampered_view = orig_art.view.model_copy(update={"id": bad_id})
+    tampered_art = CompiledViewArtifact(
+        view=tampered_view,
+        curated_ir=orig_art.curated_ir,
+        emitted_ir=orig_art.emitted_ir,
+        diagram_source=orig_art.diagram_source,
+        file_extension=orig_art.file_extension,
+        overflow_markdown=orig_art.overflow_markdown,
+    )
+    return PipelineCompilationResult(
+        observed_ir=comp.observed_ir,
+        spec=comp.spec.model_copy(update={"views": (tampered_view,)}),
+        views={bad_id: tampered_art},
+        lint_report=comp.lint_report,
+        extra_diagnostics=comp.extra_diagnostics,
+    )
+
+
+@given(
+    bad_id=_TRAVERSAL_VIEW_IDS,
+    renderer=st.sampled_from(_RENDERERS),
+    check_only=st.booleans(),
+)
+@settings(max_examples=30, deadline=None, suppress_health_check=[HealthCheck.too_slow])
+def test_fuzz_apply_and_triage_block_traversal_view_ids(
+    bad_id: str,
+    renderer: TargetRenderer,
+    check_only: bool,
+) -> None:
+    """Traversal view IDs fail at spec parsing, CLI apply/triage, and tampered pipeline sync."""
+    graph = _minimal_graph()
+    valid_spec = _build_valid_spec(graph, renderer)
+    comp = compile_and_lint_pipeline(graph, valid_spec)
+    tampered_comp = _tamper_compilation_view_id(comp, bad_id)
+
+    with tempfile.TemporaryDirectory() as tmp_str:
+        tmp_dir = Path(tmp_str)
+        out_dir = tmp_dir / "sub" / "out"
+        sentinel = tmp_dir / "README"
+        sentinel.write_text("SENTINEL", encoding="utf-8")
+
+        with pytest.raises(ValueError):
+            sync_compiled_artifacts(tampered_comp, out_dir, check_only=check_only)
+        with pytest.raises(ValueError):
+            compute_triage_stages(graph, valid_spec, bad_id)
+
+        input_file = tmp_dir / "input.ir.json"
+        input_file.write_text(graph.model_dump_json(), encoding="utf-8")
+        valid_spec_file = tmp_dir / "valid.yaml"
+        valid_spec_file.write_text(dump_curation_spec_yaml(valid_spec), encoding="utf-8")
+        bad_spec_file = tmp_dir / "bad.yaml"
+        bad_payload = valid_spec.model_dump(mode="json")
+        bad_payload["views"][0]["id"] = bad_id
+        bad_spec_file.write_text(yaml.safe_dump(bad_payload, sort_keys=False), encoding="utf-8")
+
+        with pytest.raises(ValueError):
+            execute_triage(
+                TriageOptions(
+                    input_path=input_file,
+                    spec_path=valid_spec_file,
+                    view_id=bad_id,
+                    out_dir=out_dir,
+                    check_only=check_only,
+                )
+            )
+
+        apply_args = [
+            "apply",
+            str(input_file),
+            "--spec",
+            str(bad_spec_file),
+            "--out-dir",
+            str(out_dir),
+        ]
+        if check_only:
+            apply_args.append("--check")
+        assert _RUNNER.invoke(app, apply_args).exit_code == EXIT_USAGE_ERROR
+
+        if "\x00" not in bad_id:
+            triage_args = [
+                "triage",
+                str(input_file),
+                "--spec",
+                str(valid_spec_file),
+                "--view",
+                bad_id,
+                "--out-dir",
+                str(out_dir),
+            ]
+            if check_only:
+                triage_args.append("--check")
+            assert _RUNNER.invoke(app, triage_args).exit_code == EXIT_USAGE_ERROR
+
+        assert sentinel.read_text(encoding="utf-8") == "SENTINEL"
+        assert not out_dir.exists()
+
+
+@given(
+    safe_id=_SAFE_VIEW_IDS,
+    renderer=st.sampled_from(_RENDERERS),
+    check_only=st.booleans(),
+    escape_target=st.sampled_from(["diagram", "overflow", "svg", "triage_d2", "triage_svg"]),
+)
+@settings(max_examples=25, deadline=None, suppress_health_check=[HealthCheck.too_slow])
+def test_fuzz_output_containment_blocks_symlink_and_path_escapes(
+    safe_id: str,
+    renderer: TargetRenderer,
+    check_only: bool,
+    escape_target: str,
+) -> None:
+    """Symlinks inside out_dir pointing outside cannot be read or overwritten by apply or triage."""
+    graph = _minimal_graph()
+    is_overflow = escape_target == "overflow"
+    view = DiagramViewSpec(
+        id=safe_id,
+        title="Containment View",
+        ir_mode=IRMode.STRUCTURAL_GRAPH,
+        target_renderer=renderer,
+        render_svg=escape_target == "svg",
+        invariants=ViewInvariants(
+            node_budget=BudgetRange(min_count=1, max_count=10),
+            edge_budget_max=0 if is_overflow else 20,
+            overflow_strategy="spanning_tree_table" if is_overflow else "fail",
+        ),
+    )
+    spec = CurationSpecV1(views=(view,))
+    comp = compile_and_lint_pipeline(graph, spec)
+
+    with tempfile.TemporaryDirectory() as tmp_str:
+        tmp_dir = Path(tmp_str)
+        out_dir = tmp_dir / "out"
+        out_dir.mkdir(parents=True, exist_ok=True)
+        outside_secret = tmp_dir / "outside_secret.txt"
+        outside_secret.write_text("UNTOUCHED", encoding="utf-8")
+
+        ext = renderer_file_extension(renderer)
+        symlink_names = {
+            "diagram": f"{safe_id}{ext}",
+            "overflow": f"{safe_id}.overflow.md",
+            "svg": f"{safe_id}{ext}.svg",
+            "triage_d2": f"{safe_id}.1_original.d2",
+            "triage_svg": f"{safe_id}.1_original.d2.svg",
+        }
+        (out_dir / symlink_names[escape_target]).symlink_to(outside_secret)
+
+        with pytest.raises(ValueError):
+            resolve_contained_output_path(out_dir, f"../{safe_id}{ext}")
+
+        if escape_target in {"diagram", "overflow", "svg"}:
+            with pytest.raises(ValueError):
+                sync_compiled_artifacts(comp, out_dir, check_only=check_only)
+        else:
+            input_file = tmp_dir / "input.ir.json"
+            input_file.write_text(graph.model_dump_json(), encoding="utf-8")
+            spec_file = tmp_dir / "spec.yaml"
+            spec_file.write_text(dump_curation_spec_yaml(spec), encoding="utf-8")
+            with pytest.raises(ValueError):
+                execute_triage(
+                    TriageOptions(
+                        input_path=input_file,
+                        spec_path=spec_file,
+                        view_id=safe_id,
+                        out_dir=out_dir,
+                        check_only=check_only,
+                    )
+                )
+
+        assert outside_secret.read_text(encoding="utf-8") == "UNTOUCHED"

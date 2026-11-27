@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import re
 from enum import StrEnum
 from typing import Annotated, Literal
 
 import yaml
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validator
+
+_SAFE_VIEW_ID_RE = re.compile(r"\A[A-Za-z0-9._-]+\Z")
 
 
 def _validate_non_blank(value: str) -> str:
@@ -16,7 +19,27 @@ def _validate_non_blank(value: str) -> str:
     return value
 
 
+def validate_safe_view_id(value: str) -> str:
+    """Validate that a view ID is a safe single-segment filename identifier."""
+    if not value.strip():
+        msg = "View id must not be blank"
+        raise ValueError(msg)
+    if (
+        not _SAFE_VIEW_ID_RE.fullmatch(value)
+        or ".." in value
+        or value.startswith(".")
+        or value.endswith(".")
+    ):
+        msg = (
+            f"Invalid view id {value!r}: must match [A-Za-z0-9._-]+ without '..', "
+            "leading/trailing '.', path separators, whitespace, or control characters"
+        )
+        raise ValueError(msg)
+    return value
+
+
 NonBlankStr = Annotated[str, AfterValidator(_validate_non_blank)]
+SafeViewId = Annotated[str, AfterValidator(validate_safe_view_id)]
 
 
 class IRMode(StrEnum):
@@ -209,7 +232,7 @@ class DiagramViewSpec(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    id: NonBlankStr
+    id: SafeViewId
     title: NonBlankStr
     ir_mode: IRMode
     target_renderer: TargetRenderer

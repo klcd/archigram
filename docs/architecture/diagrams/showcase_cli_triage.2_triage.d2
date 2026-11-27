@@ -349,7 +349,7 @@ archigram: "archigram" {
       }
       "archigram.domain.spec.DiagramViewSpec": "DiagramViewSpec" {
         shape: class
-        "+id": "NonBlankStr"
+        "+id": "SafeViewId"
         "+title": "NonBlankStr"
         "+ir_mode": "IRMode"
         "+target_renderer": "TargetRenderer"
@@ -432,6 +432,10 @@ archigram: "archigram" {
         style.stroke: "#64748b"
       }
       "archigram.domain.spec.parse_curation_spec_yaml": "parse_curation_spec_yaml" {
+        style.fill: transparent
+        style.stroke: "#64748b"
+      }
+      "archigram.domain.spec.validate_safe_view_id": "validate_safe_view_id" {
         style.fill: transparent
         style.stroke: "#64748b"
       }
@@ -933,6 +937,10 @@ archigram: "archigram" {
           style.stroke: "#64748b"
         }
         "archigram.entrypoints.cli.pipeline.renderer_file_extension": "renderer_file_extension" {
+          style.fill: transparent
+          style.stroke: "#64748b"
+        }
+        "archigram.entrypoints.cli.pipeline.resolve_contained_output_path": "resolve_contained_output_path" {
           style.fill: transparent
           style.stroke: "#64748b"
         }
@@ -3173,11 +3181,19 @@ archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypo
     style.filled: true
   }
 }
+archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.compute_triage_stages" -> archigram."archigram.domain"."archigram.domain.spec"."archigram.domain.spec.validate_safe_view_id": "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
 archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.compute_triage_stages" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.compile_and_lint_pipeline": "calls" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
 archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.compute_triage_stages" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.TriageOutcome": "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.execute_triage" -> archigram."archigram.domain"."archigram.domain.spec"."archigram.domain.spec.validate_safe_view_id": "calls" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
@@ -3190,6 +3206,10 @@ archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypo
   style.animated: true
 }
 archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.execute_triage" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.load_mermaid_theme": "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.execute_triage" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.resolve_contained_output_path": "calls" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
@@ -4892,6 +4912,9 @@ archigram."archigram.domain"."archigram.domain.spec"."archigram.domain.spec.expo
 archigram."archigram.domain"."archigram.domain.spec"."archigram.domain.spec.parse_curation_spec_yaml".style.stroke: "#ef4444"
 archigram."archigram.domain"."archigram.domain.spec"."archigram.domain.spec.parse_curation_spec_yaml".style.stroke-dash: 5
 archigram."archigram.domain"."archigram.domain.spec"."archigram.domain.spec.parse_curation_spec_yaml".tooltip: "[REMOVE]"
+archigram."archigram.domain"."archigram.domain.spec"."archigram.domain.spec.validate_safe_view_id".style.stroke: "#ef4444"
+archigram."archigram.domain"."archigram.domain.spec"."archigram.domain.spec.validate_safe_view_id".style.stroke-dash: 5
+archigram."archigram.domain"."archigram.domain.spec"."archigram.domain.spec.validate_safe_view_id".tooltip: "[REMOVE]"
 archigram."archigram.domain"."archigram.domain.style".style.stroke: "#8b5cf6"
 archigram."archigram.domain"."archigram.domain.style".style.stroke-dash: 5
 archigram."archigram.domain"."archigram.domain.style".tooltip: "[COLLAPSE] -> Canonical Dual-Mode Style Policy (domain.style)"
@@ -5128,6 +5151,9 @@ archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypo
 archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.renderer_file_extension".style.stroke: "#ef4444"
 archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.renderer_file_extension".style.stroke-dash: 5
 archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.renderer_file_extension".tooltip: "[REMOVE]"
+archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.resolve_contained_output_path".style.stroke: "#ef4444"
+archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.resolve_contained_output_path".style.stroke-dash: 5
+archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.resolve_contained_output_path".tooltip: "[REMOVE]"
 archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.sync_compiled_artifacts".style.stroke: "#ef4444"
 archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.sync_compiled_artifacts".style.stroke-dash: 5
 archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.sync_compiled_artifacts".tooltip: "[REMOVE]"
@@ -6078,16 +6104,22 @@ archigram."archigram.ports"."archigram.ports.contracts"."archigram.ports.contrac
 (archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.TriageOutcome" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.PipelineCompilationResult")[0].style.stroke-dash: 5
 (archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.TriageOutcome" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.TriageStats")[0].style.stroke: "#ef4444"
 (archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.TriageOutcome" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.TriageStats")[0].style.stroke-dash: 5
+(archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.compute_triage_stages" -> archigram."archigram.domain"."archigram.domain.spec"."archigram.domain.spec.validate_safe_view_id")[0].style.stroke: "#ef4444"
+(archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.compute_triage_stages" -> archigram."archigram.domain"."archigram.domain.spec"."archigram.domain.spec.validate_safe_view_id")[0].style.stroke-dash: 5
 (archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.compute_triage_stages" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.compile_and_lint_pipeline")[0].style.stroke: "#ef4444"
 (archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.compute_triage_stages" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.compile_and_lint_pipeline")[0].style.stroke-dash: 5
 (archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.compute_triage_stages" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.TriageOutcome")[0].style.stroke: "#ef4444"
 (archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.compute_triage_stages" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.TriageOutcome")[0].style.stroke-dash: 5
+(archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.execute_triage" -> archigram."archigram.domain"."archigram.domain.spec"."archigram.domain.spec.validate_safe_view_id")[0].style.stroke: "#ef4444"
+(archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.execute_triage" -> archigram."archigram.domain"."archigram.domain.spec"."archigram.domain.spec.validate_safe_view_id")[0].style.stroke-dash: 5
 (archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.execute_triage" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.load_canonical_ir")[0].style.stroke: "#ef4444"
 (archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.execute_triage" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.load_canonical_ir")[0].style.stroke-dash: 5
 (archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.execute_triage" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.load_curation_spec")[0].style.stroke: "#ef4444"
 (archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.execute_triage" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.load_curation_spec")[0].style.stroke-dash: 5
 (archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.execute_triage" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.load_mermaid_theme")[0].style.stroke: "#ef4444"
 (archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.execute_triage" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.load_mermaid_theme")[0].style.stroke-dash: 5
+(archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.execute_triage" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.resolve_contained_output_path")[0].style.stroke: "#ef4444"
+(archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.execute_triage" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.resolve_contained_output_path")[0].style.stroke-dash: 5
 (archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.execute_triage" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.TriageOutcome")[0].style.stroke: "#ef4444"
 (archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.execute_triage" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.TriageOutcome")[0].style.stroke-dash: 5
 (archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.execute_triage" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.compute_triage_stages")[0].style.stroke: "#ef4444"

@@ -34,6 +34,7 @@ from archigram.domain.spec import (
     IRMode,
     TargetRenderer,
     parse_curation_spec_yaml,
+    validate_safe_view_id,
 )
 from archigram.domain.style import (
     DEFAULT_MERMAID_THEME,
@@ -815,6 +816,42 @@ def render_companion_svg(renderer: TargetRenderer, diagram_source: str) -> str |
     return None
 
 
+def resolve_contained_output_path(out_dir: Path, filename: str) -> Path:
+    """Resolve `out_dir / filename` and verify it stays strictly inside `out_dir.resolve()`."""
+    if (
+        not filename
+        or filename in {".", ".."}
+        or "/" in filename
+        or "\\" in filename
+        or "\x00" in filename
+    ):
+        msg = f"Unsafe output filename {filename!r}: must be a single relative path segment"
+        raise ValueError(msg)
+    resolved_root = out_dir.resolve()
+    target = out_dir / filename
+    resolved_target = target.resolve()
+    if resolved_target == resolved_root or not resolved_target.is_relative_to(resolved_root):
+        msg = f"Refusing path escape outside output directory '{resolved_root}': {resolved_target}"
+        raise ValueError(msg)
+    return target
+
+
+def _validated_artifact_paths(
+    artifact: CompiledViewArtifact,
+    out_dir: Path,
+) -> tuple[Path, Path | None]:
+    validate_safe_view_id(artifact.view.id)
+    diagram_path = resolve_contained_output_path(out_dir, artifact.output_filename)
+    overflow_path = (
+        resolve_contained_output_path(out_dir, artifact.overflow_filename)
+        if artifact.overflow_markdown
+        else None
+    )
+    if artifact.view.render_svg:
+        resolve_contained_output_path(out_dir, f"{artifact.output_filename}.svg")
+    return diagram_path, overflow_path
+
+
 def _sync_companion_svg(
     artifact: CompiledViewArtifact,
     out_dir: Path,
@@ -824,7 +861,8 @@ def _sync_companion_svg(
     drifted: list[Path],
     missing: list[Path],
 ) -> None:
-    svg_path = out_dir / f"{artifact.output_filename}.svg"
+    validate_safe_view_id(artifact.view.id)
+    svg_path = resolve_contained_output_path(out_dir, f"{artifact.output_filename}.svg")
     source_sha = hashlib.sha256(artifact.diagram_source.encode("utf-8")).hexdigest()
     expected_token = f"archigram-source-sha256: {source_sha}"
     if check_only:
@@ -860,11 +898,14 @@ def sync_compiled_artifacts(
     missing: list[Path] = []
     synced_md: list[Path] = []
 
+    resolved_targets = [
+        (artifact, *_validated_artifact_paths(artifact, out_dir))
+        for artifact in compilation.views.values()
+    ]
     if not check_only and not compilation.lint_report.passed:
         return ApplySyncOutcome(compilation=compilation)
 
-    for artifact in compilation.views.values():
-        diagram_path = out_dir / artifact.output_filename
+    for artifact, diagram_path, overflow_path in resolved_targets:
         _check_or_write_single_file(
             diagram_path,
             artifact.diagram_source,
@@ -873,8 +914,7 @@ def sync_compiled_artifacts(
             drifted=drifted,
             missing=missing,
         )
-        if artifact.overflow_markdown:
-            overflow_path = out_dir / artifact.overflow_filename
+        if overflow_path is not None:
             _check_or_write_single_file(
                 overflow_path,
                 artifact.overflow_markdown + "\n",
