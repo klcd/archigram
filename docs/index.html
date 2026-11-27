@@ -951,6 +951,17 @@
       user-select: none;
       -webkit-user-drag: none;
     }
+    .prealpha-banner {
+      background: var(--amber-soft);
+      border-bottom: 1px solid var(--border);
+      color: var(--ink);
+      font-size: 0.9rem;
+      padding: 0.55rem 1rem;
+      text-align: center;
+    }
+    .prealpha-banner strong {
+      color: var(--amber);
+    }
   </style>
 </head>
 <body>
@@ -975,6 +986,11 @@
       </nav>
     </div>
   </header>
+
+  <div class="prealpha-banner" role="note">
+    <strong>Pre-alpha:</strong> ArchiGram is early-stage software. The CLI, MCP tools, spec format
+    and output formats may change without notice.
+  </div>
 
   <main>
     <!-- 1. EDITORIAL HERO -->
