@@ -537,7 +537,7 @@ def _reduce_single_view(
     spec: CurationSpecV1,
     structural_reducer: StructuralTopologicalReducer,
     trace_compactor: TraceCompactionEngine,
-) -> tuple[CanonicalIR, CanonicalIR, str, list[LintDiagnostic]]:
+) -> tuple[CanonicalIR | None, CanonicalIR | None, str, list[LintDiagnostic]]:
     if view.ir_mode.value != observed_ir.ir_mode:
         diag = LintDiagnostic(
             gate=GateId.GATE_1_GROUNDING,
@@ -554,7 +554,7 @@ def _reduce_single_view(
                 "or provide a matching input payload."
             ),
         )
-        return observed_ir, observed_ir, "", [diag]
+        return None, None, "", [diag]
 
     if isinstance(observed_ir, StructuralGraphIR) and view.ir_mode is IRMode.STRUCTURAL_GRAPH:
         try:
@@ -564,18 +564,27 @@ def _reduce_single_view(
                 spec.global_abstractions,
             )
         except CycleInducedError as exc:
-            curated = structural_reducer.reduce(
-                observed_ir,
-                view.model_copy(
-                    update={
-                        "invariants": view.invariants.model_copy(
-                            update={"forbid_new_cycles": False}
-                        )
-                    }
-                ),
-                spec.global_abstractions,
+            return (
+                None,
+                None,
+                "",
+                [
+                    LintDiagnostic(
+                        gate=GateId.GATE_3_TOPOLOGY_POSET,
+                        severity=DiagnosticSeverity.ERROR,
+                        code="INDUCED_PARTITION_CYCLE",
+                        rule_id=exc.rule_id,
+                        view_id=view.id,
+                        offending_symbols=exc.member_ids or (exc.target_node_id,),
+                        witness_path=exc.witness_path,
+                        message=str(exc),
+                        repair_hint=(
+                            f"Split member_globs or add exclude_ids on collapse_partition rule "
+                            f"'{exc.rule_id}' to prevent inducing a cycle."
+                        ),
+                    )
+                ],
             )
-            _ = exc
         overflow_md = ""
         emitted: CanonicalIR = curated
         if (
@@ -649,6 +658,8 @@ def compile_and_lint_pipeline(
             trace_compactor,
         )
         pre_diagnostics.extend(view_diags)
+        if view_diags or curated_ir is None or emitted_ir is None:
+            continue
         curated_by_id[view.id] = curated_ir
         diagram_source = emit_view_source(emitted_ir, view, overflow_md, mermaid_theme)
         compiled_views[view.id] = CompiledViewArtifact(

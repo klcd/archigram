@@ -13,7 +13,7 @@ from hypothesis import strategies as st
 from typer.testing import CliRunner
 
 from archigram.domain import ProvenanceGrade, ProvenanceStamp
-from archigram.domain.diagnostics import LintReport
+from archigram.domain.diagnostics import DiagnosticSeverity, GateId, LintReport
 from archigram.domain.ir import (
     EdgeRelation,
     InteractionTraceIR,
@@ -27,11 +27,13 @@ from archigram.domain.ir import (
 )
 from archigram.domain.spec import (
     BudgetRange,
+    CollapsePartitionRule,
     CurationSpecV1,
     DiagramViewSpec,
     IRMode,
     PruneLeavesRule,
     ReachabilityAssertion,
+    SimplifyConfig,
     TargetRenderer,
     ViewInvariants,
     dump_curation_spec_yaml,
@@ -751,3 +753,146 @@ def test_fuzz_output_containment_blocks_symlink_and_path_escapes(
                 )
 
         assert outside_secret.read_text(encoding="utf-8") == "UNTOUCHED"
+
+
+def _build_cycle_inducing_dag(mid_count: int) -> StructuralGraphIR:
+    stamp = _obs_stamp()
+    node_ids = ["part_head", *(f"mid_{idx}" for idx in range(mid_count)), "part_tail"]
+    nodes = {
+        nid: IRNode(
+            symbol_id=nid,
+            label=nid.replace("_", " ").title(),
+            kind=NodeKind.SERVICE,
+            provenance=stamp,
+        )
+        for nid in node_ids
+    }
+    edges = tuple(
+        IREdge(
+            edge_id=f"e_{idx}",
+            source=node_ids[idx],
+            target=node_ids[idx + 1],
+            relation=EdgeRelation.CALLS,
+            sync_kind=SyncKind.SYNC,
+            provenance=stamp,
+        )
+        for idx in range(len(node_ids) - 1)
+    )
+    return StructuralGraphIR(graph_id="cycle_dag", nodes=nodes, edges=edges)
+
+
+def _build_cycle_inducing_spec(
+    renderer: TargetRenderer,
+    *,
+    condense_sccs: bool,
+    transitive_reduction: bool,
+    rule_in_global: bool,
+) -> CurationSpecV1:
+    rule = CollapsePartitionRule(
+        id="collapse_cycle_rule",
+        target_node_id="part_super",
+        label="Partition Supernode",
+        member_globs=("part_*",),
+    )
+    cycle_view = DiagramViewSpec(
+        id="cycle_view",
+        title="Cycle Inducing View",
+        ir_mode=IRMode.STRUCTURAL_GRAPH,
+        target_renderer=renderer,
+        rules=() if rule_in_global else (rule,),
+        simplify=SimplifyConfig(
+            condense_sccs=condense_sccs,
+            transitive_reduction=transitive_reduction,
+        ),
+        invariants=ViewInvariants(
+            forbid_new_cycles=True,
+            node_budget=BudgetRange(min_count=1, max_count=20),
+            edge_budget_max=40,
+        ),
+    )
+    views: list[DiagramViewSpec] = [cycle_view]
+    if not rule_in_global:
+        views.append(
+            DiagramViewSpec(
+                id="valid_sibling",
+                title="Valid Sibling View",
+                ir_mode=IRMode.STRUCTURAL_GRAPH,
+                target_renderer=renderer,
+                invariants=ViewInvariants(
+                    forbid_new_cycles=True,
+                    node_budget=BudgetRange(min_count=1, max_count=20),
+                    edge_budget_max=40,
+                ),
+            )
+        )
+    return CurationSpecV1(
+        global_abstractions=(rule,) if rule_in_global else (),
+        views=tuple(views),
+    )
+
+
+@given(
+    mid_count=st.integers(min_value=1, max_value=5),
+    renderer=st.sampled_from(_RENDERERS),
+    condense_sccs=st.booleans(),
+    transitive_reduction=st.booleans(),
+    rule_in_global=st.booleans(),
+)
+@settings(max_examples=25, deadline=None, suppress_health_check=[HealthCheck.too_slow])
+def test_fuzz_collapse_induced_cycle_fails_pipeline_and_blocks_apply(
+    mid_count: int,
+    renderer: TargetRenderer,
+    condense_sccs: bool,
+    transitive_reduction: bool,
+    rule_in_global: bool,
+) -> None:
+    """`collapse_partition` inducing a cycle fails with INDUCED_PARTITION_CYCLE and blocks apply."""
+    graph = _build_cycle_inducing_dag(mid_count)
+    spec = _build_cycle_inducing_spec(
+        renderer,
+        condense_sccs=condense_sccs,
+        transitive_reduction=transitive_reduction,
+        rule_in_global=rule_in_global,
+    )
+
+    comp = compile_and_lint_pipeline(graph, spec)
+    assert not comp.lint_report.passed
+    assert "cycle_view" not in comp.views
+    if not rule_in_global:
+        assert "valid_sibling" in comp.views
+
+    cycle_diags = [d for d in comp.lint_report.diagnostics if d.code == "INDUCED_PARTITION_CYCLE"]
+    assert len(cycle_diags) == 1
+    diag = cycle_diags[0]
+    assert diag.gate is GateId.GATE_3_TOPOLOGY_POSET
+    assert diag.severity is DiagnosticSeverity.ERROR
+    assert diag.rule_id == "collapse_cycle_rule"
+    assert diag.view_id == "cycle_view"
+    assert len(diag.witness_path) >= 3
+
+    with pytest.raises(ValueError, match="INDUCED_PARTITION_CYCLE"):
+        compute_triage_stages(graph, spec, "cycle_view")
+
+    with tempfile.TemporaryDirectory() as tmp_str:
+        tmp_dir = Path(tmp_str)
+        input_file = tmp_dir / "input.ir.json"
+        input_file.write_text(graph.model_dump_json(), encoding="utf-8")
+        spec_file = tmp_dir / "diagram-views.yaml"
+        spec_file.write_text(dump_curation_spec_yaml(spec), encoding="utf-8")
+        out_dir = tmp_dir / "out"
+
+        lint_res = _RUNNER.invoke(
+            app,
+            ["lint", str(input_file), "--spec", str(spec_file), "--json"],
+        )
+        assert lint_res.exit_code == EXIT_LINT_OR_DRIFT
+        parsed_report = LintReport.model_validate_json(lint_res.stdout)
+        assert not parsed_report.passed
+        assert any(d.code == "INDUCED_PARTITION_CYCLE" for d in parsed_report.diagnostics)
+
+        apply_res = _RUNNER.invoke(
+            app,
+            ["apply", str(input_file), "--spec", str(spec_file), "--out-dir", str(out_dir)],
+        )
+        assert apply_res.exit_code == EXIT_LINT_OR_DRIFT
+        assert not out_dir.exists() or not any(out_dir.rglob("*"))

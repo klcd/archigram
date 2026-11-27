@@ -148,7 +148,7 @@ def test_perf_compute_3stage_structural_triage_80_nodes(benchmark: Callable[...,
                         member_globs=("pkg.mod_5*", "pkg.mod_6*"),
                     ),
                 ),
-                invariants=ViewInvariants(),
+                invariants=ViewInvariants(forbid_new_cycles=False),
             ),
         )
     )
