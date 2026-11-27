@@ -29,6 +29,8 @@ from archigram.domain.spec import (
 from archigram.features.lint_topology import TopologicalInvariantGate
 from archigram.features.lint_topology.gate import (
     _build_curated_resolver,  # pyright: ignore[reportPrivateUsage]
+    _build_trace_order_context,  # pyright: ignore[reportPrivateUsage]
+    _observed_projection,  # pyright: ignore[reportPrivateUsage]
 )
 
 _OBS_PROV = ProvenanceStamp(
@@ -459,3 +461,86 @@ def test_gate3_severed_reachability_attribution_benchmark(benchmark: Any) -> Non
     (diag,) = [d for d in report.diagnostics if d.code == "REACHABILITY_SEVERED"]
     assert "bypass-cut" in diag.message
     assert "fold-rule" not in diag.message
+
+
+def _build_sparse_trace_fixture(
+    span_count: int = 800,
+) -> tuple[InteractionTraceIR, CurationSpecV1, dict[str, InteractionTraceIR]]:
+    """Build a 3,200-observed / 2,400-curated sparse multi-span InteractionTraceIR fixture."""
+    participants = {
+        f"p{i}": TraceParticipant(
+            participant_id=f"p{i}",
+            symbol_id=f"svc/p{i}",
+            label=f"Service {i}",
+            provenance=_OBS_PROV,
+        )
+        for i in range(4)
+    }
+    obs_events: dict[str, TraceEvent] = {}
+    cur_events: dict[str, TraceEvent] = {}
+    for span_idx in range(span_count):
+        base = span_idx * 4
+        for offset in range(4):
+            idx = base + offset
+            eid = f"sp_{idx:04d}"
+            obs_events[eid] = TraceEvent(
+                event_id=eid,
+                caller_id=f"p{offset}",
+                callee_id=f"p{(offset + 1) % 4}",
+                signature=f"span_op_{offset}()",
+                parent_event_id=f"sp_{idx - 1:04d}" if offset > 0 else None,
+                clock_domain_id=f"clk_{span_idx % 8}",
+                start_ns=idx * 50,
+                end_ns=idx * 50 + 25,
+                sync_kind=SyncKind.SYNC,
+                provenance=_OBS_PROV,
+            )
+            if offset == 2:
+                continue
+            cur_parent = (
+                None if offset == 0 else (f"sp_{base:04d}" if offset == 1 else f"sp_{base + 1:04d}")
+            )
+            cur_events[eid] = TraceEvent(
+                event_id=eid,
+                caller_id=f"p{offset}",
+                callee_id=f"p{(offset + 1) % 4}",
+                signature=f"span_op_{offset}()",
+                parent_event_id=cur_parent,
+                clock_domain_id=f"clk_{span_idx % 8}",
+                start_ns=idx * 50,
+                end_ns=idx * 50 + 25,
+                sync_kind=SyncKind.SYNC,
+                provenance=_OBS_PROV,
+            )
+
+    observed = InteractionTraceIR(participants=participants, events=obs_events)
+    curated = InteractionTraceIR(participants=participants, events=cur_events)
+    spec = CurationSpecV1(
+        views=(
+            DiagramViewSpec(
+                id="sparse-trace",
+                title="3200/2400 Sparse Trace",
+                ir_mode=IRMode.INTERACTION_TRACE,
+                target_renderer=TargetRenderer.MERMAID,
+                invariants=ViewInvariants(preserve_partial_order=True),
+            ),
+        )
+    )
+    return observed, spec, {"sparse-trace": curated}
+
+
+_SPARSE_OBS, _SPARSE_SPEC, _SPARSE_CUR = _build_sparse_trace_fixture()
+_SPARSE_CTX = _build_trace_order_context(_SPARSE_OBS, _SPARSE_CUR["sparse-trace"])
+
+
+def test_gate3_2400_event_sparse_trace_poset_benchmark(benchmark: Any) -> None:
+    report = benchmark(_GATE.check, _SPARSE_OBS, _SPARSE_SPEC, _SPARSE_CUR)
+    assert report.passed
+    assert report.error_count == 0
+
+
+def test_gate3_2400_event_sparse_observed_projection_benchmark(benchmark: Any) -> None:
+    succ, pred = benchmark(_observed_projection, _SPARSE_CTX)
+    assert len(succ) == 2400
+    assert len(pred) == 2400
+    assert sum(mask.bit_count() for mask in succ) == 2400
