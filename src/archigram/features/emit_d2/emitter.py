@@ -212,6 +212,24 @@ def _emit_class_members(lines: list[str], members: tuple[ClassMember, ...], inde
             lines.append(f"{indent}{_quote_d2_string(key)}")
 
 
+def _is_class_shape(node: IRNode, has_children: bool, force_class: bool) -> bool:
+    """Return True when a node is drawn as a UML class compartment instead of a box."""
+    return (
+        not has_children and node.kind in _OOP_CLASS_KINDS and (bool(node.members) or force_class)
+    )
+
+
+def class_shaped_node_ids(graph: StructuralGraphIR) -> frozenset[str]:
+    """IDs of the nodes `emit` draws as class compartments, whose `style.stroke` is not a border."""
+    parents = {node.parent_id for node in graph.nodes.values() if node.parent_id is not None}
+    force_class = graph.metadata.get("diagram_variant") == "class"
+    return frozenset(
+        sid
+        for sid, node in graph.nodes.items()
+        if _is_class_shape(node, sid in parents, force_class)
+    )
+
+
 def _emit_structural_node(
     node: IRNode,
     ctx: _D2StructuralCtx,
@@ -221,9 +239,7 @@ def _emit_structural_node(
     """Recursively emit a D2 node or nested container block with transparent fill."""
     indent = "  " * depth
     child_ids = ctx.children_by_parent.get(node.symbol_id, [])
-    is_class = (
-        not child_ids and node.kind in _OOP_CLASS_KINDS and (bool(node.members) or ctx.force_class)
-    )
+    is_class = _is_class_shape(node, bool(child_ids), ctx.force_class)
     shape = "class" if is_class else _NODE_KIND_SHAPES.get(node.kind)
     tooltip = _build_provenance_tooltip(node)
     header = (
@@ -639,4 +655,5 @@ quote_d2_string = _quote_d2_string
 format_d2_key = _format_d2_key
 build_safe_key_map = _build_safe_key_map
 build_qualified_paths = _build_qualified_paths
+build_provenance_tooltip = _build_provenance_tooltip
 order_d2_trace_events = _order_trace_events

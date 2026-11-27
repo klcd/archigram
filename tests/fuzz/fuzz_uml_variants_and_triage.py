@@ -349,3 +349,9 @@ def test_triage_stages_partition_conservation_and_syntax_validity(
     assert _FAST_VALIDATORS["d2"].validate(outcome.stage2_d2).valid
     assert _FAST_VALIDATORS["d2"].validate(outcome.stage3_d2).valid
     assert _FAST_VALIDATORS["mermaid"].validate(outcome.stage3_mermaid).valid
+
+    # Stage 2 is Stage 1 verbatim plus style overrides, so both stages share one layout.
+    assert outcome.stage2_d2.startswith(outcome.stage1_d2.rstrip("\n"))
+    assert "triage_legend" in outcome.stage2_d2
+    edge_override_lines = [line for line in outcome.stage2_d2.splitlines() if line.startswith("(")]
+    assert len(edge_override_lines) == 2 * len(observed.edges)
