@@ -36,9 +36,7 @@ state "reducer" as s_14_archigram_featur_df5fa8
 [*] --> s_4_archigram_entryp_8024d0
 s_4_archigram_entryp_8024d0 -->[#3b82f6] s_4_archigram_entryp_8024d0 : compile_and_lint_pipeline
 s_4_archigram_entryp_8024d0 -->[#3b82f6] s_14_archigram_featur_df5fa8 : StructuralTopologicalReducer.reduce
-s_4_archigram_entryp_8024d0 -->[#3b82f6] s_8_archigram_featur_4d345c : MermaidEmitter.__init__
-s_4_archigram_entryp_8024d0 -->[#3b82f6] s_7_archigram_featur_65f494 : D2Emitter.emit
-s_4_archigram_entryp_8024d0 -->[#3b82f6] s_9_archigram_featur_ddda4c : PlantUmlEmitter.emit
+s_4_archigram_entryp_8024d0 -->[#3b82f6] s_5_archigram_entryp_a3efe2 : emit_view_source
 s_4_archigram_entryp_8024d0 -->[#3b82f6] s_11_archigram_featur_d444ee : GroundingAndBoundaryGate.__init__
 s_4_archigram_entryp_8024d0 -->[#3b82f6] s_13_archigram_featur_2a23e8 : TopologicalInvariantGate.__init__
 s_4_archigram_entryp_8024d0 -->[#3b82f6] s_10_archigram_featur_9a2480 : CognitiveBudgetAndOrphanGate.check
@@ -52,7 +50,7 @@ s_5_archigram_entryp_a3efe2 -->[#3b82f6] s_13_archigram_featur_2a23e8 : Topologi
 s_5_archigram_entryp_a3efe2 -->[#3b82f6] s_0_archigram_domain_71c3aa : LintReport.from_diagnostics
 s_5_archigram_entryp_a3efe2 -->[#3b82f6] s_14_archigram_featur_df5fa8 : StructuralTopologicalReducer.reduce
 s_5_archigram_entryp_a3efe2 -->[#3b82f6] s_10_archigram_featur_9a2480 : CognitiveBudgetAndOrphanGate.check
-s_5_archigram_entryp_a3efe2 -->[#3b82f6] s_8_archigram_featur_4d345c : MermaidEmitter.emit
+s_5_archigram_entryp_a3efe2 -->[#3b82f6] s_8_archigram_featur_4d345c : MermaidEmitter.__init__
 s_5_archigram_entryp_a3efe2 -->[#3b82f6] s_12_archigram_featur_d6e8be : Gate5SyntaxHarness.validate
 s_2_archigram_domain_498ecc --> [*]
 @enduml

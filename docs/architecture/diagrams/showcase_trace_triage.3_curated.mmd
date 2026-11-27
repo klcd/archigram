@@ -23,18 +23,16 @@ sequenceDiagram
   p4->>+p4: compile_and_lint_pipeline
   p4->>+p14: StructuralTopologicalReducer.reduce
   p14-->>-p4: return
-  p4->>+p8: MermaidEmitter.__init__
-  p8-->>-p4: return
-  p4->>+p8: MermaidEmitter.emit
-  p8-->>-p4: return
+  p4->>+p5: emit_view_source
+  p5-->>-p4: return
   p4->>+p14: StructuralTopologicalReducer.reduce
   p14-->>-p4: return
-  p4->>+p7: D2Emitter.emit
-  p7-->>-p4: return
+  p4->>+p5: emit_view_source
+  p5-->>-p4: return
   p4->>+p14: StructuralTopologicalReducer.reduce
   p14-->>-p4: return
-  p4->>+p9: PlantUmlEmitter.emit
-  p9-->>-p4: return
+  p4->>+p5: emit_view_source
+  p5-->>-p4: return
   p4->>+p11: GroundingAndBoundaryGate.__init__
   p11-->>-p4: return
   p4->>+p11: GroundingAndBoundaryGate.check
@@ -85,6 +83,8 @@ sequenceDiagram
   p13-->>-p5: return
   p5->>+p10: CognitiveBudgetAndOrphanGate.check
   p10-->>-p5: return
+  p5->>+p8: MermaidEmitter.__init__
+  p8-->>-p5: return
   p5->>+p8: MermaidEmitter.emit
   p8-->>-p5: return
   p5->>+p12: Gate5SyntaxHarness.validate
@@ -107,6 +107,8 @@ sequenceDiagram
   p13-->>-p5: return
   p5->>+p10: CognitiveBudgetAndOrphanGate.check
   p10-->>-p5: return
+  p5->>+p8: MermaidEmitter.__init__
+  p8-->>-p5: return
   p5->>+p8: MermaidEmitter.emit
   p8-->>-p5: return
   p5->>+p12: Gate5SyntaxHarness.validate

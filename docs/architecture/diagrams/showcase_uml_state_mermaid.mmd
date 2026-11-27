@@ -22,9 +22,7 @@ stateDiagram-v2
   [*] --> s4
   s4 --> s4 : compile_and_lint_pipeline
   s4 --> s14 : StructuralTopologicalReducer.reduce
-  s4 --> s8 : MermaidEmitter.__init__
-  s4 --> s7 : D2Emitter.emit
-  s4 --> s9 : PlantUmlEmitter.emit
+  s4 --> s5 : emit_view_source
   s4 --> s11 : GroundingAndBoundaryGate.__init__
   s4 --> s13 : TopologicalInvariantGate.__init__
   s4 --> s10 : CognitiveBudgetAndOrphanGate.check
@@ -38,6 +36,6 @@ stateDiagram-v2
   s5 --> s0 : LintReport.from_diagnostics
   s5 --> s14 : StructuralTopologicalReducer.reduce
   s5 --> s10 : CognitiveBudgetAndOrphanGate.check
-  s5 --> s8 : MermaidEmitter.emit
+  s5 --> s8 : MermaidEmitter.__init__
   s5 --> s12 : Gate5SyntaxHarness.validate
   s2 --> [*]

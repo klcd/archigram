@@ -78,11 +78,7 @@ shape: sequence_diagram
   style.stroke: "#3b82f6"
   style.animated: true
 }
-"archigram.entrypoints.cli.pipeline" -> "archigram.features.emit_mermaid.emitter": "MermaidEmitter.__init__" {
-  style.stroke: "#3b82f6"
-  style.animated: true
-}
-"archigram.entrypoints.cli.pipeline" -> "archigram.features.emit_mermaid.emitter": "MermaidEmitter.emit" {
+"archigram.entrypoints.cli.pipeline" -> "archigram.entrypoints.mcp.propose_loop": "emit_view_source" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
@@ -90,7 +86,7 @@ shape: sequence_diagram
   style.stroke: "#3b82f6"
   style.animated: true
 }
-"archigram.entrypoints.cli.pipeline" -> "archigram.features.emit_d2.emitter": "D2Emitter.emit" {
+"archigram.entrypoints.cli.pipeline" -> "archigram.entrypoints.mcp.propose_loop": "emit_view_source" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
@@ -98,7 +94,7 @@ shape: sequence_diagram
   style.stroke: "#3b82f6"
   style.animated: true
 }
-"archigram.entrypoints.cli.pipeline" -> "archigram.features.emit_plantuml.emitter": "PlantUmlEmitter.emit" {
+"archigram.entrypoints.cli.pipeline" -> "archigram.entrypoints.mcp.propose_loop": "emit_view_source" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
@@ -202,6 +198,10 @@ shape: sequence_diagram
   style.stroke: "#3b82f6"
   style.animated: true
 }
+"archigram.entrypoints.mcp.propose_loop" -> "archigram.features.emit_mermaid.emitter": "MermaidEmitter.__init__" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
 "archigram.entrypoints.mcp.propose_loop" -> "archigram.features.emit_mermaid.emitter": "MermaidEmitter.emit" {
   style.stroke: "#3b82f6"
   style.animated: true
@@ -243,6 +243,10 @@ shape: sequence_diagram
   style.animated: true
 }
 "archigram.entrypoints.mcp.propose_loop" -> "archigram.features.lint_budget.gate": "CognitiveBudgetAndOrphanGate.check" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+"archigram.entrypoints.mcp.propose_loop" -> "archigram.features.emit_mermaid.emitter": "MermaidEmitter.__init__" {
   style.stroke: "#3b82f6"
   style.animated: true
 }

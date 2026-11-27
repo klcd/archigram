@@ -62,17 +62,19 @@ triage_legend: "Triage Disposition Legend" {
   style.fill: transparent
   style.stroke: "#10b981"
 }
-"archigram.features.emit_d2.emitter": "[KEEP] emit_d2.emitter" {
+"archigram.features.emit_d2.emitter": "[REMOVE] emit_d2.emitter" {
   style.fill: transparent
-  style.stroke: "#10b981"
+  style.stroke: "#ef4444"
+  style.stroke-dash: 5
 }
 "archigram.features.emit_mermaid.emitter": "[KEEP] emit_mermaid.emitter" {
   style.fill: transparent
   style.stroke: "#10b981"
 }
-"archigram.features.emit_plantuml.emitter": "[KEEP] emit_plantuml.emitter" {
+"archigram.features.emit_plantuml.emitter": "[REMOVE] emit_plantuml.emitter" {
   style.fill: transparent
-  style.stroke: "#10b981"
+  style.stroke: "#ef4444"
+  style.stroke-dash: 5
 }
 "archigram.features.lint_budget.gate": "[KEEP] lint_budget.gate" {
   style.fill: transparent
@@ -100,13 +102,7 @@ triage_legend: "Triage Disposition Legend" {
 "archigram.entrypoints.cli.pipeline" -> "archigram.entrypoints.cli.pipeline": "[KEEP 1 spans]" {
   style.stroke: "#10b981"
 }
-"archigram.entrypoints.cli.pipeline" -> "archigram.features.emit_d2.emitter": "[KEEP 1 spans]" {
-  style.stroke: "#10b981"
-}
-"archigram.entrypoints.cli.pipeline" -> "archigram.features.emit_mermaid.emitter": "[KEEP 2 spans]" {
-  style.stroke: "#10b981"
-}
-"archigram.entrypoints.cli.pipeline" -> "archigram.features.emit_plantuml.emitter": "[KEEP 1 spans]" {
+"archigram.entrypoints.cli.pipeline" -> "archigram.entrypoints.mcp.propose_loop": "[KEEP 3 spans]" {
   style.stroke: "#10b981"
 }
 "archigram.entrypoints.cli.pipeline" -> "archigram.features.lint_budget.gate": "[KEEP 1 spans]" {
@@ -137,8 +133,17 @@ triage_legend: "Triage Disposition Legend" {
 "archigram.entrypoints.mcp.propose_loop" -> "archigram.features.digest.generator": "[KEEP 1 spans]" {
   style.stroke: "#10b981"
 }
-"archigram.entrypoints.mcp.propose_loop" -> "archigram.features.emit_mermaid.emitter": "[KEEP 2 spans]" {
-  style.stroke: "#10b981"
+"archigram.entrypoints.mcp.propose_loop" -> "archigram.features.emit_d2.emitter": "[REMOVE 1 spans]" {
+  style.stroke: "#ef4444"
+  style.stroke-dash: 5
+}
+"archigram.entrypoints.mcp.propose_loop" -> "archigram.features.emit_mermaid.emitter": "[FOLD 6 -> 4 spans]" {
+  style.stroke: "#8b5cf6"
+  style.stroke-dash: 5
+}
+"archigram.entrypoints.mcp.propose_loop" -> "archigram.features.emit_plantuml.emitter": "[REMOVE 1 spans]" {
+  style.stroke: "#ef4444"
+  style.stroke-dash: 5
 }
 "archigram.entrypoints.mcp.propose_loop" -> "archigram.features.lint_budget.gate": "[KEEP 2 spans]" {
   style.stroke: "#10b981"

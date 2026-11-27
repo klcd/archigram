@@ -72,39 +72,31 @@ direction: right
   style.stroke: "#3b82f6"
   style.animated: true
 }
-"archigram.entrypoints.cli.pipeline" -> "archigram.features.reduce_structural.reducer": "1.1: StructuralTopologicalReducer.reduce, 1.4: StructuralTopologicalReducer.reduce, 1.6: StructuralTopologicalReducer.reduce" {
+"archigram.entrypoints.cli.pipeline" -> "archigram.features.reduce_structural.reducer": "1.1: StructuralTopologicalReducer.reduce, 1.3: StructuralTopologicalReducer.reduce, 1.5: StructuralTopologicalReducer.reduce" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
-"archigram.entrypoints.cli.pipeline" -> "archigram.features.emit_mermaid.emitter": "1.2: MermaidEmitter.__init__, 1.3: MermaidEmitter.emit" {
+"archigram.entrypoints.cli.pipeline" -> "archigram.entrypoints.mcp.propose_loop": "1.2: emit_view_source, 1.4: emit_view_source, 1.6: emit_view_source" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
-"archigram.entrypoints.cli.pipeline" -> "archigram.features.emit_d2.emitter": "1.5: D2Emitter.emit" {
+"archigram.entrypoints.cli.pipeline" -> "archigram.features.lint_grounding.gates": "1.7: GroundingAndBoundaryGate.__init__, 1.8: GroundingAndBoundaryGate.check" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
-"archigram.entrypoints.cli.pipeline" -> "archigram.features.emit_plantuml.emitter": "1.7: PlantUmlEmitter.emit" {
+"archigram.entrypoints.cli.pipeline" -> "archigram.features.lint_topology.gate": "1.9: TopologicalInvariantGate.__init__, 1.10: TopologicalInvariantGate.check" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
-"archigram.entrypoints.cli.pipeline" -> "archigram.features.lint_grounding.gates": "1.8: GroundingAndBoundaryGate.__init__, 1.9: GroundingAndBoundaryGate.check" {
+"archigram.entrypoints.cli.pipeline" -> "archigram.features.lint_budget.gate": "1.11: CognitiveBudgetAndOrphanGate.check" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
-"archigram.entrypoints.cli.pipeline" -> "archigram.features.lint_topology.gate": "1.10: TopologicalInvariantGate.__init__, 1.11: TopologicalInvariantGate.check" {
+"archigram.entrypoints.cli.pipeline" -> "archigram.features.lint_syntax.validators": "1.12: build_default_validators, 1.13: Gate5SyntaxHarness.__init__, 1.14: Gate5SyntaxHarness.validate [loop x3" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
-"archigram.entrypoints.cli.pipeline" -> "archigram.features.lint_budget.gate": "1.12: CognitiveBudgetAndOrphanGate.check" {
-  style.stroke: "#3b82f6"
-  style.animated: true
-}
-"archigram.entrypoints.cli.pipeline" -> "archigram.features.lint_syntax.validators": "1.13: build_default_validators, 1.14: Gate5SyntaxHarness.__init__, 1.15: Gate5SyntaxHarness.validate [loop x3" {
-  style.stroke: "#3b82f6"
-  style.animated: true
-}
-"archigram.entrypoints.cli.pipeline" -> "archigram.domain.diagnostics": "1.16: LintReport.from_diagnostics" {
+"archigram.entrypoints.cli.pipeline" -> "archigram.domain.diagnostics": "1.15: LintReport.from_diagnostics" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
@@ -124,27 +116,27 @@ direction: right
   style.stroke: "#3b82f6"
   style.animated: true
 }
-"archigram.entrypoints.mcp.propose_loop" -> "archigram.features.lint_topology.gate": "2.4: TopologicalInvariantGate.check, 2.14: TopologicalInvariantGate.check, 2.25: TopologicalInvariantGate.check" {
+"archigram.entrypoints.mcp.propose_loop" -> "archigram.features.lint_topology.gate": "2.4: TopologicalInvariantGate.check, 2.14: TopologicalInvariantGate.check, 2.26: TopologicalInvariantGate.check" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
-"archigram.entrypoints.mcp.propose_loop" -> "archigram.domain.diagnostics": "2.5: LintReport.from_diagnostics, 2.6: LintReport._validate_passed_invarian, 2.18: LintReport.from_diagnostics (+3)" {
+"archigram.entrypoints.mcp.propose_loop" -> "archigram.domain.diagnostics": "2.5: LintReport.from_diagnostics, 2.6: LintReport._validate_passed_invarian, 2.19: LintReport.from_diagnostics (+3)" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
-"archigram.entrypoints.mcp.propose_loop" -> "archigram.features.reduce_structural.reducer": "2.12: StructuralTopologicalReducer.reduce, 2.23: StructuralTopologicalReducer.reduce" {
+"archigram.entrypoints.mcp.propose_loop" -> "archigram.features.reduce_structural.reducer": "2.12: StructuralTopologicalReducer.reduce, 2.24: StructuralTopologicalReducer.reduce" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
-"archigram.entrypoints.mcp.propose_loop" -> "archigram.features.lint_budget.gate": "2.15: CognitiveBudgetAndOrphanGate.check, 2.26: CognitiveBudgetAndOrphanGate.check" {
+"archigram.entrypoints.mcp.propose_loop" -> "archigram.features.lint_budget.gate": "2.15: CognitiveBudgetAndOrphanGate.check, 2.27: CognitiveBudgetAndOrphanGate.check" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
-"archigram.entrypoints.mcp.propose_loop" -> "archigram.features.emit_mermaid.emitter": "2.16: MermaidEmitter.emit, 2.27: MermaidEmitter.emit" {
+"archigram.entrypoints.mcp.propose_loop" -> "archigram.features.emit_mermaid.emitter": "2.16: MermaidEmitter.__init__, 2.17: MermaidEmitter.emit, 2.28: MermaidEmitter.__init__ (+1)" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
-"archigram.entrypoints.mcp.propose_loop" -> "archigram.features.lint_syntax.validators": "2.17: Gate5SyntaxHarness.validate, 2.28: Gate5SyntaxHarness.validate" {
+"archigram.entrypoints.mcp.propose_loop" -> "archigram.features.lint_syntax.validators": "2.18: Gate5SyntaxHarness.validate, 2.30: Gate5SyntaxHarness.validate" {
   style.stroke: "#3b82f6"
   style.animated: true
 }

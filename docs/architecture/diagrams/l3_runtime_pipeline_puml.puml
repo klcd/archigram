@@ -27,18 +27,16 @@ participant "reducer" as p_14_archigram_featur_df5fa8
 p_4_archigram_entryp_8024d0 -> p_4_archigram_entryp_8024d0 : compile_and_lint_pipeline
 p_4_archigram_entryp_8024d0 -> p_14_archigram_featur_df5fa8 : StructuralTopologicalReducer.reduce
 p_14_archigram_featur_df5fa8 --> p_4_archigram_entryp_8024d0 : return StructuralTopologicalReducer.reduce
-p_4_archigram_entryp_8024d0 -> p_8_archigram_featur_4d345c : MermaidEmitter.__init__
-p_8_archigram_featur_4d345c --> p_4_archigram_entryp_8024d0 : return MermaidEmitter.__init__
-p_4_archigram_entryp_8024d0 -> p_8_archigram_featur_4d345c : MermaidEmitter.emit
-p_8_archigram_featur_4d345c --> p_4_archigram_entryp_8024d0 : return MermaidEmitter.emit
+p_4_archigram_entryp_8024d0 -> p_5_archigram_entryp_a3efe2 : emit_view_source
+p_5_archigram_entryp_a3efe2 --> p_4_archigram_entryp_8024d0 : return emit_view_source
 p_4_archigram_entryp_8024d0 -> p_14_archigram_featur_df5fa8 : StructuralTopologicalReducer.reduce
 p_14_archigram_featur_df5fa8 --> p_4_archigram_entryp_8024d0 : return StructuralTopologicalReducer.reduce
-p_4_archigram_entryp_8024d0 -> p_7_archigram_featur_65f494 : D2Emitter.emit
-p_7_archigram_featur_65f494 --> p_4_archigram_entryp_8024d0 : return D2Emitter.emit
+p_4_archigram_entryp_8024d0 -> p_5_archigram_entryp_a3efe2 : emit_view_source
+p_5_archigram_entryp_a3efe2 --> p_4_archigram_entryp_8024d0 : return emit_view_source
 p_4_archigram_entryp_8024d0 -> p_14_archigram_featur_df5fa8 : StructuralTopologicalReducer.reduce
 p_14_archigram_featur_df5fa8 --> p_4_archigram_entryp_8024d0 : return StructuralTopologicalReducer.reduce
-p_4_archigram_entryp_8024d0 -> p_9_archigram_featur_ddda4c : PlantUmlEmitter.emit
-p_9_archigram_featur_ddda4c --> p_4_archigram_entryp_8024d0 : return PlantUmlEmitter.emit
+p_4_archigram_entryp_8024d0 -> p_5_archigram_entryp_a3efe2 : emit_view_source
+p_5_archigram_entryp_a3efe2 --> p_4_archigram_entryp_8024d0 : return emit_view_source
 p_4_archigram_entryp_8024d0 -> p_11_archigram_featur_d444ee : GroundingAndBoundaryGate.__init__
 p_11_archigram_featur_d444ee --> p_4_archigram_entryp_8024d0 : return GroundingAndBoundaryGate.__init__
 p_4_archigram_entryp_8024d0 -> p_11_archigram_featur_d444ee : GroundingAndBoundaryGate.check
@@ -89,6 +87,8 @@ p_5_archigram_entryp_a3efe2 -> p_13_archigram_featur_2a23e8 : TopologicalInvaria
 p_13_archigram_featur_2a23e8 --> p_5_archigram_entryp_a3efe2 : return TopologicalInvariantGate.check
 p_5_archigram_entryp_a3efe2 -> p_10_archigram_featur_9a2480 : CognitiveBudgetAndOrphanGate.check
 p_10_archigram_featur_9a2480 --> p_5_archigram_entryp_a3efe2 : return CognitiveBudgetAndOrphanGate.check
+p_5_archigram_entryp_a3efe2 -> p_8_archigram_featur_4d345c : MermaidEmitter.__init__
+p_8_archigram_featur_4d345c --> p_5_archigram_entryp_a3efe2 : return MermaidEmitter.__init__
 p_5_archigram_entryp_a3efe2 -> p_8_archigram_featur_4d345c : MermaidEmitter.emit
 p_8_archigram_featur_4d345c --> p_5_archigram_entryp_a3efe2 : return MermaidEmitter.emit
 p_5_archigram_entryp_a3efe2 -> p_12_archigram_featur_d6e8be : Gate5SyntaxHarness.validate
@@ -111,6 +111,8 @@ p_5_archigram_entryp_a3efe2 -> p_13_archigram_featur_2a23e8 : TopologicalInvaria
 p_13_archigram_featur_2a23e8 --> p_5_archigram_entryp_a3efe2 : return TopologicalInvariantGate.check
 p_5_archigram_entryp_a3efe2 -> p_10_archigram_featur_9a2480 : CognitiveBudgetAndOrphanGate.check
 p_10_archigram_featur_9a2480 --> p_5_archigram_entryp_a3efe2 : return CognitiveBudgetAndOrphanGate.check
+p_5_archigram_entryp_a3efe2 -> p_8_archigram_featur_4d345c : MermaidEmitter.__init__
+p_8_archigram_featur_4d345c --> p_5_archigram_entryp_a3efe2 : return MermaidEmitter.__init__
 p_5_archigram_entryp_a3efe2 -> p_8_archigram_featur_4d345c : MermaidEmitter.emit
 p_8_archigram_featur_4d345c --> p_5_archigram_entryp_a3efe2 : return MermaidEmitter.emit
 p_5_archigram_entryp_a3efe2 -> p_12_archigram_featur_d6e8be : Gate5SyntaxHarness.validate

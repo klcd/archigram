@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 from mcp.types import CallToolResult, TextContent
@@ -31,21 +32,28 @@ from archigram.domain.ir import (
 from archigram.domain.spec import (
     BudgetRange,
     CurationSpecV1,
+    DiagramVariant,
     DiagramViewSpec,
     FullScope,
     IRMode,
     KHopNeighborhoodScope,
     PruneLeavesRule,
+    ReachabilityAssertion,
     TargetRenderer,
     ViewInvariants,
     dump_curation_spec_yaml,
 )
-from archigram.entrypoints.cli.pipeline import load_canonical_ir
+from archigram.entrypoints.cli.pipeline import (
+    compile_and_lint_pipeline,
+    emit_view_source,
+    load_canonical_ir,
+)
 from archigram.entrypoints.mcp import (
     CuratedViewsPreviewReport,
     DeterministicHeuristicProposer,
     RuleProposerProtocol,
     create_mcp_server,
+    evaluate_curation_spec,
     get_ir_digest,
     preview_curated_views,
     repair_curation_spec_from_diagnostics,
@@ -526,3 +534,121 @@ def test_run_propose_cli_round_trip(fixture: LayeredStructuralFixture) -> None:
         spec_yaml = out_file.read_text(encoding="utf-8")
         lint_data = json.loads(validate_curation_spec(fixture.ir.model_dump_json(), spec_yaml))
         assert lint_data["passed"] is True
+
+
+_VIEW_CONFIG_STRAT = st.tuples(
+    st.sampled_from(list(TargetRenderer)),
+    st.sampled_from(list(DiagramVariant)),
+    st.one_of(st.none(), st.booleans()),
+    st.booleans(),
+)
+
+
+@settings(max_examples=40, deadline=None)
+@given(
+    ir=st.one_of(
+        layered_structural_strategy().map(lambda f: f.ir),
+        interaction_trace_strategy(),
+    ),
+    renderer=st.sampled_from(list(TargetRenderer)),
+    diagram_variant=st.sampled_from(list(DiagramVariant)),
+    animate_edges=st.one_of(st.none(), st.booleans()),
+)
+def test_mcp_preview_matches_cli_emit_view_source(
+    ir: CanonicalIR,
+    renderer: TargetRenderer,
+    diagram_variant: DiagramVariant,
+    animate_edges: bool | None,
+) -> None:
+    """MCP preview_curated_views emits text identical to CLI emit_view_source across options."""
+    loop_res = run_propose_loop(ir, DeterministicHeuristicProposer(ir), max_turns=3)
+    assert loop_res.succeeded
+    assert loop_res.spec is not None
+
+    view = loop_res.spec.views[0].model_copy(
+        update={
+            "target_renderer": renderer,
+            "diagram_variant": diagram_variant,
+            "animate_edges": animate_edges,
+        }
+    )
+    spec = loop_res.spec.model_copy(update={"views": (view,)})
+    spec_yaml = dump_curation_spec_yaml(spec)
+
+    preview_report = CuratedViewsPreviewReport.model_validate_json(
+        preview_curated_views(ir.model_dump_json(), spec_yaml)
+    )
+    cli_result = compile_and_lint_pipeline(ir, spec)
+    compiled = preview_report.views[0]
+    cli_artifact = cli_result.views[view.id]
+
+    assert compiled.diagram_text == cli_artifact.diagram_source
+    assert compiled.diagram_text == emit_view_source(
+        cli_artifact.emitted_ir, view, overflow_markdown=""
+    )
+    if renderer is TargetRenderer.DOT:
+        assert 'rankdir="LR"' in compiled.diagram_text
+        assert 'bgcolor="transparent"' in compiled.diagram_text
+
+
+@settings(max_examples=30, deadline=None)
+@given(
+    fixture=layered_structural_strategy(),
+    view_configs=st.lists(_VIEW_CONFIG_STRAT, min_size=2, max_size=4),
+    meta_val=_TOKEN_STRAT,
+)
+def test_multiview_fallback_repair_preserves_all_views_and_metadata(
+    fixture: LayeredStructuralFixture,
+    view_configs: list[tuple[TargetRenderer, DiagramVariant, bool | None, bool]],
+    meta_val: str,
+) -> None:
+    """Fallback repair preserves all 2..N views' fields and spec metadata."""
+    unmet_reach = (ReachabilityAssertion(from_node=fixture.sinks[0], to_node=fixture.roots[0]),)
+    views = tuple(
+        DiagramViewSpec(
+            id=f"view_{idx}",
+            title=f"Curated View {idx}",
+            ir_mode=IRMode.STRUCTURAL_GRAPH,
+            target_renderer=renderer,
+            diagram_variant=variant,
+            animate_edges=animate,
+            render_svg=render_svg,
+            invariants=ViewInvariants(require_reachability=unmet_reach),
+        )
+        for idx, (renderer, variant, animate, render_svg) in enumerate(view_configs)
+    )
+    prior_spec = CurationSpecV1(views=views, metadata={"custom_key": meta_val})
+    diagnostics = evaluate_curation_spec(fixture.ir, prior_spec).lint_report.diagnostics
+
+    repaired = repair_curation_spec_from_diagnostics(
+        dump_curation_spec_yaml(prior_spec),
+        diagnostics,
+        fixture.ir,
+    )
+    assert len(repaired.views) == len(prior_spec.views)
+    assert repaired.metadata == {"custom_key": meta_val}
+    for pv, rv in zip(prior_spec.views, repaired.views, strict=True):
+        assert rv.id == pv.id
+        assert rv.title == pv.title
+        assert rv.target_renderer == pv.target_renderer
+        assert rv.diagram_variant == pv.diagram_variant
+        assert rv.animate_edges == pv.animate_edges
+        assert rv.render_svg == pv.render_svg
+
+
+@settings(max_examples=30, deadline=None)
+@given(
+    fixture=layered_structural_strategy(),
+    invalid_turns=st.one_of(
+        st.integers(max_value=0),
+        st.integers(min_value=4, max_value=100),
+        st.booleans(),
+    ),
+)
+def test_run_propose_loop_rejects_invalid_max_turns(
+    fixture: LayeredStructuralFixture,
+    invalid_turns: int,
+) -> None:
+    """run_propose_loop raises ValueError for non-1..3 or bool max_turns."""
+    with pytest.raises(ValueError, match="max_turns must be between 1 and 3"):
+        run_propose_loop(fixture.ir, max_turns=invalid_turns)
