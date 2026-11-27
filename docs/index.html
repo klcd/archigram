@@ -133,33 +133,6 @@
       box-shadow: var(--shadow-sm);
     }
 
-    .theme-grid {
-      display: grid;
-      grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
-      gap: 1.5rem;
-      margin-top: 1.5rem;
-      align-items: start;
-    }
-
-    @media (max-width: 960px) {
-      .theme-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .mermaid-live-stage {
-      width: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0.5rem;
-    }
-
-    .mermaid-live-stage svg {
-      max-width: 100%;
-      height: auto;
-    }
-
     * {
       box-sizing: border-box;
     }
@@ -221,7 +194,7 @@
     }
 
     .topbar-inner {
-      max-width: 1320px;
+      max-width: 1180px;
       margin: 0 auto;
       padding: 0.75rem 1.5rem;
       display: flex;
@@ -241,29 +214,12 @@
       letter-spacing: -0.02em;
     }
 
-    .brand-mark {
-      font-family: var(--font-mono);
-      font-size: 0.75rem;
-      padding: 0.15rem 0.45rem;
-      border-radius: 4px;
-      background: var(--accent-soft);
-      color: var(--accent);
-      border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
-    }
-
     .nav-links {
       display: flex;
       align-items: center;
       flex-wrap: wrap;
       gap: 0.55rem 1.1rem;
       font-size: 0.88rem;
-    }
-
-    /* The six nav links need about 1,230px next to the brand; drop the decorative tag first. */
-    @media (max-width: 1279px) {
-      .brand-mark {
-        display: none;
-      }
     }
 
     .nav-links a {
@@ -455,36 +411,6 @@
       font-size: 0.95rem;
       color: var(--ink-muted);
       margin: 0;
-    }
-
-    /* Thesis split */
-    .thesis-split {
-      display: grid;
-      grid-template-columns: 1.15fr 0.85fr;
-      gap: 2rem;
-      align-items: start;
-      margin-top: 2rem;
-    }
-
-    @media (max-width: 920px) {
-      .thesis-split {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .callout {
-      border-left: 3px solid var(--accent);
-      background: var(--bg-elevated);
-      padding: 1.1rem 1.3rem;
-      border-radius: 0 10px 10px 0;
-      border-top: 1px solid var(--border);
-      border-right: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
-      margin: 1.5rem 0;
-    }
-
-    .callout strong {
-      color: var(--ink);
     }
 
     .gate-list {
@@ -844,44 +770,6 @@
       display: block;
     }
 
-    /* Docs matrix footer */
-    .docs-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 1rem;
-      margin-top: 1.5rem;
-    }
-
-    .doc-link-card {
-      display: block;
-      text-decoration: none;
-      color: var(--ink);
-      background: var(--bg-elevated);
-      border: 1px solid var(--border);
-      border-radius: 11px;
-      padding: 1.1rem 1.2rem;
-      transition: transform 0.14s ease, border-color 0.14s ease;
-    }
-
-    .doc-link-card:hover {
-      transform: translateY(-2px);
-      border-color: var(--accent);
-    }
-
-    .doc-link-card .lvl {
-      font-family: var(--font-mono);
-      font-size: 0.75rem;
-      color: var(--accent);
-      margin-bottom: 0.3rem;
-      display: block;
-    }
-
-    .doc-link-card p {
-      font-size: 0.87rem;
-      color: var(--ink-muted);
-      margin: 0.35rem 0 0;
-    }
-
     footer {
       border-top: 1px solid var(--border);
       margin-top: 4rem;
@@ -993,7 +881,6 @@
        wraps onto a second line in one card never pushes its neighbours' text or images out of
        line. Without subgrid support the title gets a two-line minimum height instead. */
     .card h3,
-    .doc-link-card h3,
     .pattern-card h3,
     .pipeline-step h4 {
       min-height: 2.7em;
@@ -1007,14 +894,12 @@
 
     @supports (grid-template-rows: subgrid) {
       .card h3,
-      .doc-link-card h3,
       .pattern-card h3,
       .pipeline-step h4 {
         min-height: 0;
       }
 
-      .trilemma-grid > .card,
-      .docs-grid > .doc-link-card {
+      .trilemma-grid > .card {
         display: grid;
         grid-row: span 3;
         grid-template-rows: subgrid;
@@ -1115,7 +1000,7 @@
       color: var(--ink-faint);
       border-top: 1px dashed var(--border-strong);
       padding-top: 0.6rem;
-      align-self: end;
+      align-self: start;
     }
 
     .pattern-enforced strong {
@@ -1198,13 +1083,6 @@
       object-fit: contain;
     }
 
-    /* Where the nav wraps onto two rows the sticky header is taller, so sit lower. */
-    @media (max-width: 1099px) {
-      .tour-text {
-        top: 8rem;
-      }
-    }
-
     @media (max-width: 900px) {
       .tour-row {
         grid-template-columns: 1fr;
@@ -1220,7 +1098,6 @@
   <header class="topbar">
     <div class="topbar-inner">
       <a href="#" class="brand">
-        <span class="brand-mark">IR → 5 GATES → SVG</span>
         <span>ArchiGram</span>
       </a>
       <nav class="nav-links" aria-label="Primary">
@@ -1228,8 +1105,6 @@
         <a href="#architecture">Architecture</a>
         <a href="#triage">3-Stage Triage</a>
         <a href="#animated">Animated Traces</a>
-        <a href="#theming">Central Theme</a>
-        <a href="#docs">L0–L3 Docs</a>
         <div class="theme-switch" role="group" aria-label="Color theme">
           <button class="theme-btn" type="button" data-theme-choice="auto" aria-pressed="true">Auto</button>
           <button class="theme-btn" type="button" data-theme-choice="light" aria-pressed="false">Light</button>
@@ -1249,12 +1124,11 @@
     <!-- 1. EDITORIAL HERO -->
     <section class="hero">
       <div class="prose-wrap">
-        <div class="eyebrow">Project Purpose &amp; Architecture Manifesto</div>
         <h1>Architecture diagrams should be <em>compiled</em>, not drawn.</h1>
         <p class="lede">
-          ArchiGram is a deterministic compiler and 5-gate formal linter that turns real ASTs and
-          runtime execution traces into readable, zero-drift architecture diagrams—restricting
-          humans and LLMs to auditable CLI curation instead of pixel-pushing or hallucinated syntax.
+          ArchiGram reads your code and its runtime traces and compiles them into small, readable
+          architecture diagrams. You choose what each diagram shows with a short spec, and five
+          checks make sure it stays true to the code.
         </p>
         <div class="install-bar" role="region" aria-label="Quick install">
           <div>
@@ -1265,117 +1139,78 @@
       </div>
     </section>
 
-    <!-- 2. ESSAY: HAIRBALL VS HALLUCINATION -->
+    <!-- 2. THE PROBLEM AND THE IDEA -->
     <section id="why">
       <div class="prose-wrap">
         <div class="section-kicker">01 · The Problem</div>
-        <h2>The Hairball vs. Hallucination Trilemma</h2>
+        <h2>Why architecture diagrams go wrong</h2>
         <p>
-          Every engineering team wants architecture diagrams that stay truthful as code evolves
-          <em>and</em> fit inside human working memory. In practice, existing tools force a choice
-          between three broken failure modes:
+          Teams want diagrams that stay true as the code changes and are small enough to read.
+          Today they usually fail in one of three ways.
         </p>
       </div>
 
       <div class="wide-wrap">
         <div class="trilemma-grid">
           <article class="card">
-            <span class="card-num rot">Failure Mode 1 · Manual Drift</span>
-            <h3>Hand-drawn boxes silently rot</h3>
+            <span class="card-num rot">Failure 1 · Drift</span>
+            <h3>Hand-drawn diagrams go stale</h3>
             <p>
-              Diagrams sketched in Excalidraw, Miro, or hand-written Markdown have zero causal link
-              to the repository. Within days of a refactor, arrows point to deleted modules, omit
-              newly introduced couplings, and turn documentation into folklore.
+              Diagrams drawn in Excalidraw, Miro or Markdown have no link to the code. After a
+              refactor, arrows point at deleted modules and new dependencies are missing.
             </p>
           </article>
           <article class="card">
-            <span class="card-num hairball">Failure Mode 2 · Raw Auto-Dumps</span>
-            <h3>Naive extractors emit unreadable hairballs</h3>
+            <span class="card-num hairball">Failure 2 · Hairballs</span>
+            <h3>Generated graphs are unreadable</h3>
             <p>
-              Raw AST, dependency, and OpenTelemetry visualizers swing to the opposite extreme:
-              dumping <code>361</code> symbols or <code>1,000</code> spans onto a single canvas. The
-              output exceeds both human cognition and platform caps like Gitea’s
-              <code>5,000</code>-character Mermaid limit.
+              Dependency and trace visualizers put every symbol on one canvas, which is 361 symbols
+              for ArchiGram itself. That is too much to read, and too big for Gitea’s
+              5,000-character Mermaid limit.
             </p>
           </article>
           <article class="card">
-            <span class="card-num hallucination">Failure Mode 3 · Freehand LLMs</span>
-            <h3>Unbounded LLMs hallucinate edges &amp; syntax</h3>
+            <span class="card-num hallucination">Failure 3 · Invention</span>
+            <h3>LLM-drawn diagrams make things up</h3>
             <p>
-              Asking an LLM to write raw Mermaid, D2, or PlantUML invents nonexistent classes,
-              silently severs real dependency paths while “summarizing,” trips over renderer parser
-              quirks, and produces non-deterministic diffs on every run.
+              An LLM writing Mermaid or D2 directly invents classes, drops real dependencies while
+              summarizing, breaks renderer syntax, and draws a different diagram on every run.
             </p>
           </article>
         </div>
       </div>
 
-      <div class="wide-wrap">
-        <div class="thesis-split">
-          <div>
-            <div class="section-kicker">02 · The ArchiGram Thesis</div>
-            <h2>Separate the Data Plane from the Control Plane</h2>
-            <p>
-              ArchiGram resolves the trilemma through one strict architectural rule:
-              <strong>only deterministic programs may observe topology, and LLMs may only curate it
-              through a verified CLI/YAML spec.</strong>
-            </p>
-            <div class="callout">
-              <strong>The Curation Rule:</strong> Neither humans nor AI agents ever author raw
-              Mermaid, D2, or PlantUML. A deterministic extractor builds a cryptographically
-              stamped <code>CanonicalIR</code>, and the agent invokes CLI commands
-              (<code>archigram curate ...</code>) to prune leaves, collapse cohesive partitions, or
-              fold loops—verified by five mathematical gates before emission.
-            </div>
-            <ul class="gate-list">
-              <li>
-                <span class="gate-badge">Gate 1</span>
-                <span><strong>Symbol Grounding:</strong> 100% of referenced IDs and globs must resolve against observed AST or trace symbols—zero hallucinated nodes.</span>
-              </li>
-              <li>
-                <span class="gate-badge">Gate 2</span>
-                <span><strong>Protected Boundaries:</strong> Security, domain, or API boundary nodes marked protected can never be pruned or hidden.</span>
-              </li>
-              <li>
-                <span class="gate-badge">Gate 3</span>
-                <span><strong>Topology &amp; Poset Preservation:</strong> Preserves transitive reachability, cycle discipline, and async happens-before partial order—emitting concrete witness paths on violation.</span>
-              </li>
-              <li>
-                <span class="gate-badge">Gate 4</span>
-                <span><strong>Cognitive Budgets:</strong> Enforces explicit node, edge, and parallel-branch bounds (typically <code>10–25</code> nodes per view).</span>
-              </li>
-              <li>
-                <span class="gate-badge">Gate 5</span>
-                <span><strong>Headless Syntax Verification:</strong> Validates emitted Mermaid (including <code>&lt; 5,000</code>-char Gitea budgets), D2, PlantUML, LikeC4, and DOT before writing disk artifacts.</span>
-              </li>
-            </ul>
-          </div>
-
-          <div class="diagram-frame">
-            <div class="diagram-header">
-              <span class="mono-title">l0_hexagonal_rings_d2.d2.svg (Self-Hosted L0)</span>
-              <button
-                class="zoom-hint"
-                type="button"
-                data-zoom-src="./architecture/diagrams/l0_hexagonal_rings_d2.d2.svg"
-                data-zoom-title="L0 System & Hexagonal Rings (Self-Hosted ArchiGram Architecture)"
-              >
-                Inspect ⤢
-              </button>
-            </div>
-            <div
-              class="diagram-canvas"
-              data-zoom-src="./architecture/diagrams/l0_hexagonal_rings_d2.d2.svg"
-              data-zoom-title="L0 System & Hexagonal Rings (Self-Hosted ArchiGram Architecture)"
-            >
-              <img
-                data-dual-svg
-                src="./architecture/diagrams/l0_hexagonal_rings_d2.d2.svg"
-                alt="ArchiGram L0 Hexagonal Architecture and Data vs Control Plane"
-              />
-            </div>
-          </div>
-        </div>
+      <div class="prose-wrap">
+        <div class="section-kicker">02 · The Idea</div>
+        <h2>Programs extract the facts; you only choose what to show</h2>
+        <p>
+          Only deterministic programs read the code. Neither people nor AI agents write diagram
+          syntax: they edit a declarative YAML spec through CLI commands such as
+          <code>archigram curate</code>, which prune leaves, collapse groups or fold loops. Before
+          a diagram is written, five gates check it:
+        </p>
+        <ul class="gate-list">
+          <li>
+            <span class="gate-badge">Gate 1</span>
+            <span><strong>Grounding:</strong> every ID and pattern in the spec must match a real symbol in the code or trace, so nothing is invented.</span>
+          </li>
+          <li>
+            <span class="gate-badge">Gate 2</span>
+            <span><strong>Protected boundaries:</strong> nodes marked as protected, such as security or API boundaries, can never be pruned or hidden.</span>
+          </li>
+          <li>
+            <span class="gate-badge">Gate 3</span>
+            <span><strong>Topology and order:</strong> paths that exist in the code stay connected, cycles are reported, and the order of async calls is kept. A failure names the exact path.</span>
+          </li>
+          <li>
+            <span class="gate-badge">Gate 4</span>
+            <span><strong>Budgets:</strong> each view stays within its node and edge limits, typically 10–25 nodes.</span>
+          </li>
+          <li>
+            <span class="gate-badge">Gate 5</span>
+            <span><strong>Syntax:</strong> the Mermaid, D2, PlantUML, LikeC4 or DOT output is validated before it is written, including Gitea’s 5,000-character Mermaid limit.</span>
+          </li>
+        </ul>
       </div>
     </section>
 
@@ -1385,10 +1220,9 @@
         <div class="section-kicker">03 · ArchiGram on ArchiGram</div>
         <h2>The Architecture, Drawn by the Tool Itself</h2>
         <p class="section-lede">
-          Every picture in this tour was compiled from ArchiGram’s own source tree, or from one
-          recorded run of itself. Each one is curated by a declarative spec, checked by the five
-          gates, and re-verified on every push, so when the code changes and a picture would
-          become wrong, the build fails. These maps are as trustworthy as the tests.
+          Every diagram below is compiled from ArchiGram’s own code, or from one recorded run of
+          it, and re-checked on every push. If the code changes and a picture would become wrong,
+          the build fails.
         </p>
 
         <h3 class="tour-heading">What it does: one pipeline from code to a verified diagram</h3>
@@ -1440,17 +1274,18 @@
           </li>
         </ol>
 
-        <h3 class="tour-heading">The architectural patterns, and what keeps each one true</h3>
+        <h3 class="tour-heading">The patterns that keep it maintainable</h3>
         <div class="pattern-grid">
           <article class="pattern-card">
-            <span class="pattern-kicker">Pattern 1 · Structure</span>
+            <span class="pattern-kicker">Pattern 1 · Rings</span>
             <h3>Dependencies only point inward</h3>
             <p>
               Four rings: entrypoints, features, ports and domain. Every import points toward the
-              domain, so the CLI and the MCP server are replaceable adapters around a core that
-              knows nothing about them.
+              domain, and the domain and ports may not import the CLI or MCP frameworks,
+              <code>subprocess</code>, or any outer ring. The CLI and the MCP server are
+              replaceable adapters around them.
             </p>
-            <span class="pattern-enforced"><strong>Enforced by</strong> import-linter · layers contract</span>
+            <span class="pattern-enforced"><strong>Enforced by</strong> import-linter · layers and forbidden contracts</span>
           </article>
           <article class="pattern-card">
             <span class="pattern-kicker">Pattern 2 · Slices</span>
@@ -1462,43 +1297,14 @@
             <span class="pattern-enforced"><strong>Enforced by</strong> import-linter · independence contract</span>
           </article>
           <article class="pattern-card">
-            <span class="pattern-kicker">Pattern 3 · Purity</span>
-            <h3>A core that cannot touch the outside</h3>
-            <p>
-              The domain and ports layers may not import <code>typer</code>, <code>mcp</code> or
-              <code>subprocess</code>, nor any feature or entrypoint. They hold pure types and
-              protocols, which makes them easy to test.
-            </p>
-            <span class="pattern-enforced"><strong>Enforced by</strong> import-linter · forbidden contract</span>
-          </article>
-          <article class="pattern-card">
-            <span class="pattern-kicker">Pattern 4 · Two planes</span>
-            <h3>Programs observe, models only propose</h3>
-            <p>
-              Facts come from deterministic extractors. A model may only propose declarative
-              curation rules through the MCP server, inside a bounded three-turn repair loop that
-              is guided by the gates’ counterexamples.
-            </p>
-            <span class="pattern-enforced"><strong>Enforced by</strong> the 5 gates · bounded propose loop</span>
-          </article>
-          <article class="pattern-card">
-            <span class="pattern-kicker">Pattern 5 · Hub</span>
+            <span class="pattern-kicker">Pattern 3 · Hub</span>
             <h3>Many inputs, one canonical hub</h3>
             <p>
               Every ingestor produces the same <code>CanonicalIR</code> and every emitter reads it,
               so supporting a new input or output format means adding one slice, not rewriting the
               pipeline.
             </p>
-            <span class="pattern-enforced"><strong>Enforced by</strong> ports · <code>Protocol</code> contracts</span>
-          </article>
-          <article class="pattern-card">
-            <span class="pattern-kicker">Pattern 6 · Zero drift</span>
-            <h3>Diagrams that fail the build when wrong</h3>
-            <p>
-              Docs are generated, not drawn. CI reruns <code>archigram apply --check</code> and
-              fails if one byte of any committed diagram differs from what the code now produces.
-            </p>
-            <span class="pattern-enforced"><strong>Enforced by</strong> gate 8 · zero-drift check</span>
+            <span class="pattern-enforced"><strong>Enforced by</strong> the typed ports in <code>archigram.ports</code></span>
           </article>
         </div>
 
@@ -1513,11 +1319,6 @@
               and the MCP server call features, features call ports, and ports describe the
               domain.
             </p>
-            <ul class="tour-facts">
-              <li><span class="fact-label">Pattern</span><span>Hexagonal rings, inward-only imports</span></li>
-              <li><span class="fact-label">Kept true by</span><span>the layers and purity contracts, on every commit</span></li>
-              <li><span class="fact-label">Use it to</span><span>learn the system, or to plug in the CLI or MCP server</span></li>
-            </ul>
             <a class="tour-link" href="https://github.com/klcd/archigram/blob/main/docs/architecture/L0-system-and-rings.md">Read the L0 guide →</a>
           </div>
           <div class="diagram-frame tour-diagram">
@@ -1540,11 +1341,6 @@
               and ports. A contributor adding an input format, a diagram target or a lint rule
               works inside one slice and breaks no other.
             </p>
-            <ul class="tour-facts">
-              <li><span class="fact-label">Pattern</span><span>Vertical slices with no cross-slice imports</span></li>
-              <li><span class="fact-label">Kept true by</span><span>the independence contract, on every commit</span></li>
-              <li><span class="fact-label">Use it to</span><span>find where a new ingestor, emitter or gate belongs</span></li>
-            </ul>
             <a class="tour-link" href="https://github.com/klcd/archigram/blob/main/docs/architecture/L1-feature-slices.md">Read the L1 guide →</a>
           </div>
           <div class="diagram-frame tour-diagram">
@@ -1567,11 +1363,6 @@
               components and transitive reduction, and the <code>R1–R6</code> rules that compact a
               runtime trace while keeping its causal order.
             </p>
-            <ul class="tour-facts">
-              <li><span class="fact-label">Pattern</span><span>Pure functions from one IR to a smaller IR</span></li>
-              <li><span class="fact-label">Kept true by</span><span>the topology gate and the property-based fuzz suite</span></li>
-              <li><span class="fact-label">Use it to</span><span>change how graphs or traces are simplified</span></li>
-            </ul>
             <a class="tour-link" href="https://github.com/klcd/archigram/blob/main/docs/architecture/L2-subsystem-guides.md#l2b-reduction--concurrency-compaction-engine">Read the L2 guide →</a>
           </div>
           <div class="diagram-frame tour-diagram">
@@ -1594,11 +1385,6 @@
               tree, compacts it to 15 participants and 48 events, and draws it with the same
               pipeline you just saw. Nobody typed this sequence diagram.
             </p>
-            <ul class="tour-facts">
-              <li><span class="fact-label">Pattern</span><span>Observed runtime behaviour, not documented intent</span></li>
-              <li><span class="fact-label">Kept true by</span><span>the zero-drift check against a recorded trace snapshot</span></li>
-              <li><span class="fact-label">Use it to</span><span>trace how a lint run or a repair loop actually executes</span></li>
-            </ul>
             <div class="tour-links">
               <a class="tour-link" href="#animated">Watch it animated →</a>
               <a class="tour-link" href="https://github.com/klcd/archigram/blob/main/docs/architecture/L3-runtime-traces.md">Read the L3 guide →</a>
@@ -1617,17 +1403,16 @@
       </div>
     </section>
 
-    <!-- 3. INTERACTIVE 3-STAGE TRIAGE EXPLORER -->
+    <!-- 4. INTERACTIVE 3-STAGE TRIAGE EXPLORER -->
     <section id="triage">
       <div class="wide-wrap">
-        <div class="section-kicker">04 · Program-First Extraction → CLI-Only Curation</div>
-        <h2>Interactive 3-Stage Triage: Before, What Gets Removed, and After</h2>
+        <div class="section-kicker">04 · Curation in Action</div>
+        <h2>Before, triage, after: one graph in three stages</h2>
         <p style="max-width: 780px; color: var(--ink-muted);">
-          When ArchiGram ingests its own <code>src/archigram</code> Python AST, the unedited graph
-          contains <code>334</code> symbols and <code>484</code> edges (<code>50,186</code> Mermaid
-          characters—over <code>10×</code> Gitea’s <code>5,000</code>-char parser limit). Instead of
-          letting an LLM redraw it by hand, <code>archigram triage</code> renders the exact
-          three-stage SVG audit trail computed from CLI rules. Click any diagram to zoom and pan.
+          This is ArchiGram’s own code. Stage 1 is the raw graph a plain extractor produces.
+          Stage 2 is the same graph, colored by what the spec does to each node: remove, bypass,
+          collapse or keep. Stage 3 is the result that passed all five gates. The CLI commands
+          that produced it are listed below. Click a diagram to zoom.
         </p>
 
         <div class="workbench">
@@ -1672,60 +1457,46 @@
       </div>
     </section>
 
-    <!-- 4. LIVE ANIMATED D2 RUNTIME & UML SHOWCASE -->
+    <!-- 5. ANIMATED RUNTIME TRACES -->
     <section id="animated">
       <div class="wide-wrap">
-        <div class="section-kicker">05 · Moving Architecture Diagrams</div>
-        <h2>Self-Contained Animated Runtime Traces &amp; UML 2.5 Flows</h2>
+        <div class="section-kicker">05 · Animated Traces</div>
+        <h2>Diagrams that show order, not just structure</h2>
         <p style="max-width: 780px; color: var(--ink-muted);">
-          Static boxes struggle to convey order of execution, concurrency fan-out, and state
-          transitions. ArchiGram captures live Python <code>sys.monitoring</code> or OpenTelemetry
-          traces, folds repeating loops and parallel branches via <code>R1–R6</code> +
-          Series-Parallel poset decomposition, and compiles pure CSS-animated <code>.d2.svg</code>
-          files that play natively inside Markdown, Gitea, GitHub, and browsers—with zero JavaScript
-          runtime.
+          Boxes and arrows cannot show what happens first. From a recorded run, ArchiGram also
+          emits animated SVGs, driven by CSS alone, that play in Markdown, Gitea, GitHub and
+          browsers without any JavaScript.
         </p>
 
         <div class="anim-grid">
           <div class="anim-selector" role="tablist" aria-label="Animated diagram views">
             <button class="anim-tab" type="button" role="tab" data-anim="steps" aria-selected="true">
-              <span class="anim-tab-tag">D2 steps · 1,400ms Keyframe Playback</span>
-              <span class="anim-tab-title">Step-by-Step Pipeline &amp; Self-Repair</span>
+              <span class="anim-tab-tag">D2 steps</span>
+              <span class="anim-tab-title">Pipeline and self-repair, step by step</span>
               <span class="anim-tab-desc">
-                Reveals each runtime stage sequentially: AST ingestion → deterministic reduction →
-                5-Gate validation → 3-turn MCP repair convergence.
-              </span>
-            </button>
-            <button class="anim-tab" type="button" role="tab" data-anim="sequence" aria-selected="false">
-              <span class="anim-tab-tag">sys.monitoring · R1–R6 Compacted</span>
-              <span class="anim-tab-title">Live Self-Hosted Sequence Trace</span>
-              <span class="anim-tab-desc">
-                183 raw Python call events compacted to 48 causal interactions across 15
-                participants with zero async-to-sync upgrade violations.
+                Each stage of a run appears in turn: ingest, reduce, the five gates, then the MCP
+                repair loop.
               </span>
             </button>
             <button class="anim-tab" type="button" role="tab" data-anim="activity" aria-selected="false">
-              <span class="anim-tab-tag">UML 2.5 · Activity Swimlanes</span>
-              <span class="anim-tab-title">Animated Activity Swimlane Flow</span>
+              <span class="anim-tab-tag">UML activity</span>
+              <span class="anim-tab-title">Activity swimlanes</span>
               <span class="anim-tab-desc">
-                Projects the exact same runtime trace into caller/callee swimlanes with flowing
-                <code>stroke-dashoffset</code> call pulses.
+                The same trace as caller and callee swimlanes, with each call pulsing along its edge.
               </span>
             </button>
             <button class="anim-tab" type="button" role="tab" data-anim="communication" aria-selected="false">
-              <span class="anim-tab-tag">UML 2.5 · Numbered Collaboration</span>
-              <span class="anim-tab-title">Communication &amp; Message Graph</span>
+              <span class="anim-tab-tag">UML communication</span>
+              <span class="anim-tab-title">Numbered message graph</span>
               <span class="anim-tab-desc">
-                Aggregates runtime interactions into numbered <code>1..N: signature()</code> edges
-                over participant topology.
+                The calls collapsed onto the participants, numbered in the order they happened.
               </span>
             </button>
             <button class="anim-tab" type="button" role="tab" data-anim="state" aria-selected="false">
-              <span class="anim-tab-tag">UML 2.5 · Lifecycle Automaton</span>
-              <span class="anim-tab-title">Derived Participant State Machine</span>
+              <span class="anim-tab-tag">UML state machine</span>
+              <span class="anim-tab-title">Derived state machine</span>
               <span class="anim-tab-desc">
-                Synthesizes a deterministic <code>[*] → state → [*]</code> transition graph directly
-                from observed runtime trace spans.
+                States and transitions for each participant, derived from the recorded calls.
               </span>
             </button>
           </div>
@@ -1764,160 +1535,6 @@
       </div>
     </section>
 
-    <!-- 5. CENTRALIZED MERMAID & DUAL-MODE GOVERNANCE -->
-    <section id="theming">
-      <div class="wide-wrap">
-        <div class="section-kicker">06 · Centralized Dual-Mode Governance</div>
-        <h2>One Human-Owned Theme Policy—Never Per-Diagram AI Colors</h2>
-        <p style="max-width: 800px; color: var(--ink-muted);">
-          Letting an AI agent invent <code>themeVariables</code> or custom colors per diagram causes
-          palette drift, wastes Gitea’s <code>5,000</code>-character Mermaid budget, and triggers
-          dark-mode landmines like Mermaid’s <code>khroma</code> <code>primaryColor: transparent</code>
-          black-text bug or D2’s <code>shape: class</code> header inversion. ArchiGram enforces
-          <code>extra="forbid"</code> on AI curation specs and compiles every diagram from one
-          WCAG-validated <code>docs/architecture/mermaid-theme.yaml</code> policy. Toggle
-          <strong>Light</strong> and <strong>Dark</strong> in the top bar to inspect live contrast.
-        </p>
-
-        <div class="theme-grid">
-          <div class="workbench" style="margin-top: 0;">
-            <div class="workbench-toolbar">
-              <span style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--ink-muted);">
-                docs/architecture/mermaid-theme.yaml → docs/mermaid-theme.js
-              </span>
-              <div class="seg-group" role="tablist" aria-label="Dual-mode target preview">
-                <button class="seg-btn" type="button" role="tab" data-dual-tab="mermaid" aria-selected="true">
-                  Live Mermaid
-                </button>
-                <button class="seg-btn" type="button" role="tab" data-dual-tab="d2class" aria-selected="false">
-                  D2 UML Class
-                </button>
-                <button class="seg-btn" type="button" role="tab" data-dual-tab="dot" aria-selected="false">
-                  Graphviz DOT
-                </button>
-              </div>
-            </div>
-            <div class="cli-drawer" style="border-top: 0;">
-              <pre style="margin: 0;"># Central human-owned policy (WCAG AAA &gt;= 7.0:1 text contrast verified)
-# AI curation specs (CurationSpecV1) cannot override colors per diagram!
-layout_engine: elk
-flowchart_curve: linear
-node_fill: transparent
-node_border_hex: "#64748b"
-
-web_light:
-  background_hex: "#ffffff"
-  surface_hex: "#f8fafc"   # Real hex avoids Mermaid khroma NaN trap
-  text_hex: "#0f172a"      # 17.9:1 contrast on #ffffff
-  border_hex: "#64748b"
-
-web_dark:
-  background_hex: "#0b0f19"
-  surface_hex: "#111827"   # Real hex avoids dark-mode black text
-  text_hex: "#e2e8f0"      # 14.8:1 contrast on #0b0f19
-  line_hex: "#94a3b8"</pre>
-            </div>
-          </div>
-
-          <div class="diagram-frame">
-            <div class="diagram-header">
-              <span class="mono-title" id="dual-preview-title">l0_hexagonal_rings_mermaid.mmd (Central Theme)</span>
-              <span class="pill keep" style="font-family: var(--font-mono); font-size: 0.72rem;">WCAG AAA ≥ 7:1</span>
-            </div>
-            <div class="diagram-canvas" style="min-height: 430px;" id="dual-preview-canvas">
-              <div class="mermaid-live-stage" id="dual-mermaid-stage" data-mermaid-src="---
-config:
-  layout: elk
-  elk:
-    mergeEdges: false
-    nodePlacementStrategy: BRANDES_KOEPF
-  flowchart:
-    defaultRenderer: elk
-    curve: linear
----
-flowchart TD
-  classDef default fill:transparent,stroke:#64748b,stroke-width:1.5px
-  subgraph n0[&quot;archigram&quot;]
-    subgraph n1[&quot;entrypoints&quot;]
-      n3[&quot;CLI Data Plane (entrypoints.cli)&quot;]
-      n10[&quot;MCP Control Plane (entrypoints.mcp)&quot;]
-    end
-    subgraph n2[&quot;features&quot;]
-      n5[&quot;Digest Slice&quot;]
-      n6[&quot;Emitter Slices (Mermaid, D2, PlantUML)&quot;]
-      n7[&quot;Ingestor Slices (DOT, SCIP, OTLP, Python)&quot;]
-      n8[&quot;5-Gate Linter Slices&quot;]
-      n9[&quot;Reducer Slices (Structural + Trace)&quot;]
-    end
-    n4[&quot;Domain Core (IR, Spec, Style Policy)&quot;]
-    n11[&quot;Ports &amp; Contracts (archigram.ports)&quot;]
-  end
-  style n0 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
-  style n1 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
-  style n2 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
-  n3 --&gt;|&quot;calls&quot;| n7
-  n3 --&gt;|&quot;calls&quot;| n10
-  n10 --&gt;|&quot;calls&quot;| n8
-  n8 -.-&gt;|&quot;implements&quot;| n11
-  n7 -.-&gt;|&quot;implements&quot;| n11
-  n9 --&gt;|&quot;calls&quot;| n4
-  n6 --&gt;|&quot;composes&quot;| n4
-  n11 -.-&gt;|&quot;imports&quot;| n4
-  linkStyle 0,1,2,5 stroke:#3b82f6,stroke-width:1.75px
-  linkStyle 3,4 stroke:#a855f7,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 6 stroke:#14b8a6,stroke-width:1.75px
-  linkStyle 7 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5"></div>
-              <img
-                id="dual-svg-stage"
-                data-dual-svg
-                src="./architecture/diagrams/l2c_oop_syntax_validators_d2.d2.svg"
-                alt="Dual-mode compiled SVG preview"
-                style="display: none; cursor: zoom-in;"
-                data-zoom-src="./architecture/diagrams/l2c_oop_syntax_validators_d2.d2.svg"
-                data-zoom-title="L2c OOP Syntax Validators (Dual-Mode D2 Class SVG)"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 6. ARCHITECTURE DOCS MATRIX -->
-    <section id="docs">
-      <div class="wide-wrap">
-        <div class="section-kicker">07 · Self-Dogfooded Documentation</div>
-        <h2>Explore All Four Zoom Levels &amp; Benchmarks</h2>
-        <p style="max-width: 740px; color: var(--ink-muted);">
-          Every diagram in this repository is compiled from ArchiGram’s own source tree and verified
-          on every push by 8 CI quality gates (<code>lint-imports</code>, <code>ruff</code> McCabe
-          <code>C901 ≤ 10</code>, strict <code>pyright</code>, Hypothesis fuzzing,
-          <code>pytest-benchmark</code>, and zero-drift <code>archigram apply --check</code>).
-        </p>
-
-        <div class="docs-grid">
-          <a class="doc-link-card" href="https://github.com/klcd/archigram/blob/main/docs/architecture/L0-system-and-rings.md">
-            <span class="lvl">LEVEL L0 · SYSTEM</span>
-            <h3>System &amp; Hexagonal Rings</h3>
-            <p>9 capability groups, inward dependency rules, and CLI Data Plane vs. MCP Control Plane.</p>
-          </a>
-          <a class="doc-link-card" href="https://github.com/klcd/archigram/blob/main/docs/architecture/L1-feature-slices.md">
-            <span class="lvl">LEVEL L1 · SLICES</span>
-            <h3>16 Independent Feature Slices</h3>
-            <p>Zero cross-slice imports enforced by import-linter across ingestors, reducers, gates, and emitters.</p>
-          </a>
-          <a class="doc-link-card" href="https://github.com/klcd/archigram/blob/main/docs/architecture/L2-subsystem-guides.md">
-            <span class="lvl">LEVEL L2 · SUBSYSTEMS</span>
-            <h3>K-Hop Subsystem Zooms</h3>
-            <p>Focused 9–18 node neighborhoods for Domain/Ports, Reducers, 5-Gate Linter, and CLI/MCP adapters.</p>
-          </a>
-          <a class="doc-link-card" href="https://github.com/klcd/archigram/blob/main/docs/architecture/uml-and-curation-showcase.md">
-            <span class="lvl">SHOWCASE · 14 UML TYPES</span>
-            <h3>UML 2.5 &amp; CLI Triage Guide</h3>
-            <p>Full 14-diagram UML 2.5 taxonomy across Mermaid (&lt; 5k chars), D2, and PlantUML.</p>
-          </a>
-        </div>
-      </div>
-    </section>
   </main>
 
   <footer>
@@ -1950,7 +1567,6 @@ flowchart TD
     </div>
   </div>
 
-  <script src="./mermaid-theme.js"></script>
   <script>
     (function () {
       const TRIAGE_DATA = {
@@ -2047,11 +1663,6 @@ flowchart TD
           src: "./architecture/diagrams/l3_runtime_pipeline_steps_d2.d2.svg",
           title: "Step-by-Step Pipeline & Self-Repair Playback"
         },
-        sequence: {
-          file: "l3_runtime_pipeline_d2.d2.svg",
-          src: "./architecture/diagrams/l3_runtime_pipeline_d2.d2.svg",
-          title: "Live Self-Hosted Sequence Trace (R1–R6 Compacted)"
-        },
         activity: {
           file: "showcase_uml_activity_d2.d2.svg",
           src: "./architecture/diagrams/showcase_uml_activity_d2.d2.svg",
@@ -2069,17 +1680,6 @@ flowchart TD
         }
       };
 
-      const DUAL_SVG_VIEWS = {
-        d2class: {
-          title: "l2c_oop_syntax_validators_d2.d2.svg (D2 shape: class)",
-          src: "./architecture/diagrams/l2c_oop_syntax_validators_d2.d2.svg"
-        },
-        dot: {
-          title: "l0_hexagonal_rings_dot.dot.svg (Graphviz DOT Dual-Mode)",
-          src: "./architecture/diagrams/l0_hexagonal_rings_dot.dot.svg"
-        }
-      };
-
       // Theme & Dual-Mode SVG Controller
       let activeThemeChoice = "auto";
       try {
@@ -2091,13 +1691,6 @@ flowchart TD
 
       const svgRawCache = new Map();
       const svgBlobCache = new Map();
-
-      function effectiveColorMode() {
-        if (activeThemeChoice === "light" || activeThemeChoice === "dark") {
-          return activeThemeChoice;
-        }
-        return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-      }
 
       // D2 marks some edges as animated, which adds an infinite CSS animation per edge. For a
       // diagram you study, not watch, that is pure cost: the giant triage graphs have 252 of them,
@@ -2159,15 +1752,6 @@ flowchart TD
         });
       }
 
-      function renderCentralMermaid() {
-        if (window.ArchiGramMermaidTheme && window.__mermaidInstance) {
-          window.ArchiGramMermaidTheme
-            .renderAll(window.__mermaidInstance, "[data-mermaid-src]", effectiveColorMode())
-            .catch(() => {});
-        }
-      }
-      window.__renderCentralMermaid = renderCentralMermaid;
-
       function applyThemeChoice(choice, persist) {
         activeThemeChoice = choice;
         const root = document.documentElement;
@@ -2185,19 +1769,12 @@ flowchart TD
           } catch (_) {}
         }
         syncAllDualModeSvgs();
-        renderCentralMermaid();
       }
 
       document.querySelectorAll("[data-theme-choice]").forEach((btn) => {
         btn.addEventListener("click", () => {
           applyThemeChoice(btn.getAttribute("data-theme-choice") || "auto", true);
         });
-      });
-
-      window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
-        if (activeThemeChoice === "auto") {
-          renderCentralMermaid();
-        }
       });
 
       let activeDataset = "structural";
@@ -2254,7 +1831,7 @@ flowchart TD
           viewportEl.innerHTML = `
             <div class="triage-filmstrip">${cards}</div>
             <p class="stage-caption">
-              Click any stage above to open the zoom/pan inspector—or select Stage 1, 2, or 3 in the toolbar for a full-size view.
+              Click a stage to zoom in, or pick a single stage in the toolbar.
             </p>
           `;
         } else {
@@ -2317,35 +1894,6 @@ flowchart TD
           animZoomBtn.setAttribute("data-zoom-src", item.src);
           animZoomBtn.setAttribute("data-zoom-title", item.title);
           syncAllDualModeSvgs();
-        });
-      });
-
-      // Central Dual-Mode Governance tab switcher
-      const dualTitleEl = document.getElementById("dual-preview-title");
-      const dualMmdEl = document.getElementById("dual-mermaid-stage");
-      const dualSvgEl = document.getElementById("dual-svg-stage");
-
-      document.querySelectorAll("[data-dual-tab]").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const tab = btn.getAttribute("data-dual-tab");
-          document.querySelectorAll("[data-dual-tab]").forEach((b) =>
-            b.setAttribute("aria-selected", String(b === btn))
-          );
-          if (tab === "mermaid") {
-            dualTitleEl.textContent = "l0_hexagonal_rings_mermaid.mmd (Central Theme)";
-            dualMmdEl.style.display = "flex";
-            dualSvgEl.style.display = "none";
-            renderCentralMermaid();
-          } else {
-            const view = DUAL_SVG_VIEWS[tab];
-            dualTitleEl.textContent = view.title;
-            dualMmdEl.style.display = "none";
-            dualSvgEl.style.display = "block";
-            dualSvgEl.setAttribute("data-canonical-src", view.src);
-            dualSvgEl.setAttribute("data-zoom-src", view.src);
-            dualSvgEl.setAttribute("data-zoom-title", view.title);
-            syncAllDualModeSvgs();
-          }
         });
       });
 
@@ -2549,29 +2097,6 @@ flowchart TD
         }
       });
     })();
-  </script>
-  <script type="module">
-    try {
-      const [{ default: mermaid }, { default: elkLayouts }] = await Promise.all([
-        import("https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs"),
-        import("https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0/dist/mermaid-layout-elk.esm.min.mjs"),
-      ]);
-      mermaid.registerLayoutLoaders(elkLayouts);
-      window.__mermaidInstance = mermaid;
-      if (typeof window.__renderCentralMermaid === "function") {
-        window.__renderCentralMermaid();
-      }
-    } catch (_) {
-      try {
-        const { default: mermaid } = await import(
-          "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs"
-        );
-        window.__mermaidInstance = mermaid;
-        if (typeof window.__renderCentralMermaid === "function") {
-          window.__renderCentralMermaid();
-        }
-      } catch (__) {}
-    }
   </script>
 </body>
 </html>
