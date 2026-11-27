@@ -280,60 +280,6 @@ archigram: "archigram" {
         style.stroke: "#64748b"
       }
     }
-    "archigram.domain.likec4_boundary": "likec4_boundary" {
-      style.fill: transparent
-      style.stroke: "#64748b"
-      "archigram.domain.likec4_boundary.CurationCapabilityProfile": "CurationCapabilityProfile" {
-        shape: class
-        "+view_id": "str"
-        "+target_kind": "DiagramTargetKind"
-        "+hierarchical_rollup": "bool"
-        "+tag_metadata_filter": "bool"
-        "+interactive_drill_down": "bool"
-        "+explicit_dynamic_flow": "bool"
-        "+prune_leaves": "bool"
-        "+bypass_vertices": "bool"
-        "+collapse_partition": "bool"
-        "+k_hop_slice": "bool"
-        "+transitive_reduction": "bool"
-        "+preserve_reachability": "bool"
-        "+forbid_new_cycles": "bool"
-        "+max_fanout_product_guard": "bool"
-        "+preserve_partial_order": "bool"
-        "+oop_compartments": "bool"
-        "+trace_compaction": "bool"
-        "+export_sequence_fragments_to_text_dsl": "bool"
-        "+require_likec4_output": "bool"
-      }
-      "archigram.domain.likec4_boundary.CurationOperatorKind": "CurationOperatorKind" {
-        style.fill: transparent
-        style.stroke: "#64748b"
-      }
-      "archigram.domain.likec4_boundary.CurationRoutingDecision": "CurationRoutingDecision" {
-        shape: class
-        "+view_id": "str"
-        "+strategy": "CurationStrategyMode"
-        "+native_likec4_operators": "tuple[CurationOperatorKind, ...]"
-        "+archigram_pre_reduce_operators": "tuple[CurationOperatorKind, ...]"
-        "+unsupported_in_likec4_operators": "tuple[CurationOperatorKind, ...]"
-        "+requires_archigram_reducer": "bool"
-        "+requires_gate3_topology_lint": "bool"
-        "+likec4_can_render_final_view": "bool"
-        "+rationale": "tuple[str, ...]"
-      }
-      "archigram.domain.likec4_boundary.CurationStrategyMode": "CurationStrategyMode" {
-        style.fill: transparent
-        style.stroke: "#64748b"
-      }
-      "archigram.domain.likec4_boundary.DiagramTargetKind": "DiagramTargetKind" {
-        style.fill: transparent
-        style.stroke: "#64748b"
-      }
-      "archigram.domain.likec4_boundary.route_curation_strategy": "route_curation_strategy" {
-        style.fill: transparent
-        style.stroke: "#64748b"
-      }
-    }
     "archigram.domain.spec": "spec" {
       style.fill: transparent
       style.stroke: "#64748b"
@@ -2376,31 +2322,6 @@ archigram."archigram.domain"."archigram.domain.ir"."archigram.domain.ir.export_c
   style.animated: true
 }
 archigram."archigram.domain"."archigram.domain.ir"."archigram.domain.ir.export_canonical_ir_json_schemas" -> archigram."archigram.domain"."archigram.domain.ir"."archigram.domain.ir.StructuralGraphIR": "calls" {
-  style.stroke: "#3b82f6"
-  style.animated: true
-}
-archigram."archigram.domain"."archigram.domain.likec4_boundary"."archigram.domain.likec4_boundary.CurationCapabilityProfile" -> archigram."archigram.domain"."archigram.domain.likec4_boundary"."archigram.domain.likec4_boundary.DiagramTargetKind": "composes" {
-  style.stroke: "#14b8a6"
-  source-arrowhead: {
-    shape: diamond
-    style.filled: true
-  }
-}
-archigram."archigram.domain"."archigram.domain.likec4_boundary"."archigram.domain.likec4_boundary.CurationRoutingDecision" -> archigram."archigram.domain"."archigram.domain.likec4_boundary"."archigram.domain.likec4_boundary.CurationOperatorKind": "composes" {
-  style.stroke: "#14b8a6"
-  source-arrowhead: {
-    shape: diamond
-    style.filled: true
-  }
-}
-archigram."archigram.domain"."archigram.domain.likec4_boundary"."archigram.domain.likec4_boundary.CurationRoutingDecision" -> archigram."archigram.domain"."archigram.domain.likec4_boundary"."archigram.domain.likec4_boundary.CurationStrategyMode": "composes" {
-  style.stroke: "#14b8a6"
-  source-arrowhead: {
-    shape: diamond
-    style.filled: true
-  }
-}
-archigram."archigram.domain"."archigram.domain.likec4_boundary"."archigram.domain.likec4_boundary.route_curation_strategy" -> archigram."archigram.domain"."archigram.domain.likec4_boundary"."archigram.domain.likec4_boundary.CurationRoutingDecision": "calls" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
