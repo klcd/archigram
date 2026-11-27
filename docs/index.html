@@ -1154,7 +1154,7 @@
           <div class="workbench-toolbar">
             <div class="seg-group" role="tablist" aria-label="Triage dataset">
               <button class="seg-btn" type="button" role="tab" data-dataset="structural" aria-selected="true">
-                Codebase AST (334 → 17 nodes)
+                Codebase AST (361 → 13 nodes)
               </button>
               <button class="seg-btn" type="button" role="tab" data-dataset="trace" aria-selected="false">
                 Runtime Trace (183 → 48 spans)
@@ -1473,21 +1473,21 @@ flowchart TD
     (function () {
       const TRIAGE_DATA = {
         structural: {
-          rawSummary: "Raw: 342 nodes / 495 edges (51,814 Mermaid chars — 10× over 5k limit)",
-          curatedSummary: "Curated: 17 nodes / 12 edges (1,643 Mermaid chars · 5-Gate PASSED)",
+          rawSummary: "Raw: 361 nodes / 534 edges (55,890 Mermaid chars — 11× over 5k limit)",
+          curatedSummary: "Curated: 13 nodes / 11 edges (1,579 Mermaid chars · 5-Gate PASSED)",
           pills: [
-            { cls: "remove", text: "[REMOVE] 310" },
-            { cls: "bypass", text: "[BYPASS] 1" },
-            { cls: "collapse", text: "[COLLAPSE] 20" },
-            { cls: "keep", text: "[KEEP] 11" }
+            { cls: "remove", text: "[REMOVE] 322" },
+            { cls: "bypass", text: "[BYPASS] 6" },
+            { cls: "collapse", text: "[COLLAPSE] 27" },
+            { cls: "keep", text: "[KEEP] 6" }
           ],
           stages: {
             "1": {
               label: "Stage 1 · Raw AST Graph",
-              meta: "342 nodes · 51,814 chars",
+              meta: "361 nodes · 55,890 chars",
               src: "./architecture/diagrams/showcase_cli_triage.1_original.d2.svg",
               preview: "./architecture/diagrams/showcase_cli_triage.1_original.png",
-              caption: "Unedited deterministic Python AST extraction of src/archigram (342 symbols, 495 edges). Honest, complete, and completely unreadable at a glance."
+              caption: "Unedited deterministic Python AST extraction of src/archigram (361 symbols, 534 edges). Honest, complete, and completely unreadable at a glance."
             },
             "2": {
               label: "Stage 2 · Triage Overlay",
@@ -1498,7 +1498,7 @@ flowchart TD
             },
             "3": {
               label: "Stage 3 · 5-Gate Curated View",
-              meta: "17 nodes · 1,643 chars",
+              meta: "13 nodes · 1,579 chars",
               src: "./architecture/diagrams/showcase_cli_triage.3_curated.d2.svg",
               caption: "Final compiled view after CLI-only scope, leaf-pruning, bypass, and partition-collapse rules—passing all 5 formal gates and fitting comfortably under 5,000 Mermaid chars."
             }

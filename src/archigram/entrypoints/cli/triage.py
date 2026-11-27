@@ -12,6 +12,7 @@ from archigram.domain import ProvenanceGrade
 from archigram.domain.ir import (
     CanonicalIR,
     InteractionTraceIR,
+    IREdge,
     IRNode,
     StructuralGraphIR,
 )
@@ -46,10 +47,16 @@ from archigram.entrypoints.cli.pipeline import (
 )
 from archigram.features.emit_d2 import D2Emitter
 from archigram.features.emit_d2.emitter import (
+    build_provenance_tooltip as _build_provenance_tooltip,
+)
+from archigram.features.emit_d2.emitter import (
     build_qualified_paths as _build_qualified_paths,
 )
 from archigram.features.emit_d2.emitter import (
     build_safe_key_map as _build_safe_key_map,
+)
+from archigram.features.emit_d2.emitter import (
+    class_shaped_node_ids,
 )
 from archigram.features.emit_d2.emitter import (
     format_d2_key as _format_d2_key,
@@ -195,79 +202,110 @@ def _append_triage_legend(lines: list[str]) -> None:
     lines.append("}")
 
 
-@dataclass(frozen=True, slots=True)
-class _TriageTreeCtx:
-    nodes: dict[str, IRNode]
-    children: dict[str, list[str]]
-    key_map: dict[str, str]
-    dispositions: dict[str, NodeDisposition]
-    collapse_targets: dict[str, str]
+_PASTEL_WHITE_MIX = 0.82
 
 
-def _emit_structural_triage_subtree(
-    sym_id: str,
-    ctx: _TriageTreeCtx,
-    depth: int,
-    lines: list[str],
-) -> None:
-    indent = "  " * depth
-    inner = "  " * (depth + 1)
-    node = ctx.nodes[sym_id]
-    disp = ctx.dispositions[sym_id]
-    stroke_hex, badge, dashed = _DISPOSITION_STYLES[disp]
-    suffix = f" -> {ctx.collapse_targets[sym_id]}" if sym_id in ctx.collapse_targets else ""
-    label = f"{badge} {node.label}{suffix}"
-    lines.append(f"{indent}{_format_d2_key(ctx.key_map[sym_id])}: {_quote_d2_string(label)} {{")
-    lines.append(f"{inner}style.fill: {TRANSPARENT_FILL}")
-    lines.append(f'{inner}style.stroke: "{stroke_hex}"')
-    if dashed:
-        lines.append(f"{inner}style.stroke-dash: 5")
-    for cid in ctx.children.get(sym_id, ()):
-        _emit_structural_triage_subtree(cid, ctx, depth + 1, lines)
-    lines.append(f"{indent}}}")
+def _pastel(hex_color: str) -> str:
+    """Blend `#rrggbb` toward white: class compartments take their color from `fill`."""
+    channels = (int(hex_color[i : i + 2], 16) for i in (1, 3, 5))
+    mixed = (round(c * (1 - _PASTEL_WHITE_MIX) + 255 * _PASTEL_WHITE_MIX) for c in channels)
+    return "#" + "".join(f"{c:02x}" for c in mixed)
+
+
+def _triage_node_lines(
+    node: IRNode,
+    path: str,
+    disposition: NodeDisposition,
+    collapse_target: str | None,
+    is_class: bool,
+) -> list[str]:
+    """Style overrides that recolor one Stage 1 node and tag it with a hover tooltip."""
+    stroke_hex, badge, dashed = _DISPOSITION_STYLES[disposition]
+    note = badge if collapse_target is None else f"{badge} -> {collapse_target}"
+    provenance = _build_provenance_tooltip(node)
+    tooltip = note if provenance is None else f"{note} - {provenance}"
+    if is_class:
+        lines = [f'{path}.style.fill: "{_pastel(stroke_hex)}"']
+    else:
+        lines = [
+            f'{path}.style.stroke: "{stroke_hex}"',
+            f"{path}.style.stroke-dash: {5 if dashed else 0}",
+        ]
+    lines.append(f"{path}.tooltip: {_quote_d2_string(tooltip)}")
+    return lines
+
+
+def _triage_edge_style(
+    edge: IREdge,
+    surviving_pairs: set[tuple[str, str]],
+    dispositions: dict[str, NodeDisposition],
+) -> tuple[str, bool]:
+    """Return the (stroke color, dashed) a raw edge takes in the triage overlay."""
+    if (edge.source, edge.target) in surviving_pairs:
+        return TRIAGE_KEEP_HEX, False
+    ends = {dispositions[edge.source], dispositions[edge.target]}
+    if NodeDisposition.REMOVE in ends:
+        return TRIAGE_REMOVE_HEX, True
+    if NodeDisposition.BYPASS in ends:
+        return TRIAGE_BYPASS_HEX, True
+    return TRIAGE_COLLAPSE_HEX, True
+
+
+def _triage_edge_lines(
+    observed: StructuralGraphIR,
+    emitted: StructuralGraphIR,
+    paths: dict[str, str],
+    dispositions: dict[str, NodeDisposition],
+) -> list[str]:
+    """Recolor each Stage 1 edge, addressing parallel edges by the emitter's own ordering."""
+    surviving_pairs = {(e.source, e.target) for e in emitted.edges}
+    seen: dict[tuple[str, str], int] = {}
+    lines: list[str] = []
+    ordered = sorted(
+        observed.edges,
+        key=lambda e: (e.source, e.target, e.relation.value, e.sync_kind.value, e.edge_id),
+    )
+    for edge in ordered:
+        pair = (edge.source, edge.target)
+        index = seen.get(pair, 0)
+        seen[pair] = index + 1
+        stroke_hex, dashed = _triage_edge_style(edge, surviving_pairs, dispositions)
+        ref = f"({paths[edge.source]} -> {paths[edge.target]})[{index}]"
+        lines.append(f'{ref}.style.stroke: "{stroke_hex}"')
+        lines.append(f"{ref}.style.stroke-dash: {5 if dashed else 0}")
+    return lines
 
 
 def _emit_structural_triage_d2(
+    base_d2: str,
     observed: StructuralGraphIR,
     emitted: StructuralGraphIR,
     dispositions: dict[str, NodeDisposition],
     collapse_targets: dict[str, str],
 ) -> str:
-    lines = [D2_CANONICAL_HEADER, ""]
-    _append_triage_legend(lines)
-    sorted_ids = sorted(observed.nodes)
-    key_map, _ = _build_safe_key_map([*sorted_ids, "triage_legend"])
-    children: dict[str, list[str]] = {sid: [] for sid in sorted_ids}
-    roots: list[str] = []
-    for sid in sorted_ids:
-        pid = observed.nodes[sid].parent_id
-        if pid is None or pid not in children:
-            roots.append(sid)
-        else:
-            children[pid].append(sid)
-    ctx = _TriageTreeCtx(observed.nodes, children, key_map, dispositions, collapse_targets)
-    lines.append("")
-    for rid in roots:
-        _emit_structural_triage_subtree(rid, ctx, 0, lines)
+    """Stage 1's D2 plus style overrides, so Stage 2 keeps Stage 1's layout.
 
+    Overrides only change colors and dashes, never labels or shapes, so the layout engine
+    places every node exactly where Stage 1 does and the two diagrams stay comparable.
+    """
+    key_map, _ = _build_safe_key_map(observed.nodes.keys())
     paths = _build_qualified_paths(observed.nodes, key_map)
-    surviving_pairs = {(e.source, e.target) for e in emitted.edges}
+    class_ids = class_shaped_node_ids(observed)
+    lines = [base_d2.rstrip("\n"), ""]
+    for sid in sorted(observed.nodes):
+        lines.extend(
+            _triage_node_lines(
+                observed.nodes[sid],
+                paths[sid],
+                dispositions[sid],
+                collapse_targets.get(sid),
+                sid in class_ids,
+            )
+        )
     lines.append("")
-    for edge in sorted(observed.edges, key=lambda item: item.edge_id):
-        src_d, dst_d = dispositions[edge.source], dispositions[edge.target]
-        if (edge.source, edge.target) in surviving_pairs:
-            e_hex, e_lbl, dashed = TRIAGE_KEEP_HEX, edge.relation.value, False
-        elif NodeDisposition.REMOVE in {src_d, dst_d}:
-            e_hex, e_lbl, dashed = TRIAGE_REMOVE_HEX, f"[remove] {edge.relation.value}", True
-        elif NodeDisposition.BYPASS in {src_d, dst_d}:
-            e_hex, e_lbl, dashed = TRIAGE_BYPASS_HEX, f"[splice] {edge.relation.value}", True
-        else:
-            e_hex, e_lbl, dashed = TRIAGE_COLLAPSE_HEX, f"[merge] {edge.relation.value}", True
-        lines.append(f"{paths[edge.source]} -> {paths[edge.target]}: {_quote_d2_string(e_lbl)} {{")
-        lines.append(f'  style.stroke: "{e_hex}"')
-        if dashed:
-            lines.append("  style.stroke-dash: 5")
-        lines.append("}")
+    lines.extend(_triage_edge_lines(observed, emitted, paths, dispositions))
+    lines.append("")
+    _append_triage_legend(lines)
     return "\n".join(lines) + "\n"
 
 
@@ -408,7 +446,7 @@ def _build_structural_stages(
     stage1_d2 = d2.emit(observed)
     rules = (*spec.global_abstractions, *view.rules)
     disps, collapse_targets = _classify_structural_nodes(observed, emitted, rules)
-    stage2_d2 = _emit_structural_triage_d2(observed, emitted, disps, collapse_targets)
+    stage2_d2 = _emit_structural_triage_d2(stage1_d2, observed, emitted, disps, collapse_targets)
     d2_view = view.model_copy(update={"target_renderer": TargetRenderer.D2})
     mmd_view = view.model_copy(update={"target_renderer": TargetRenderer.MERMAID})
     stage3_d2 = emit_view_source(emitted, d2_view, overflow_md, theme)

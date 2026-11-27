@@ -1006,14 +1006,6 @@ archigram: "archigram" {
           "+collapsed_count": "int"
           "+property exceeds_gitea_mermaid_limit()": "bool"
         }
-        "archigram.entrypoints.cli.triage._TriageTreeCtx": "_TriageTreeCtx" {
-          shape: class
-          "+nodes": "dict[str, IRNode]"
-          "+children": "dict[str, list[str]]"
-          "+key_map": "dict[str, str]"
-          "+dispositions": "dict[str, NodeDisposition]"
-          "+collapse_targets": "dict[str, str]"
-        }
         "archigram.entrypoints.cli.triage.compute_triage_stages": "compute_triage_stages" {
           style.fill: transparent
           style.stroke: "#64748b"
@@ -1285,6 +1277,10 @@ archigram: "archigram" {
           "+signature": "str"
           "+sync_kind": "SyncKind"
           "+call_count": "int"
+        }
+        "archigram.features.emit_d2.emitter.class_shaped_node_ids": "class_shaped_node_ids" {
+          style.fill: transparent
+          style.stroke: "#64748b"
         }
       }
       "archigram.features.emit_d2.uml_variants": "uml_variants" {
@@ -3171,20 +3167,6 @@ archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypo
   }
 }
 archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.TriageOutcome" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.TriageStats": "composes" {
-  style.stroke: "#14b8a6"
-  source-arrowhead: {
-    shape: diamond
-    style.filled: true
-  }
-}
-archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage._TriageTreeCtx" -> archigram."archigram.domain"."archigram.domain.ir"."archigram.domain.ir.IRNode": "composes" {
-  style.stroke: "#14b8a6"
-  source-arrowhead: {
-    shape: diamond
-    style.filled: true
-  }
-}
-archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage._TriageTreeCtx" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage"."archigram.entrypoints.cli.triage.NodeDisposition": "composes" {
   style.stroke: "#14b8a6"
   source-arrowhead: {
     shape: diamond

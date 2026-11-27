@@ -10,13 +10,13 @@
 
 Deterministic graph projection, runtime concurrency trace compaction (`R1–R6` + Series-Parallel poset lowering), and 5-gate semantic/topological linting CLI + MCP server.
 
-### Stage 2: Triage Overlay on Raw `334`-Node AST (`50,186` Mermaid Chars)
+### Stage 2: Triage Overlay on Raw `361`-Node AST (`55,890` Mermaid Chars)
 
 [![Stage 2 — Triage Overlay](docs/architecture/diagrams/showcase_cli_triage.2_triage.png)](https://klcd.github.io/archigram/#triage)
 
 *Dense on purpose: this is the raw hairball that curation turns into Stage 3. [Open the interactive explorer ->](https://klcd.github.io/archigram/#triage) to zoom and pan. Crimson `[REMOVE]`, Amber `[BYPASS]`, Violet `[COLLAPSE]`, Emerald `[KEEP]` — computed from CLI rules ([full 3-stage showcase ->](docs/architecture/uml-and-curation-showcase.md))*
 
-### Stage 3: 5-Gate-Verified Curated Result (`17` Nodes, `1,887` Chars)
+### Stage 3: 5-Gate-Verified Curated Result (`13` Nodes, `1,579` Chars)
 
 [![Stage 3 — Curated Result](docs/architecture/diagrams/showcase_cli_triage.3_curated.png)](docs/architecture/diagrams/showcase_cli_triage.3_curated.png)
 
