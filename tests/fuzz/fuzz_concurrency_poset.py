@@ -5,9 +5,12 @@ from __future__ import annotations
 from collections import deque
 from typing import TYPE_CHECKING
 
+import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
+from pydantic import TypeAdapter, ValidationError
 
+from archigram.domain import NonBlankStr, ProvenanceGrade, ProvenanceStamp, validate_non_blank
 from archigram.domain.concurrency import (
     ParallelSiblingCluster,
     PosetCotreeNode,
@@ -15,13 +18,24 @@ from archigram.domain.concurrency import (
     SpanInterval,
     cluster_overlapping_siblings,
     decompose_causal_poset,
+    events_overlap,
+    find_causal_overlap_span,
     find_induced_n_witness,
     fold_parallel_map,
+    group_concurrent_siblings,
+    order_trace_events,
     reconstruct_causal_order,
 )
+from archigram.domain.ir import EventStatus, SyncKind, TraceEvent
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
+_FUZZ_STAMP = ProvenanceStamp(
+    grade=ProvenanceGrade.OBSERVED,
+    extractor="fuzz_concurrency",
+    input_sha256="a" * 64,
+)
 
 
 def _reference_transitive_closure(
@@ -432,3 +446,228 @@ def test_embedded_induced_n_modules_always_yield_prime_and_exact_witness(
     assert (b, d) in expected_closure
     for x, y in ((a, b), (b, a), (c, d), (d, c), (a, d), (d, a)):
         assert (x, y) not in expected_closure
+
+
+@st.composite
+def random_skewed_causal_trace_events(
+    draw: st.DrawFn,
+    *,
+    allow_dangling: bool = True,
+) -> dict[str, TraceEvent]:
+    """Generate TraceEvent DAGs with skewed clocks, causal_links, and zero-dur spans."""
+    count = draw(st.integers(min_value=0, max_value=18))
+    if count == 0:
+        return {}
+
+    clocks = ("host_a:1", "host_b:2", "host_c:3")
+    participants = ("api", "auth", "orders", "billing", "db")
+    event_ids = [f"tr_{idx:02d}" for idx in range(count)]
+    skew_by_clock = {clk: draw(st.integers(min_value=-200, max_value=500)) for clk in clocks}
+
+    events: dict[str, TraceEvent] = {}
+    for idx, eid in enumerate(event_ids):
+        earlier = event_ids[:idx]
+        parent_id = draw(st.sampled_from(earlier)) if earlier and draw(st.booleans()) else None
+        links: list[str] = (
+            draw(st.lists(st.sampled_from(earlier), max_size=3, unique=True)) if earlier else []
+        )
+        if allow_dangling and draw(st.booleans()):
+            links.append(f"dangling_link_{idx}")
+        if allow_dangling and parent_id is None and draw(st.integers(0, 4)) == 0:
+            parent_id = f"dangling_parent_{idx}"
+
+        clock = draw(st.sampled_from(clocks))
+        raw_start = draw(st.integers(min_value=0, max_value=120)) + skew_by_clock[clock]
+        start_ns = max(0, raw_start)
+        dur = 0 if draw(st.integers(0, 5)) == 0 else draw(st.integers(min_value=1, max_value=80))
+        events[eid] = TraceEvent(
+            event_id=eid,
+            caller_id=draw(st.sampled_from(participants)),
+            callee_id=draw(st.sampled_from(participants)),
+            signature=f"op_{idx % 4}()",
+            parent_event_id=parent_id,
+            causal_links=tuple(links),
+            clock_domain_id=clock,
+            start_ns=start_ns,
+            end_ns=start_ns + dur,
+            sync_kind=draw(st.sampled_from(list(SyncKind))),
+            status=EventStatus.OK,
+            provenance=_FUZZ_STAMP,
+        )
+    return events
+
+
+def _assert_topological_order(
+    ordered: Sequence[TraceEvent],
+    events: dict[str, TraceEvent],
+) -> None:
+    pos = {ev.event_id: idx for idx, ev in enumerate(ordered)}
+    assert len(ordered) == len(events)
+    assert set(pos) == set(events)
+    for idx, ev in enumerate(ordered):
+        if ev.parent_event_id is not None and ev.parent_event_id in events:
+            assert pos[ev.parent_event_id] < idx
+        for link in ev.causal_links:
+            if link in events:
+                assert pos[link] < idx
+
+
+def _assert_group_invariants(group: Sequence[TraceEvent]) -> None:
+    anchor = group[0]
+    member_ids = {ev.event_id for ev in group}
+    for ev in group:
+        assert ev.parent_event_id == anchor.parent_event_id
+        assert ev.clock_domain_id == anchor.clock_domain_id
+        assert ev.parent_event_id not in member_ids
+        assert not (set(ev.causal_links) & member_ids)
+    if len(group) >= 2:
+        # Every member after the first overlaps at least one earlier member in the group.
+        for idx in range(1, len(group)):
+            assert any(events_overlap(group[prev], group[idx]) for prev in range(idx))
+
+
+@settings(max_examples=150)
+@given(events=random_skewed_causal_trace_events(allow_dangling=True), perm=st.data())
+def test_order_trace_events_honors_dag_skewed_clocks_and_is_order_invariant(
+    events: dict[str, TraceEvent],
+    perm: st.DataObject,
+) -> None:
+    ordered = order_trace_events(events)
+    _assert_topological_order(ordered, events)
+
+    shuffled_keys = perm.draw(st.permutations(list(events.keys())))
+    shuffled = {key: events[key] for key in shuffled_keys}
+    assert order_trace_events(shuffled) == ordered
+
+
+@settings(max_examples=100)
+@given(
+    cycle_len=st.integers(min_value=2, max_value=6),
+    extra_count=st.integers(min_value=0, max_value=4),
+    perm=st.data(),
+)
+def test_order_trace_events_cycle_safe_and_deterministic(
+    cycle_len: int,
+    extra_count: int,
+    perm: st.DataObject,
+) -> None:
+    events: dict[str, TraceEvent] = {}
+    for idx in range(cycle_len):
+        eid = f"cyc_{idx}"
+        prev_id = f"cyc_{(idx - 1) % cycle_len}"
+        start_ns = perm.draw(st.integers(min_value=0, max_value=200))
+        events[eid] = TraceEvent(
+            event_id=eid,
+            caller_id="svc_a",
+            callee_id="svc_b",
+            signature="call()",
+            causal_links=(prev_id,),
+            clock_domain_id=f"clk_{idx % 2}",
+            start_ns=start_ns,
+            end_ns=start_ns + 20,
+            provenance=_FUZZ_STAMP,
+        )
+    for idx in range(extra_count):
+        eid = f"tail_{idx}"
+        events[eid] = TraceEvent(
+            event_id=eid,
+            caller_id="svc_b",
+            callee_id="svc_c",
+            signature="after()",
+            causal_links=("cyc_0",),
+            clock_domain_id="clk_0",
+            start_ns=idx * 5,
+            end_ns=idx * 5 + 10,
+            provenance=_FUZZ_STAMP,
+        )
+
+    ordered = order_trace_events(events)
+    assert len(ordered) == len(events)
+    assert {ev.event_id for ev in ordered} == set(events)
+
+    shuffled_keys = perm.draw(st.permutations(list(events.keys())))
+    shuffled = {key: events[key] for key in shuffled_keys}
+    assert order_trace_events(shuffled) == ordered
+
+
+@settings(max_examples=150)
+@given(events=random_skewed_causal_trace_events(allow_dangling=False))
+def test_group_concurrent_siblings_and_span_enforce_causality_and_clock_isolation(
+    events: dict[str, TraceEvent],
+) -> None:
+    ordered = order_trace_events(events)
+    groups = group_concurrent_siblings(ordered)
+
+    flattened = [ev for group in groups for ev in group]
+    assert flattened == ordered
+
+    cursor = 0
+    for group in groups:
+        assert len(group) >= 1
+        end_idx = find_causal_overlap_span(ordered, cursor)
+        assert ordered[cursor:end_idx] == group
+        _assert_group_invariants(group)
+        cursor = end_idx
+    assert cursor == len(ordered)
+
+
+@settings(max_examples=80)
+@given(
+    start_a=st.integers(min_value=0, max_value=200),
+    dur_a=st.integers(min_value=20, max_value=100),
+    dur_b=st.integers(min_value=20, max_value=100),
+    same_clock=st.booleans(),
+    has_causal_link=st.booleans(),
+)
+def test_causal_link_or_clock_mismatch_prevents_concurrent_merge(
+    start_a: int,
+    dur_a: int,
+    dur_b: int,
+    same_clock: bool,
+    has_causal_link: bool,
+) -> None:
+    ev_a = TraceEvent(
+        event_id="ev_a",
+        caller_id="api",
+        callee_id="svc_a",
+        signature="step_a()",
+        clock_domain_id="host_0",
+        start_ns=start_a,
+        end_ns=start_a + dur_a,
+        provenance=_FUZZ_STAMP,
+    )
+    ev_b = TraceEvent(
+        event_id="ev_b",
+        caller_id="api",
+        callee_id="svc_b",
+        signature="step_b()",
+        causal_links=("ev_a",) if has_causal_link else (),
+        clock_domain_id="host_0" if same_clock else "host_1",
+        start_ns=start_a + 1,
+        end_ns=start_a + 1 + dur_b,
+        provenance=_FUZZ_STAMP,
+    )
+    ordered = order_trace_events({"ev_b": ev_b, "ev_a": ev_a})
+    groups = group_concurrent_siblings(ordered)
+
+    if same_clock and not has_causal_link:
+        assert len(groups) == 1
+        assert [ev.event_id for ev in groups[0]] == ["ev_a", "ev_b"]
+    else:
+        assert len(groups) == 2
+        assert [ev.event_id for ev in groups[0]] == ["ev_a"]
+        assert [ev.event_id for ev in groups[1]] == ["ev_b"]
+
+
+@settings(max_examples=120)
+@given(raw=st.text(min_size=0, max_size=24))
+def test_validate_non_blank_and_non_blank_str_roundtrip(raw: str) -> None:
+    adapter: TypeAdapter[str] = TypeAdapter(NonBlankStr)
+    if raw.strip():
+        assert validate_non_blank(raw) == raw
+        assert adapter.validate_python(raw) == raw
+    else:
+        with pytest.raises(ValueError):
+            validate_non_blank(raw)
+        with pytest.raises(ValidationError):
+            adapter.validate_python(raw)

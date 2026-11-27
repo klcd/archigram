@@ -57,8 +57,9 @@ flowchart TD
   style n0 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   style n1 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   style n2 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  n3 -.->|"imports"| n1
   n2 -.->|"imports"| n1
-  linkStyle 0 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 0,1 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
 ```
 <!-- archigram:end l2a_domain_and_ports_mermaid -->
 
@@ -127,6 +128,7 @@ flowchart TD
   n11 -.->|"imports"| n4
   n11 -.->|"imports"| n6
   n7 -.->|"imports"| n9
+  n9 -.->|"imports"| n1
   n14 -->|"calls"| n10
   n5 -.->|"imports"| n10
   n7 -.->|"imports"| n10
@@ -141,8 +143,8 @@ flowchart TD
   n7 -->|"calls"| n15
   n4 -.->|"imports"| n5
   n6 -.->|"imports"| n7
-  linkStyle 0,1,2,4,5,6,7,8,9,15,16 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 3,10,11,12,13,14 stroke:#3b82f6,stroke-width:1.75px
+  linkStyle 0,1,2,3,5,6,7,8,9,10,16,17 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 4,11,12,13,14,15 stroke:#3b82f6,stroke-width:1.75px
 ```
 <!-- archigram:end l2b_reduction_engine_mermaid -->
 
