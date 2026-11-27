@@ -21,12 +21,11 @@ skinparam ArtifactBorderColor #64748b
 start
 :pipeline: compile_and_lint_pipeline;
 :reducer: StructuralTopologicalReducer.reduce;
-:emit_mermaid.emitter: MermaidEmitter.__init__;
-:emit_mermaid.emitter: MermaidEmitter.emit;
+:propose_loop: emit_view_source;
 :reducer: StructuralTopologicalReducer.reduce;
-:emit_d2.emitter: D2Emitter.emit;
+:propose_loop: emit_view_source;
 :reducer: StructuralTopologicalReducer.reduce;
-:emit_plantuml.emitter: PlantUmlEmitter.emit;
+:propose_loop: emit_view_source;
 :gates: GroundingAndBoundaryGate.__init__;
 :gates: GroundingAndBoundaryGate.check;
 :lint_topology.gate: TopologicalInvariantGate.__init__;
@@ -37,6 +36,7 @@ start
 :validators: Gate5SyntaxHarness.validate [loop x3;
 :diagnostics: LintReport.from_diagnostics;
 :propose_loop: run_propose_loop;
-:+31 compacted actions;
+:generator: GraphDigestGenerator.to_compact_mark;
+:+32 compacted actions;
 stop
 @enduml

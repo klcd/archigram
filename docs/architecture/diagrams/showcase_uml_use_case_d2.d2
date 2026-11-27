@@ -179,26 +179,10 @@ system_boundary.uc_propose_repair -> system_boundary.uc_emit_targets: "<<include
   style.stroke: "#3b82f6"
   style.stroke-dash: 5
 }
-system_boundary.uc_compile_sync -> system_boundary.uc_emit_targets: "<<include>>" {
-  style.stroke: "#3b82f6"
-  style.stroke-dash: 5
-}
-system_boundary.uc_compile_sync -> system_boundary.uc_emit_targets: "<<include>>" {
-  style.stroke: "#3b82f6"
-  style.stroke-dash: 5
-}
 system_boundary.uc_compile_sync -> system_boundary.uc_ingest_ir: "<<include>>" {
   style.stroke: "#3b82f6"
   style.stroke-dash: 5
 }
-system_boundary.uc_compile_sync -> system_boundary.uc_verify_gates: "<<include>>" {
-  style.stroke: "#3b82f6"
-  style.stroke-dash: 5
-}
-system_boundary.uc_compile_sync -> system_boundary.uc_verify_gates: "<<include>>" {
-  style.stroke: "#3b82f6"
-  style.stroke-dash: 5
-}
 system_boundary.uc_propose_repair -> system_boundary.uc_verify_gates: "<<include>>" {
   style.stroke: "#3b82f6"
   style.stroke-dash: 5
@@ -207,27 +191,21 @@ system_boundary.uc_propose_repair -> system_boundary.uc_verify_gates: "<<include
   style.stroke: "#3b82f6"
   style.stroke-dash: 5
 }
-actor_cli_user -> system_boundary.uc_propose_repair: "invokes" {
+actor_mcp_agent -> system_boundary.uc_propose_repair: "invokes" {
   style.stroke: "#3b82f6"
+}
+system_boundary.uc_compile_sync -> system_boundary.uc_propose_repair: "<<include>>" {
+  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
 }
 actor_mcp_agent -> system_boundary.uc_propose_repair: "invokes" {
   style.stroke: "#3b82f6"
 }
-actor_cli_user -> system_boundary.uc_propose_repair: "invokes" {
+system_boundary.uc_compile_sync -> system_boundary.uc_propose_repair: "<<include>>" {
   style.stroke: "#3b82f6"
-}
-actor_mcp_agent -> system_boundary.uc_propose_repair: "invokes" {
-  style.stroke: "#3b82f6"
+  style.stroke-dash: 5
 }
 system_boundary.uc_propose_repair -> system_boundary.uc_reduce_compact: "<<include>>" {
-  style.stroke: "#3b82f6"
-  style.stroke-dash: 5
-}
-system_boundary.uc_compile_sync -> system_boundary.uc_reduce_compact: "<<include>>" {
-  style.stroke: "#3b82f6"
-  style.stroke-dash: 5
-}
-system_boundary.uc_compile_sync -> system_boundary.uc_reduce_compact: "<<include>>" {
   style.stroke: "#3b82f6"
   style.stroke-dash: 5
 }

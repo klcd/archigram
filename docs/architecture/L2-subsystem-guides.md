@@ -211,15 +211,12 @@ flowchart TD
   n7 -.->|"imports"| n6
   n9 -.->|"imports"| n6
   n11 -.->|"imports"| n7
-  n4 -.->|"imports"| n7
-  n4 -.->|"imports"| n8
   n11 -.->|"imports"| n8
-  n4 -.->|"imports"| n9
   n11 -.->|"imports"| n9
   n11 -.->|"imports"| n10
-  n4 -.->|"imports"| n10
+  n4 -.->|"imports"| n11
   n10 -.->|"imports"| n12
-  linkStyle 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 0,1,2,3,4,5,6,7,8,9,10,11,12 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
 ```
 <!-- archigram:end l2c_five_gate_linter_mermaid -->
 
@@ -377,14 +374,11 @@ flowchart TD
   n17 -->|"calls"| n12
   n17 -.->|"imports"| n12
   n17 -.->|"imports"| n13
-  n10 -.->|"imports"| n13
-  n10 -->|"calls"| n13
   n17 -->|"calls"| n13
   n10 -.->|"imports"| n14
   n17 -->|"calls"| n15
   n17 -.->|"imports"| n15
-  n10 -.->|"imports"| n15
-  n11 -.->|"imports"| n17
+  n10 -.->|"imports"| n17
   n18 -.->|"imports"| n17
   n5 -.->|"imports"| n18
   n12 -.->|"imports"| n19
@@ -395,8 +389,7 @@ flowchart TD
   n16 -.->|"imports"| n19
   n17 -->|"calls"| n16
   n17 -.->|"imports"| n16
-  n10 -.->|"imports"| n16
-  linkStyle 0,1,2,3,4,5,6,7,8,10,11,12,15,17,18,19,20,21,22,23,24,25,26,27,29,30 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 9,13,14,16,28 stroke:#3b82f6,stroke-width:1.75px
+  linkStyle 0,1,2,3,4,5,6,7,8,10,11,13,15,16,17,18,19,20,21,22,23,24,26 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 9,12,14,25 stroke:#3b82f6,stroke-width:1.75px
 ```
 <!-- archigram:end l2d_cli_and_mcp_adapters_mermaid -->

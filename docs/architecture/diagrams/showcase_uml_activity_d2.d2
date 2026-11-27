@@ -31,7 +31,7 @@ act_0 -> act_1: "next" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
-act_2: "emit_mermaid.emitter: MermaidEmitter.__init__" {
+act_2: "propose_loop: emit_view_source" {
   style.border-radius: 999
   style.fill: transparent
   style.stroke: "#64748b"
@@ -40,7 +40,7 @@ act_1 -> act_2: "next" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
-act_3: "emit_mermaid.emitter: MermaidEmitter.emit" {
+act_3: "reducer: StructuralTopologicalReducer.reduce" {
   style.border-radius: 999
   style.fill: transparent
   style.stroke: "#64748b"
@@ -49,7 +49,7 @@ act_2 -> act_3: "next" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
-act_4: "reducer: StructuralTopologicalReducer.reduce" {
+act_4: "propose_loop: emit_view_source" {
   style.border-radius: 999
   style.fill: transparent
   style.stroke: "#64748b"
@@ -58,7 +58,7 @@ act_3 -> act_4: "next" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
-act_5: "emit_d2.emitter: D2Emitter.emit" {
+act_5: "reducer: StructuralTopologicalReducer.reduce" {
   style.border-radius: 999
   style.fill: transparent
   style.stroke: "#64748b"
@@ -67,7 +67,7 @@ act_4 -> act_5: "next" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
-act_6: "reducer: StructuralTopologicalReducer.reduce" {
+act_6: "propose_loop: emit_view_source" {
   style.border-radius: 999
   style.fill: transparent
   style.stroke: "#64748b"
@@ -76,7 +76,7 @@ act_5 -> act_6: "next" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
-act_7: "emit_plantuml.emitter: PlantUmlEmitter.emit" {
+act_7: "gates: GroundingAndBoundaryGate.__init__" {
   style.border-radius: 999
   style.fill: transparent
   style.stroke: "#64748b"
@@ -85,7 +85,7 @@ act_6 -> act_7: "next" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
-act_8: "gates: GroundingAndBoundaryGate.__init__" {
+act_8: "gates: GroundingAndBoundaryGate.check" {
   style.border-radius: 999
   style.fill: transparent
   style.stroke: "#64748b"
@@ -94,7 +94,7 @@ act_7 -> act_8: "next" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
-act_9: "gates: GroundingAndBoundaryGate.check" {
+act_9: "lint_topology.gate: TopologicalInvariantGate.__init__" {
   style.border-radius: 999
   style.fill: transparent
   style.stroke: "#64748b"
@@ -103,7 +103,7 @@ act_8 -> act_9: "next" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
-act_10: "lint_topology.gate: TopologicalInvariantGate.__init__" {
+act_10: "lint_topology.gate: TopologicalInvariantGate.check" {
   style.border-radius: 999
   style.fill: transparent
   style.stroke: "#64748b"
@@ -112,7 +112,7 @@ act_9 -> act_10: "next" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
-act_11: "lint_topology.gate: TopologicalInvariantGate.check" {
+act_11: "lint_budget.gate: CognitiveBudgetAndOrphanGate.check" {
   style.border-radius: 999
   style.fill: transparent
   style.stroke: "#64748b"
@@ -121,7 +121,7 @@ act_10 -> act_11: "next" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
-act_12: "lint_budget.gate: CognitiveBudgetAndOrphanGate.check" {
+act_12: "validators: build_default_validators" {
   style.border-radius: 999
   style.fill: transparent
   style.stroke: "#64748b"
@@ -130,7 +130,7 @@ act_11 -> act_12: "next" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
-act_13: "validators: build_default_validators" {
+act_13: "validators: Gate5SyntaxHarness.__init__" {
   style.border-radius: 999
   style.fill: transparent
   style.stroke: "#64748b"
@@ -139,34 +139,34 @@ act_12 -> act_13: "next" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
-act_14: "validators: Gate5SyntaxHarness.__init__" {
-  style.border-radius: 999
-  style.fill: transparent
-  style.stroke: "#64748b"
-}
-act_13 -> act_14: "next" {
-  style.stroke: "#3b82f6"
-  style.animated: true
-}
-guard_15: "loop x3" {
+guard_14: "loop x3" {
   shape: diamond
   style.fill: transparent
   style.stroke: "#64748b"
 }
-act_14 -> guard_15: "guard" {
+act_13 -> guard_14: "guard" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
-act_15: "validators: Gate5SyntaxHarness.validate [loop x3" {
+act_14: "validators: Gate5SyntaxHarness.validate [loop x3" {
   style.border-radius: 999
   style.fill: transparent
   style.stroke: "#64748b"
 }
-guard_15 -> act_15: "next" {
+guard_14 -> act_14: "next" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
-act_16: "diagnostics: LintReport.from_diagnostics" {
+act_15: "diagnostics: LintReport.from_diagnostics" {
+  style.border-radius: 999
+  style.fill: transparent
+  style.stroke: "#64748b"
+}
+act_14 -> act_15: "next" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
+act_16: "propose_loop: run_propose_loop" {
   style.border-radius: 999
   style.fill: transparent
   style.stroke: "#64748b"
@@ -175,7 +175,7 @@ act_15 -> act_16: "next" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
-act_17: "propose_loop: run_propose_loop" {
+act_17: "generator: GraphDigestGenerator.to_compact_mark" {
   style.border-radius: 999
   style.fill: transparent
   style.stroke: "#64748b"
@@ -184,7 +184,7 @@ act_16 -> act_17: "next" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
-act_more: "+31 compacted actions" {
+act_more: "+32 compacted actions" {
   style.border-radius: 999
   style.fill: transparent
   style.stroke: "#64748b"
