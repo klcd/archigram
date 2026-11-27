@@ -1184,6 +1184,25 @@ def _check_invented_order(
     return diagnostics
 
 
+def _build_obs_owner_index(
+    obs_count: int,
+    backing_mask: Sequence[int],
+) -> tuple[list[int], int]:
+    """Map each observed event index to the bitmask of curated events backed by it."""
+    owners_by_obs = [0] * obs_count
+    owned_obs_mask = 0
+    for cur_idx, b_mask in enumerate(backing_mask):
+        if not b_mask:
+            continue
+        owned_obs_mask |= b_mask
+        cur_bit = 1 << cur_idx
+        while b_mask:
+            bit = b_mask & -b_mask
+            b_mask ^= bit
+            owners_by_obs[bit.bit_length() - 1] |= cur_bit
+    return owners_by_obs, owned_obs_mask
+
+
 def _observed_projection(ctx: _TraceOrderContext) -> tuple[list[int], list[int]]:
     """Project observed order onto distinct curated events.
 
@@ -1195,16 +1214,36 @@ def _observed_projection(ctx: _TraceOrderContext) -> tuple[list[int], list[int]]
     count = len(ctx.cur_poset.event_ids)
     succ = [0] * count
     pred = [0] * count
-    for u_idx in range(count):
-        u_mask = ctx.backing_mask[u_idx]
+    owners_by_obs, owned_obs_mask = _build_obs_owner_index(
+        len(ctx.obs_poset.event_ids),
+        ctx.backing_mask,
+    )
+    for u_idx, u_mask in enumerate(ctx.backing_mask):
         if not u_mask:
             continue
-        reach = ctx.obs_desc_union[u_idx]
-        for v_idx in range(count):
-            v_mask = ctx.backing_mask[v_idx]
-            if v_idx != u_idx and v_mask & reach and not v_mask & u_mask:
-                succ[u_idx] |= 1 << v_idx
-                pred[v_idx] |= 1 << u_idx
+        reach = ctx.obs_desc_union[u_idx] & owned_obs_mask
+        if not reach:
+            continue
+        candidates = 0
+        while reach:
+            bit = reach & -reach
+            reach ^= bit
+            candidates |= owners_by_obs[bit.bit_length() - 1]
+        overlap = 0
+        m_mask = u_mask
+        while m_mask:
+            bit = m_mask & -m_mask
+            m_mask ^= bit
+            overlap |= owners_by_obs[bit.bit_length() - 1]
+        u_succ = candidates & ~overlap
+        if not u_succ:
+            continue
+        succ[u_idx] = u_succ
+        u_bit = 1 << u_idx
+        while u_succ:
+            bit = u_succ & -u_succ
+            u_succ ^= bit
+            pred[bit.bit_length() - 1] |= u_bit
     return succ, pred
 
 
