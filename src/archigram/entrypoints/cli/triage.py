@@ -522,7 +522,14 @@ def compute_triage_stages(
         raise ValueError(msg)
     single_spec = spec.model_copy(update={"views": (matching[0],)})
     compilation = compile_and_lint_pipeline(observed_ir, single_spec, mermaid_theme=mermaid_theme)
-    artifact = compilation.views[safe_view_id]
+    artifact = compilation.views.get(safe_view_id)
+    if artifact is None:
+        diag_summary = "; ".join(
+            f"{d.code}: {d.message}" for d in compilation.lint_report.diagnostics
+        )
+        detail = diag_summary or "no diagnostics recorded"
+        msg = f"View '{safe_view_id}' failed compilation and cannot be triaged ({detail})"
+        raise ValueError(msg)
     if isinstance(observed_ir, StructuralGraphIR) and isinstance(
         artifact.emitted_ir, StructuralGraphIR
     ):
