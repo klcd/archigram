@@ -22,15 +22,18 @@ from archigram.domain.ir import (
 from archigram.domain.spec import (
     BypassVerticesRule,
     CollapsePartitionRule,
+    CurationSpecV1,
     DiagramViewSpec,
     FullScope,
     IRMode,
     KHopNeighborhoodScope,
     PruneLeavesRule,
+    ReachabilityAssertion,
     SimplifyConfig,
     TargetRenderer,
     ViewInvariants,
 )
+from archigram.features.lint_topology import TopologicalInvariantGate
 from archigram.features.reduce_structural import (
     CycleInducedError,
     StructuralTopologicalReducer,
@@ -616,3 +619,173 @@ def test_fuzz_collapse_partition_honors_exclude_ids(count: int, exclude_idx: int
     assert "super_svc" in collapsed.nodes
     assert safe_excluded not in collapsed.nodes["super_svc"].provenance.backing_ids
     assert excluded_id in ir.nodes
+
+
+_EXPECTED_RELATION_RANK: dict[EdgeRelation, int] = {
+    EdgeRelation.ASYNC_SPAWN: 0,
+    EdgeRelation.FORK_JOIN: 1,
+    EdgeRelation.CALLS: 2,
+    EdgeRelation.WRITES_DATA: 3,
+    EdgeRelation.READS_DATA: 4,
+    EdgeRelation.INHERITS: 5,
+    EdgeRelation.IMPLEMENTS: 6,
+    EdgeRelation.COMPOSES: 7,
+    EdgeRelation.AGGREGATES: 8,
+    EdgeRelation.IMPORTS: 9,
+    EdgeRelation.ASSOCIATES: 10,
+}
+
+
+@settings(max_examples=80, deadline=None)
+@given(
+    in_rel=st.sampled_from(_ALL_RELATIONS),
+    out_rel=st.sampled_from(_ALL_RELATIONS),
+    sync_kind=st.sampled_from(_ALL_SYNC_KINDS),
+)
+def test_fuzz_bypass_mixed_relation_splice_uses_symmetric_precedence(
+    in_rel: EdgeRelation,
+    out_rel: EdgeRelation,
+    sync_kind: SyncKind,
+) -> None:
+    """Mixed-relation splicing is symmetric and retains higher-precedence behavioral relations."""
+    expected = min(in_rel, out_rel, key=lambda rel: _EXPECTED_RELATION_RANK[rel])
+    rule = BypassVerticesRule(id="bypass_bridge", node_id_globs=("bridge",))
+
+    fwd_ir = StructuralGraphIR(
+        graph_id="mixed_fwd",
+        nodes={nid: _make_node(nid) for nid in ("A", "bridge", "DB")},
+        edges=(
+            _make_edge("e_in", "A", "bridge", relation=in_rel, sync_kind=sync_kind),
+            _make_edge("e_out", "bridge", "DB", relation=out_rel, sync_kind=sync_kind),
+        ),
+    )
+    rev_ir = StructuralGraphIR(
+        graph_id="mixed_rev",
+        nodes={nid: _make_node(nid) for nid in ("A", "bridge", "DB")},
+        edges=(
+            _make_edge("e_in", "A", "bridge", relation=out_rel, sync_kind=sync_kind),
+            _make_edge("e_out", "bridge", "DB", relation=in_rel, sync_kind=sync_kind),
+        ),
+    )
+
+    fwd_reduced = bypass_vertices(fwd_ir, rule)
+    rev_reduced = bypass_vertices(rev_ir, rule)
+
+    assert "bridge" not in fwd_reduced.nodes
+    assert len(fwd_reduced.edges) == 1
+    assert len(rev_reduced.edges) == 1
+    assert fwd_reduced.edges[0].relation is expected
+    assert rev_reduced.edges[0].relation is expected
+    assert {"e_in", "bridge", "e_out"}.issubset(set(fwd_reduced.edges[0].provenance.backing_ids))
+
+
+@settings(max_examples=80, deadline=None)
+@given(
+    rels=st.lists(st.sampled_from(_ALL_RELATIONS), min_size=3, max_size=5),
+    reverse_bridge_names=st.booleans(),
+)
+def test_fuzz_bypass_multihop_mixed_relations_are_order_independent(
+    rels: list[EdgeRelation],
+    reverse_bridge_names: bool,
+) -> None:
+    """Multi-hop mixed-relation splicing yields the global highest-precedence relation."""
+    hop_count = len(rels)
+    bridges = [f"bridge_{i}" for i in range(hop_count - 1)]
+    if reverse_bridge_names:
+        bridges.reverse()
+    chain = ["src", *bridges, "dst"]
+
+    nodes = {nid: _make_node(nid) for nid in chain}
+    edges = tuple(
+        _make_edge(f"e_{i}", chain[i], chain[i + 1], relation=rel) for i, rel in enumerate(rels)
+    )
+    ir = StructuralGraphIR(graph_id="multihop_mixed", nodes=nodes, edges=edges)
+    rule = BypassVerticesRule(id="bypass_chain", node_id_globs=("bridge_*",))
+
+    reduced = bypass_vertices(ir, rule)
+    assert set(reduced.nodes) == {"src", "dst"}
+    assert len(reduced.edges) == 1
+    expected = min(rels, key=lambda rel: _EXPECTED_RELATION_RANK[rel])
+    assert reduced.edges[0].relation is expected
+    assert {f"e_{i}" for i in range(hop_count)}.issubset(
+        set(reduced.edges[0].provenance.backing_ids)
+    )
+
+
+@settings(max_examples=80, deadline=None)
+@given(
+    behavioral=st.sampled_from(
+        (EdgeRelation.ASYNC_SPAWN, EdgeRelation.FORK_JOIN, EdgeRelation.CALLS)
+    ),
+    passive=st.sampled_from(
+        (
+            EdgeRelation.WRITES_DATA,
+            EdgeRelation.READS_DATA,
+            EdgeRelation.IMPORTS,
+            EdgeRelation.ASSOCIATES,
+        )
+    ),
+    behavioral_first=st.booleans(),
+    restrict_relations=st.booleans(),
+    include_passive_in_rule=st.booleans(),
+)
+def test_fuzz_bypass_mixed_relations_preserve_gate3_reachability(
+    behavioral: EdgeRelation,
+    passive: EdgeRelation,
+    behavioral_first: bool,
+    restrict_relations: bool,
+    include_passive_in_rule: bool,
+) -> None:
+    """Bypass retains behavioral relations over passive ones and passes Gate 3 reachability."""
+    in_rel, out_rel = (behavioral, passive) if behavioral_first else (passive, behavioral)
+    observed = StructuralGraphIR(
+        graph_id="gate3_mixed",
+        nodes={nid: _make_node(nid) for nid in ("A", "bridge", "DB")},
+        edges=(
+            _make_edge("e_in", "A", "bridge", relation=in_rel),
+            _make_edge("e_out", "bridge", "DB", relation=out_rel),
+        ),
+    )
+
+    preserve_rels: tuple[str, ...] = ()
+    if restrict_relations:
+        preserve_rels = (
+            (behavioral.value, passive.value) if include_passive_in_rule else (behavioral.value,)
+        )
+
+    rule = BypassVerticesRule(
+        id="bypass_bridge",
+        node_id_globs=("bridge",),
+        preserve_edge_relations=preserve_rels,
+    )
+    view = DiagramViewSpec(
+        id="mixed_view",
+        title="Mixed Relation View",
+        ir_mode=IRMode.STRUCTURAL_GRAPH,
+        target_renderer=TargetRenderer.MERMAID,
+        rules=(rule,),
+        simplify=SimplifyConfig(condense_sccs=False, transitive_reduction=False),
+        invariants=ViewInvariants(
+            preserve_reachability=(
+                ReachabilityAssertion(
+                    from_node="A",
+                    to_node="DB",
+                    via_relations=(behavioral.value, passive.value),
+                ),
+            ),
+        ),
+    )
+    spec = CurationSpecV1(views=(view,))
+    curated = StructuralTopologicalReducer().reduce(observed, view)
+    report = TopologicalInvariantGate().check(observed, spec, {"mixed_view": curated})
+    severed = [d for d in report.diagnostics if d.code == "REACHABILITY_SEVERED"]
+
+    if not restrict_relations or include_passive_in_rule:
+        assert len(curated.edges) == 1
+        assert curated.edges[0].relation is behavioral
+        assert not severed
+        assert report.passed
+    else:
+        assert len(curated.edges) == 0
+        assert len(severed) == 1
+        assert not report.passed
