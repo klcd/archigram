@@ -4,6 +4,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from archigram.domain.concurrency import (
+    find_causal_overlap_span,
+)
+from archigram.domain.concurrency import (
+    order_trace_events as _order_trace_events,
+)
 from archigram.domain.ir import (
     CanonicalIR,
     EdgeRelation,
@@ -27,9 +33,6 @@ from archigram.features.emit_d2.emitter import (
 )
 from archigram.features.emit_d2.emitter import (
     format_d2_key as _format_d2_key,
-)
-from archigram.features.emit_d2.emitter import (
-    order_d2_trace_events as _order_trace_events,
 )
 from archigram.features.emit_d2.emitter import (
     quote_d2_string as _quote_d2_string,
@@ -305,14 +308,7 @@ def emit_d2_activity(ir: CanonicalIR) -> str:
     idx = 0
     while idx < len(capped):
         ev = capped[idx]
-        overlap_end = idx + 1
-        while (
-            overlap_end < len(capped)
-            and capped[overlap_end].parent_event_id == ev.parent_event_id
-            and capped[overlap_end].clock_domain_id == ev.clock_domain_id
-            and capped[overlap_end].start_ns < ev.end_ns
-        ):
-            overlap_end += 1
+        overlap_end = find_causal_overlap_span(capped, idx)
         if overlap_end - idx > 1:
             prev_id = _emit_d2_fork_region(ir, capped, (idx, overlap_end), prev_id, anim, lines)
             idx = overlap_end
