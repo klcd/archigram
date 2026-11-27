@@ -942,6 +942,9 @@
       overflow: hidden;
       position: relative;
       cursor: grab;
+      /* Cream panel behind the diagram, in light and dark mode, so thin lines stay visible. */
+      background: #f8f4e8;
+      touch-action: none;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -955,6 +958,7 @@
       max-width: 92vw;
       max-height: 84vh;
       transform-origin: center center;
+      will-change: transform;
       user-select: none;
       -webkit-user-drag: none;
     }
@@ -1867,31 +1871,87 @@ flowchart TD
       const lbTitle = document.getElementById("lb-title");
       const lbStage = document.getElementById("lb-stage");
       const lbZoomLabel = document.getElementById("lb-zoom-label");
-      let scale = 1;
-      let panX = 0;
-      let panY = 0;
+      // Zoom/pan state: lbTarget is where the view is heading, lbView is what is drawn.
+      // Each frame eases lbView toward lbTarget, so wheel, buttons and double-click all
+      // glide instead of jumping. Dragging writes both, so panning stays 1:1 with the pointer.
+      const LB_MIN_SCALE = 0.5;
+      const LB_MAX_SCALE = 80;
+      const LB_EASE = 0.22;
+      const lbView = { scale: 1, x: 0, y: 0 };
+      const lbTarget = { scale: 1, x: 0, y: 0 };
+      let lbFrame = 0;
       let dragging = false;
       let startX = 0;
       let startY = 0;
 
-      function applyTransform() {
-        lbImg.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
-        lbZoomLabel.textContent = `${Math.round(scale * 100)}%`;
+      function lbRender() {
+        lbImg.style.transform = `translate3d(${lbView.x}px, ${lbView.y}px, 0) scale(${lbView.scale})`;
+        lbZoomLabel.textContent = `${Math.round(lbView.scale * 100)}%`;
+      }
+
+      function lbTick() {
+        lbView.scale += (lbTarget.scale - lbView.scale) * LB_EASE;
+        lbView.x += (lbTarget.x - lbView.x) * LB_EASE;
+        lbView.y += (lbTarget.y - lbView.y) * LB_EASE;
+        const settled =
+          Math.abs(lbTarget.scale - lbView.scale) < 0.0005 * lbTarget.scale &&
+          Math.abs(lbTarget.x - lbView.x) < 0.05 &&
+          Math.abs(lbTarget.y - lbView.y) < 0.05;
+        if (settled) {
+          Object.assign(lbView, lbTarget);
+          lbFrame = 0;
+        } else {
+          lbFrame = requestAnimationFrame(lbTick);
+        }
+        lbRender();
+      }
+
+      function lbAnimate() {
+        if (!lbFrame) {
+          lbFrame = requestAnimationFrame(lbTick);
+        }
+      }
+
+      function lbJump(scale, x, y) {
+        cancelAnimationFrame(lbFrame);
+        lbFrame = 0;
+        Object.assign(lbTarget, { scale, x, y });
+        Object.assign(lbView, lbTarget);
+        lbRender();
+      }
+
+      // Zoom by `factor` keeping the point under (clientX, clientY) fixed on screen. The image
+      // is centered in the stage, so coordinates are taken relative to the stage center.
+      function lbZoomAt(factor, clientX, clientY) {
+        const rect = lbStage.getBoundingClientRect();
+        const qx = clientX - (rect.left + rect.width / 2);
+        const qy = clientY - (rect.top + rect.height / 2);
+        const next = Math.min(LB_MAX_SCALE, Math.max(LB_MIN_SCALE, lbTarget.scale * factor));
+        const ratio = next / lbTarget.scale;
+        lbTarget.x = qx - ratio * (qx - lbTarget.x);
+        lbTarget.y = qy - ratio * (qy - lbTarget.y);
+        lbTarget.scale = next;
+        lbAnimate();
+      }
+
+      function lbZoomCenter(factor) {
+        const rect = lbStage.getBoundingClientRect();
+        lbZoomAt(factor, rect.left + rect.width / 2, rect.top + rect.height / 2);
       }
 
       function openLightbox(src, title) {
         lbTitle.textContent = title || "Diagram Inspector";
-        scale = 1;
-        panX = 0;
-        panY = 0;
-        applyTransform();
+        lbJump(1, 0, 0);
         lb.classList.add("open");
-        resolveSvgUrlForMode(src, activeThemeChoice).then((resolved) => {
+        // The inspector always sits on a cream panel, so always show the light palette.
+        resolveSvgUrlForMode(src, "light").then((resolved) => {
           lbImg.src = resolved;
         });
       }
 
       function closeLightbox() {
+        cancelAnimationFrame(lbFrame);
+        lbFrame = 0;
         lb.classList.remove("open");
         lbImg.src = "";
       }
@@ -1907,51 +1967,57 @@ flowchart TD
       });
 
       document.getElementById("lb-close").addEventListener("click", closeLightbox);
-      document.getElementById("lb-zoom-in").addEventListener("click", () => {
-        scale = Math.min(12, scale * 1.35);
-        applyTransform();
-      });
-      document.getElementById("lb-zoom-out").addEventListener("click", () => {
-        scale = Math.max(0.4, scale / 1.35);
-        applyTransform();
-      });
+      document.getElementById("lb-zoom-in").addEventListener("click", () => lbZoomCenter(1.6));
+      document.getElementById("lb-zoom-out").addEventListener("click", () => lbZoomCenter(1 / 1.6));
       document.getElementById("lb-zoom-reset").addEventListener("click", () => {
-        scale = 1;
-        panX = 0;
-        panY = 0;
-        applyTransform();
+        Object.assign(lbTarget, { scale: 1, x: 0, y: 0 });
+        lbAnimate();
       });
 
+      // Wheel and trackpad pinch: zoom in proportion to the scroll distance, so small
+      // trackpad deltas give fine steps and a mouse notch gives roughly one 1.2x step.
       lbStage.addEventListener(
         "wheel",
         (e) => {
           e.preventDefault();
-          const factor = e.deltaY < 0 ? 1.18 : 1 / 1.18;
-          scale = Math.min(12, Math.max(0.4, scale * factor));
-          applyTransform();
+          const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 400 : 1;
+          const distance = Math.max(-120, Math.min(120, e.deltaY * unit));
+          const speed = e.ctrlKey ? 0.01 : 0.0016;
+          lbZoomAt(Math.exp(-distance * speed), e.clientX, e.clientY);
         },
         { passive: false }
       );
 
+      lbStage.addEventListener("dblclick", (e) => lbZoomAt(2.2, e.clientX, e.clientY));
+
       lbStage.addEventListener("pointerdown", (e) => {
-        if (e.target.closest("button")) return;
+        if (e.target.closest("button") || e.button !== 0) return;
         dragging = true;
-        startX = e.clientX - panX;
-        startY = e.clientY - panY;
+        lbStage.setPointerCapture(e.pointerId);
+        startX = e.clientX - lbTarget.x;
+        startY = e.clientY - lbTarget.y;
         lbStage.classList.add("dragging");
       });
 
-      window.addEventListener("pointermove", (e) => {
+      lbStage.addEventListener("pointermove", (e) => {
         if (!dragging) return;
-        panX = e.clientX - startX;
-        panY = e.clientY - startY;
-        applyTransform();
+        lbTarget.x = e.clientX - startX;
+        lbTarget.y = e.clientY - startY;
+        lbView.x = lbTarget.x;
+        lbView.y = lbTarget.y;
+        lbRender();
       });
 
-      window.addEventListener("pointerup", () => {
+      function endDrag(e) {
+        if (!dragging) return;
         dragging = false;
+        if (lbStage.hasPointerCapture(e.pointerId)) {
+          lbStage.releasePointerCapture(e.pointerId);
+        }
         lbStage.classList.remove("dragging");
-      });
+      }
+      lbStage.addEventListener("pointerup", endDrag);
+      lbStage.addEventListener("pointercancel", endDrag);
 
       window.addEventListener("keydown", (e) => {
         if (e.key === "Escape" && lb.classList.contains("open")) {
