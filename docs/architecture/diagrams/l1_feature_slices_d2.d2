@@ -40,7 +40,7 @@ archigram: "archigram" {
     emit_dsl: "emit_likec4 + emit_plantuml" {
       style.fill: transparent
       style.stroke: "#64748b"
-      tooltip: "Derived via l1_d2_emit_dsl (21 backing nodes: archigram.features.emit_likec4, archigram.features.emit_likec4.emitter, archigram.features.emit_likec4.emitter.LikeC4Emitter, archigram.features.emit_plantuml, archigram.features.emit_plantuml.emitter, ...)"
+      tooltip: "Derived via l1_d2_emit_dsl (20 backing nodes: archigram.features.emit_likec4, archigram.features.emit_likec4.emitter, archigram.features.emit_likec4.emitter.LikeC4Emitter, archigram.features.emit_plantuml, archigram.features.emit_plantuml.emitter, ...)"
     }
     emit_mermaid: "emit_mermaid" {
       style.fill: transparent
@@ -136,6 +136,10 @@ archigram."archigram.features".emit_d2 -> archigram.domain: "composes" {
 archigram."archigram.features".emit_d2 -> archigram.domain: "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
+}
+archigram."archigram.features".emit_dsl -> archigram.domain: "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
 }
 archigram."archigram.features".emit_dsl -> archigram.domain: "composes" {
   style.stroke: "#14b8a6"

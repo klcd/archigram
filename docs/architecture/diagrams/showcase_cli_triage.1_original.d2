@@ -1427,10 +1427,6 @@ archigram: "archigram" {
           style.fill: transparent
           style.stroke: "#64748b"
         }
-        "archigram.features.emit_plantuml.emitter.emit_class_filter_overlay": "emit_class_filter_overlay" {
-          style.fill: transparent
-          style.stroke: "#64748b"
-        }
         "archigram.features.emit_plantuml.emitter.sanitize_plantuml_label": "sanitize_plantuml_label" {
           style.fill: transparent
           style.stroke: "#64748b"
@@ -3759,6 +3755,10 @@ archigram."archigram.features"."archigram.features.emit_plantuml" -> archigram."
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }
+archigram."archigram.features"."archigram.features.emit_plantuml"."archigram.features.emit_plantuml.emitter" -> archigram."archigram.domain"."archigram.domain.concurrency": "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
 archigram."archigram.features"."archigram.features.emit_plantuml"."archigram.features.emit_plantuml.emitter" -> archigram."archigram.domain"."archigram.domain.ir": "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
@@ -3799,6 +3799,10 @@ archigram."archigram.features"."archigram.features.emit_plantuml"."archigram.fea
     style.filled: true
   }
 }
+archigram."archigram.features"."archigram.features.emit_plantuml"."archigram.features.emit_plantuml.uml_variants" -> archigram."archigram.domain"."archigram.domain.concurrency": "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
 archigram."archigram.features"."archigram.features.emit_plantuml"."archigram.features.emit_plantuml.uml_variants" -> archigram."archigram.domain"."archigram.domain.ir": "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
@@ -3817,6 +3821,10 @@ archigram."archigram.features"."archigram.features.emit_plantuml"."archigram.fea
     shape: diamond
     style.filled: true
   }
+}
+archigram."archigram.features"."archigram.features.emit_plantuml"."archigram.features.emit_plantuml.uml_variants"."archigram.features.emit_plantuml.uml_variants.emit_plantuml_activity" -> archigram."archigram.domain"."archigram.domain.concurrency"."archigram.domain.concurrency.find_causal_overlap_span": "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
 }
 archigram."archigram.features"."archigram.features.emit_plantuml"."archigram.features.emit_plantuml.uml_variants"."archigram.features.emit_plantuml.uml_variants.emit_plantuml_communication" -> archigram."archigram.features"."archigram.features.emit_plantuml"."archigram.features.emit_plantuml.emitter"."archigram.features.emit_plantuml.emitter.build_alias_map": "calls" {
   style.stroke: "#3b82f6"

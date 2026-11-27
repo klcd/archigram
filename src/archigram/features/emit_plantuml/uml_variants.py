@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from archigram.domain.concurrency import find_causal_overlap_span
 from archigram.domain.ir import (
     CanonicalIR,
     EdgeRelation,
@@ -169,14 +170,7 @@ def emit_plantuml_activity(ir: CanonicalIR) -> str:
     idx = 0
     while idx < len(capped):
         ev = capped[idx]
-        overlap_end = idx + 1
-        while (
-            overlap_end < len(capped)
-            and capped[overlap_end].parent_event_id == ev.parent_event_id
-            and capped[overlap_end].clock_domain_id == ev.clock_domain_id
-            and capped[overlap_end].start_ns < ev.end_ns
-        ):
-            overlap_end += 1
+        overlap_end = find_causal_overlap_span(capped, idx)
         if overlap_end - idx > 1:
             for b_idx in range(idx, overlap_end):
                 lines.append("fork" if b_idx == idx else "fork again")

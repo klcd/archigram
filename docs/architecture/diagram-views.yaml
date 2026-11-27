@@ -972,6 +972,7 @@ views:
           - archigram.features.emit_*
           - archigram.features.digest
           - archigram.features.digest.*
+          - archigram.features.emit_*
     simplify:
       condense_sccs: true
       transitive_reduction: true
@@ -1072,6 +1073,7 @@ views:
           - archigram.features.emit_*
           - archigram.features.digest
           - archigram.features.digest.*
+          - archigram.features.emit_*
     simplify:
       condense_sccs: true
       transitive_reduction: true
