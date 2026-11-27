@@ -19,40 +19,41 @@ skinparam NodeBorderColor #64748b
 skinparam ArtifactBackgroundColor transparent
 skinparam ArtifactBorderColor #64748b
 state "diagnostics" as s_0_archigram_domain_71c3aa
-state "ir" as s_1_archigram_domain_ae7fc5
-state "spec" as s_2_archigram_domain_498ecc
-state "style" as s_3_archigram_domain_baf783
-state "pipeline" as s_4_archigram_entryp_8024d0
-state "propose_loop" as s_5_archigram_entryp_a3efe2
-state "generator" as s_6_archigram_featur_603002
-state "emit_d2.emitter" as s_7_archigram_featur_65f494
-state "emit_mermaid.emitter" as s_8_archigram_featur_4d345c
-state "emit_plantuml.emitter" as s_9_archigram_featur_ddda4c
-state "lint_budget.gate" as s_10_archigram_featur_9a2480
-state "gates" as s_11_archigram_featur_d444ee
-state "validators" as s_12_archigram_featur_d6e8be
-state "lint_topology.gate" as s_13_archigram_featur_2a23e8
-state "reducer" as s_14_archigram_featur_df5fa8
-[*] --> s_4_archigram_entryp_8024d0
-s_4_archigram_entryp_8024d0 -->[#3b82f6] s_4_archigram_entryp_8024d0 : compile_and_lint_pipeline
-s_4_archigram_entryp_8024d0 -->[#3b82f6] s_14_archigram_featur_df5fa8 : StructuralTopologicalReducer.reduce
-s_4_archigram_entryp_8024d0 -->[#3b82f6] s_8_archigram_featur_4d345c : MermaidEmitter.__init__
-s_4_archigram_entryp_8024d0 -->[#3b82f6] s_7_archigram_featur_65f494 : D2Emitter.emit
-s_4_archigram_entryp_8024d0 -->[#3b82f6] s_9_archigram_featur_ddda4c : PlantUmlEmitter.emit
-s_4_archigram_entryp_8024d0 -->[#3b82f6] s_11_archigram_featur_d444ee : GroundingAndBoundaryGate.__init__
-s_4_archigram_entryp_8024d0 -->[#3b82f6] s_13_archigram_featur_2a23e8 : TopologicalInvariantGate.__init__
-s_4_archigram_entryp_8024d0 -->[#3b82f6] s_10_archigram_featur_9a2480 : CognitiveBudgetAndOrphanGate.check
-s_4_archigram_entryp_8024d0 -->[#3b82f6] s_12_archigram_featur_d6e8be : build_default_validators
-s_4_archigram_entryp_8024d0 -->[#3b82f6] s_0_archigram_domain_71c3aa : LintReport.from_diagnostics
-s_5_archigram_entryp_a3efe2 -->[#3b82f6] s_5_archigram_entryp_a3efe2 : run_propose_loop
-s_5_archigram_entryp_a3efe2 -->[#3b82f6] s_6_archigram_featur_603002 : GraphDigestGenerator.to_compact_mark
-s_5_archigram_entryp_a3efe2 -->[#3b82f6] s_2_archigram_domain_498ecc : parse_curation_spec_yaml
-s_5_archigram_entryp_a3efe2 -->[#3b82f6] s_11_archigram_featur_d444ee : GroundingAndBoundaryGate.check [loop
-s_5_archigram_entryp_a3efe2 -->[#3b82f6] s_13_archigram_featur_2a23e8 : TopologicalInvariantGate.check
-s_5_archigram_entryp_a3efe2 -->[#3b82f6] s_0_archigram_domain_71c3aa : LintReport.from_diagnostics
-s_5_archigram_entryp_a3efe2 -->[#3b82f6] s_14_archigram_featur_df5fa8 : StructuralTopologicalReducer.reduce
-s_5_archigram_entryp_a3efe2 -->[#3b82f6] s_10_archigram_featur_9a2480 : CognitiveBudgetAndOrphanGate.check
-s_5_archigram_entryp_a3efe2 -->[#3b82f6] s_8_archigram_featur_4d345c : MermaidEmitter.emit
-s_5_archigram_entryp_a3efe2 -->[#3b82f6] s_12_archigram_featur_d6e8be : Gate5SyntaxHarness.validate
-s_2_archigram_domain_498ecc --> [*]
+state "glob" as s_1_archigram_domain_075592
+state "ir" as s_2_archigram_domain_ae7fc5
+state "spec" as s_3_archigram_domain_498ecc
+state "style" as s_4_archigram_domain_baf783
+state "pipeline" as s_5_archigram_entryp_8024d0
+state "propose_loop" as s_6_archigram_entryp_a3efe2
+state "generator" as s_7_archigram_featur_603002
+state "emit_d2.emitter" as s_8_archigram_featur_65f494
+state "emit_mermaid.emitter" as s_9_archigram_featur_4d345c
+state "emit_plantuml.emitter" as s_10_archigram_featur_ddda4c
+state "lint_budget.gate" as s_11_archigram_featur_9a2480
+state "gates" as s_12_archigram_featur_d444ee
+state "validators" as s_13_archigram_featur_d6e8be
+state "lint_topology.gate" as s_14_archigram_featur_2a23e8
+state "reducer" as s_15_archigram_featur_df5fa8
+[*] --> s_5_archigram_entryp_8024d0
+s_5_archigram_entryp_8024d0 -->[#3b82f6] s_5_archigram_entryp_8024d0 : compile_and_lint_pipeline
+s_5_archigram_entryp_8024d0 -->[#3b82f6] s_15_archigram_featur_df5fa8 : StructuralTopologicalReducer.reduce
+s_5_archigram_entryp_8024d0 -->[#3b82f6] s_9_archigram_featur_4d345c : MermaidEmitter.__init__
+s_5_archigram_entryp_8024d0 -->[#3b82f6] s_8_archigram_featur_65f494 : D2Emitter.emit
+s_5_archigram_entryp_8024d0 -->[#3b82f6] s_10_archigram_featur_ddda4c : PlantUmlEmitter.emit
+s_5_archigram_entryp_8024d0 -->[#3b82f6] s_12_archigram_featur_d444ee : GroundingAndBoundaryGate.__init__
+s_5_archigram_entryp_8024d0 -->[#3b82f6] s_14_archigram_featur_2a23e8 : TopologicalInvariantGate.__init__
+s_5_archigram_entryp_8024d0 -->[#3b82f6] s_11_archigram_featur_9a2480 : CognitiveBudgetAndOrphanGate.check
+s_5_archigram_entryp_8024d0 -->[#3b82f6] s_13_archigram_featur_d6e8be : build_default_validators
+s_5_archigram_entryp_8024d0 -->[#3b82f6] s_0_archigram_domain_71c3aa : LintReport.from_diagnostics
+s_6_archigram_entryp_a3efe2 -->[#3b82f6] s_6_archigram_entryp_a3efe2 : run_propose_loop
+s_6_archigram_entryp_a3efe2 -->[#3b82f6] s_7_archigram_featur_603002 : GraphDigestGenerator.to_compact_mark
+s_6_archigram_entryp_a3efe2 -->[#3b82f6] s_3_archigram_domain_498ecc : parse_curation_spec_yaml
+s_6_archigram_entryp_a3efe2 -->[#3b82f6] s_12_archigram_featur_d444ee : GroundingAndBoundaryGate.check [loop
+s_6_archigram_entryp_a3efe2 -->[#3b82f6] s_14_archigram_featur_2a23e8 : TopologicalInvariantGate.check
+s_6_archigram_entryp_a3efe2 -->[#3b82f6] s_0_archigram_domain_71c3aa : LintReport.from_diagnostics
+s_6_archigram_entryp_a3efe2 -->[#3b82f6] s_15_archigram_featur_df5fa8 : StructuralTopologicalReducer.reduce
+s_6_archigram_entryp_a3efe2 -->[#3b82f6] s_11_archigram_featur_9a2480 : CognitiveBudgetAndOrphanGate.check
+s_6_archigram_entryp_a3efe2 -->[#3b82f6] s_9_archigram_featur_4d345c : MermaidEmitter.emit
+s_6_archigram_entryp_a3efe2 -->[#3b82f6] s_13_archigram_featur_d6e8be : Gate5SyntaxHarness.validate
+s_3_archigram_domain_498ecc --> [*]
 @enduml

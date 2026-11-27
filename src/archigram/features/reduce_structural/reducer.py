@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import fnmatch
 import hashlib
 from collections import defaultdict, deque
 from typing import TYPE_CHECKING
@@ -10,6 +9,7 @@ from typing import TYPE_CHECKING
 import rustworkx as rx
 
 from archigram.domain import ProvenanceGrade, ProvenanceStamp
+from archigram.domain.glob import matches_any_glob
 from archigram.domain.ir import (
     EdgeRelation,
     IREdge,
@@ -54,7 +54,7 @@ class CycleInducedError(rx.DAGWouldCycle):
 
 
 def _matches_any_glob(symbol_id: str, patterns: Sequence[str]) -> bool:
-    return any(fnmatch.fnmatchcase(symbol_id, pattern) for pattern in patterns)
+    return matches_any_glob(symbol_id, patterns)
 
 
 def _build_rx_graph(

@@ -36,6 +36,11 @@ triage_legend: "Triage Disposition Legend" {
   style.fill: transparent
   style.stroke: "#10b981"
 }
+"archigram.domain.glob": "[REMOVE] glob" {
+  style.fill: transparent
+  style.stroke: "#ef4444"
+  style.stroke-dash: 5
+}
 "archigram.domain.ir": "[REMOVE] ir" {
   style.fill: transparent
   style.stroke: "#ef4444"
@@ -176,7 +181,19 @@ triage_legend: "Triage Disposition Legend" {
   style.stroke: "#ef4444"
   style.stroke-dash: 5
 }
+"archigram.features.lint_grounding.gates" -> "archigram.domain.glob": "[REMOVE 23 spans]" {
+  style.stroke: "#ef4444"
+  style.stroke-dash: 5
+}
 "archigram.features.lint_topology.gate" -> "archigram.domain.diagnostics": "[REMOVE 4 spans]" {
+  style.stroke: "#ef4444"
+  style.stroke-dash: 5
+}
+"archigram.features.lint_topology.gate" -> "archigram.domain.glob": "[REMOVE 35 spans]" {
+  style.stroke: "#ef4444"
+  style.stroke-dash: 5
+}
+"archigram.features.reduce_structural.reducer" -> "archigram.domain.glob": "[REMOVE 15 spans]" {
   style.stroke: "#ef4444"
   style.stroke-dash: 5
 }

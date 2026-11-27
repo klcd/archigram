@@ -5,39 +5,40 @@ config:
 stateDiagram-v2
   direction TB
   state "diagnostics" as s0
-  state "ir" as s1
-  state "spec" as s2
-  state "style" as s3
-  state "pipeline" as s4
-  state "propose_loop" as s5
-  state "generator" as s6
-  state "emit_d2.emitter" as s7
-  state "emit_mermaid.emitter" as s8
-  state "emit_plantuml.emitter" as s9
-  state "lint_budget.gate" as s10
-  state "gates" as s11
-  state "validators" as s12
-  state "lint_topology.gate" as s13
-  state "reducer" as s14
-  [*] --> s4
-  s4 --> s4 : compile_and_lint_pipeline
-  s4 --> s14 : StructuralTopologicalReducer.reduce
-  s4 --> s8 : MermaidEmitter.__init__
-  s4 --> s7 : D2Emitter.emit
-  s4 --> s9 : PlantUmlEmitter.emit
-  s4 --> s11 : GroundingAndBoundaryGate.__init__
-  s4 --> s13 : TopologicalInvariantGate.__init__
-  s4 --> s10 : CognitiveBudgetAndOrphanGate.check
-  s4 --> s12 : build_default_validators
-  s4 --> s0 : LintReport.from_diagnostics
-  s5 --> s5 : run_propose_loop
-  s5 --> s6 : GraphDigestGenerator.to_compact_mark
-  s5 --> s2 : parse_curation_spec_yaml
-  s5 --> s11 : GroundingAndBoundaryGate.check loop
-  s5 --> s13 : TopologicalInvariantGate.check
+  state "glob" as s1
+  state "ir" as s2
+  state "spec" as s3
+  state "style" as s4
+  state "pipeline" as s5
+  state "propose_loop" as s6
+  state "generator" as s7
+  state "emit_d2.emitter" as s8
+  state "emit_mermaid.emitter" as s9
+  state "emit_plantuml.emitter" as s10
+  state "lint_budget.gate" as s11
+  state "gates" as s12
+  state "validators" as s13
+  state "lint_topology.gate" as s14
+  state "reducer" as s15
+  [*] --> s5
+  s5 --> s5 : compile_and_lint_pipeline
+  s5 --> s15 : StructuralTopologicalReducer.reduce
+  s5 --> s9 : MermaidEmitter.__init__
+  s5 --> s8 : D2Emitter.emit
+  s5 --> s10 : PlantUmlEmitter.emit
+  s5 --> s12 : GroundingAndBoundaryGate.__init__
+  s5 --> s14 : TopologicalInvariantGate.__init__
+  s5 --> s11 : CognitiveBudgetAndOrphanGate.check
+  s5 --> s13 : build_default_validators
   s5 --> s0 : LintReport.from_diagnostics
-  s5 --> s14 : StructuralTopologicalReducer.reduce
-  s5 --> s10 : CognitiveBudgetAndOrphanGate.check
-  s5 --> s8 : MermaidEmitter.emit
-  s5 --> s12 : Gate5SyntaxHarness.validate
-  s2 --> [*]
+  s6 --> s6 : run_propose_loop
+  s6 --> s7 : GraphDigestGenerator.to_compact_mark
+  s6 --> s3 : parse_curation_spec_yaml
+  s6 --> s12 : GroundingAndBoundaryGate.check loop
+  s6 --> s14 : TopologicalInvariantGate.check
+  s6 --> s0 : LintReport.from_diagnostics
+  s6 --> s15 : StructuralTopologicalReducer.reduce
+  s6 --> s11 : CognitiveBudgetAndOrphanGate.check
+  s6 --> s9 : MermaidEmitter.emit
+  s6 --> s13 : Gate5SyntaxHarness.validate
+  s3 --> [*]

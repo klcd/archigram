@@ -171,6 +171,18 @@ archigram: "archigram" {
         "+by_gate(gate: GateId)": "tuple[LintDiagnostic, ...]"
       }
     }
+    "archigram.domain.glob": "glob" {
+      style.fill: transparent
+      style.stroke: "#64748b"
+      "archigram.domain.glob.matches_any_glob": "matches_any_glob" {
+        style.fill: transparent
+        style.stroke: "#64748b"
+      }
+      "archigram.domain.glob.matches_glob": "matches_glob" {
+        style.fill: transparent
+        style.stroke: "#64748b"
+      }
+    }
     "archigram.domain.ir": "ir" {
       style.fill: transparent
       style.stroke: "#64748b"
@@ -1852,10 +1864,6 @@ archigram: "archigram" {
           style.fill: transparent
           style.stroke: "#64748b"
         }
-        "archigram.features.lint_grounding.gates.matches_glob": "matches_glob" {
-          style.fill: transparent
-          style.stroke: "#64748b"
-        }
         "archigram.features.lint_grounding.gates.run_gate_1_grounding": "run_gate_1_grounding" {
           style.fill: transparent
           style.stroke: "#64748b"
@@ -2234,6 +2242,10 @@ archigram."archigram.domain"."archigram.domain.diagnostics"."archigram.domain.di
     shape: diamond
     style.filled: true
   }
+}
+archigram."archigram.domain"."archigram.domain.glob"."archigram.domain.glob.matches_any_glob" -> archigram."archigram.domain"."archigram.domain.glob"."archigram.domain.glob.matches_glob": "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
 }
 archigram."archigram.domain"."archigram.domain.ir" -> archigram."archigram.domain": "imports" {
   style.stroke: "#64748b"
@@ -3095,6 +3107,10 @@ archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypo
   style.animated: true
 }
 archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage" -> archigram."archigram.domain": "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.triage" -> archigram."archigram.domain"."archigram.domain.glob": "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }
@@ -4352,6 +4368,10 @@ archigram."archigram.features"."archigram.features.lint_grounding"."archigram.fe
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }
+archigram."archigram.features"."archigram.features.lint_grounding"."archigram.features.lint_grounding.gates" -> archigram."archigram.domain"."archigram.domain.glob": "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
 archigram."archigram.features"."archigram.features.lint_grounding"."archigram.features.lint_grounding.gates" -> archigram."archigram.domain"."archigram.domain.ir": "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
@@ -4388,7 +4408,7 @@ archigram."archigram.features"."archigram.features.lint_grounding"."archigram.fe
   style.stroke: "#3b82f6"
   style.animated: true
 }
-archigram."archigram.features"."archigram.features.lint_grounding"."archigram.features.lint_grounding.gates"."archigram.features.lint_grounding.gates.match_symbols_for_globs" -> archigram."archigram.features"."archigram.features.lint_grounding"."archigram.features.lint_grounding.gates"."archigram.features.lint_grounding.gates.matches_glob": "calls" {
+archigram."archigram.features"."archigram.features.lint_grounding"."archigram.features.lint_grounding.gates"."archigram.features.lint_grounding.gates.match_symbols_for_globs" -> archigram."archigram.domain"."archigram.domain.glob"."archigram.domain.glob.matches_any_glob": "calls" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
@@ -4547,6 +4567,10 @@ archigram."archigram.features"."archigram.features.lint_topology"."archigram.fea
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }
+archigram."archigram.features"."archigram.features.lint_topology"."archigram.features.lint_topology.gate" -> archigram."archigram.domain"."archigram.domain.glob": "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
 archigram."archigram.features"."archigram.features.lint_topology"."archigram.features.lint_topology.gate" -> archigram."archigram.domain"."archigram.domain.ir": "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
@@ -4606,6 +4630,10 @@ archigram."archigram.features"."archigram.features.reduce_structural" -> archigr
   style.stroke-dash: 5
 }
 archigram."archigram.features"."archigram.features.reduce_structural"."archigram.features.reduce_structural.reducer" -> archigram."archigram.domain": "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.features"."archigram.features.reduce_structural"."archigram.features.reduce_structural.reducer" -> archigram."archigram.domain"."archigram.domain.glob": "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }

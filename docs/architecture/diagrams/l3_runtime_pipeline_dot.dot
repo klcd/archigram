@@ -5,6 +5,7 @@ digraph "archigram_pipeline_and_repair_v1" {
   node [shape="box", style="rounded", color="#64748b", fontcolor="#64748b"];
   edge [penwidth="1.5", fontcolor="#64748b"];
   "archigram.domain.diagnostics" [label="diagnostics", kind="module", _kind="module"];
+  "archigram.domain.glob" [label="glob", kind="module", _kind="module"];
   "archigram.domain.ir" [label="ir", kind="module", _kind="module"];
   "archigram.domain.spec" [label="spec", kind="module", _kind="module"];
   "archigram.domain.style" [label="style", kind="module", _kind="module"];

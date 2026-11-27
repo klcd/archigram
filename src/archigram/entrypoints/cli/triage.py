@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-import fnmatch
 import hashlib
 from dataclasses import dataclass
 from enum import StrEnum
 from typing import TYPE_CHECKING
 
 from archigram.domain import ProvenanceGrade
+from archigram.domain.glob import matches_any_glob
 from archigram.domain.ir import (
     CanonicalIR,
     InteractionTraceIR,
@@ -172,7 +172,7 @@ def _classify_structural_nodes(
             dispositions[sid] = NodeDisposition.KEEP
         elif sid in collapse_targets:
             dispositions[sid] = NodeDisposition.COLLAPSE
-        elif any(fnmatch.fnmatchcase(sid, pat) for pat in bypass_globs):
+        elif matches_any_glob(sid, bypass_globs):
             dispositions[sid] = NodeDisposition.BYPASS
         else:
             dispositions[sid] = NodeDisposition.REMOVE

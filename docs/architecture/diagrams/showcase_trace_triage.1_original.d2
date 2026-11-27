@@ -12,6 +12,10 @@ direction: right
   style.fill: transparent
   style.stroke: "#64748b"
 }
+"archigram.domain.glob": "glob" {
+  style.fill: transparent
+  style.stroke: "#64748b"
+}
 "archigram.domain.ir": "ir" {
   style.fill: transparent
   style.stroke: "#64748b"
@@ -143,7 +147,16 @@ direction: right
 "archigram.features.lint_grounding.gates" -> "archigram.domain.diagnostics": "LintReport.from_diagnostics (x17 raw)" {
   style.stroke: "#3b82f6"
 }
+"archigram.features.lint_grounding.gates" -> "archigram.domain.glob": "matches_glob (x23 raw)" {
+  style.stroke: "#3b82f6"
+}
 "archigram.features.lint_topology.gate" -> "archigram.domain.diagnostics": "LintReport.from_diagnostics (x4 raw)" {
+  style.stroke: "#3b82f6"
+}
+"archigram.features.lint_topology.gate" -> "archigram.domain.glob": "matches_any_glob (x35 raw)" {
+  style.stroke: "#3b82f6"
+}
+"archigram.features.reduce_structural.reducer" -> "archigram.domain.glob": "matches_any_glob (x15 raw)" {
   style.stroke: "#3b82f6"
 }
 "archigram.features.reduce_structural.reducer" -> "archigram.domain.ir": "_validate_non_blank (x86 raw)" {
