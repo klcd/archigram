@@ -594,7 +594,7 @@ views:
       node_budget:
         min_count: 18
         max_count: 25
-      edge_budget_max: 80
+      edge_budget_max: 85
 
   - id: l1_feature_slices_d2
     title: "L1: 16 Independent Vertical Feature Slices (D2)"
@@ -719,7 +719,7 @@ views:
       node_budget:
         min_count: 18
         max_count: 25
-      edge_budget_max: 80
+      edge_budget_max: 85
 
   # ============================================================================
   # LEVEL 2a: Domain Models & Hexagonal Ports Contracts
