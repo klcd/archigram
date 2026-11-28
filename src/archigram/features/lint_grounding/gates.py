@@ -2,12 +2,9 @@
 
 from __future__ import annotations
 
-import re
 from collections import deque
 from dataclasses import dataclass
 from difflib import get_close_matches
-from fnmatch import fnmatchcase
-from functools import lru_cache
 from typing import TYPE_CHECKING
 
 from archigram.domain.diagnostics import (
@@ -16,6 +13,7 @@ from archigram.domain.diagnostics import (
     LintDiagnostic,
     LintReport,
 )
+from archigram.domain.glob import matches_any_glob, matches_glob
 from archigram.domain.ir import (
     EdgeRelation,
     StructuralGraphIR,
@@ -41,44 +39,6 @@ _VALID_RELATIONS: frozenset[str] = frozenset(rel.value for rel in EdgeRelation)
 _VALID_RELATIONS_STR: str = ", ".join(sorted(_VALID_RELATIONS))
 
 
-def matches_glob(symbol_id: str, pattern: str) -> bool:
-    """Match a symbol_id against a glob pattern with fnmatchcase and hierarchical '**' support."""
-    if fnmatchcase(symbol_id, pattern):
-        return True
-    if "**" not in pattern:
-        return False
-    regex = _compile_hierarchical_glob(pattern)
-    return bool(regex.fullmatch(symbol_id))
-
-
-@lru_cache(maxsize=512)
-def _compile_hierarchical_glob(pattern: str) -> re.Pattern[str]:
-    parts: list[str] = ["^"]
-    idx = 0
-    length = len(pattern)
-    while idx < length:
-        if pattern[idx : idx + 3] in {"**/", ".**"}:
-            if pattern[idx : idx + 3] == "**/":
-                parts.append("(?:.+/)?")
-            else:
-                parts.append(r"(?:\..+)?")
-            idx += 3
-        elif pattern[idx : idx + 2] == "**":
-            parts.append(".*")
-            idx += 2
-        elif pattern[idx] == "*":
-            parts.append(r"[^./:]*")
-            idx += 1
-        elif pattern[idx] == "?":
-            parts.append(r"[^./:]")
-            idx += 1
-        else:
-            parts.append(re.escape(pattern[idx]))
-            idx += 1
-    parts.append("$")
-    return re.compile("".join(parts))
-
-
 def collect_observed_symbols(observed_ir: CanonicalIR) -> frozenset[str]:
     """Collect all valid observed symbol/participant identifiers from a CanonicalIR."""
     if isinstance(observed_ir, StructuralGraphIR):
@@ -98,9 +58,7 @@ def match_symbols_for_globs(
     """Return sorted observed symbols matched by any glob in globs and not in exclude_ids."""
     excluded = frozenset(exclude_ids)
     matched = [
-        sym
-        for sym in observed_symbols
-        if sym not in excluded and any(matches_glob(sym, pat) for pat in globs)
+        sym for sym in observed_symbols if sym not in excluded and matches_any_glob(sym, globs)
     ]
     matched.sort()
     return tuple(matched)

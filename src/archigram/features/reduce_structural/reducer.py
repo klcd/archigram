@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import fnmatch
 import hashlib
 from collections import defaultdict, deque
 from typing import TYPE_CHECKING
@@ -10,6 +9,7 @@ from typing import TYPE_CHECKING
 import rustworkx as rx
 
 from archigram.domain import ProvenanceGrade, ProvenanceStamp
+from archigram.domain.glob import matches_any_glob
 from archigram.domain.ir import (
     EdgeRelation,
     IREdge,
@@ -54,7 +54,7 @@ class CycleInducedError(rx.DAGWouldCycle):
 
 
 def _matches_any_glob(symbol_id: str, patterns: Sequence[str]) -> bool:
-    return any(fnmatch.fnmatchcase(symbol_id, pattern) for pattern in patterns)
+    return matches_any_glob(symbol_id, patterns)
 
 
 def _build_rx_graph(
@@ -363,9 +363,9 @@ def _build_spliced_groups(
         for _, dst_idx, out_edge in out_edges:
             if src_idx == dst_idx or not _edge_relation_allowed(out_edge, preserve_set):
                 continue
-            relation = (
-                in_edge.relation if in_edge.relation is out_edge.relation else out_edge.relation
-            )
+            # Retain the higher-precedence semantic relation across mixed-relation legs
+            # rather than unconditionally discarding in_edge.relation.
+            relation = _resolve_spliced_relation(in_edge.relation, out_edge.relation)
             sync_kind = _resolve_spliced_sync_kind(
                 in_edge.sync_kind,
                 out_edge.sync_kind,
@@ -846,3 +846,27 @@ class StructuralTopologicalReducer:
             current = transitive_reduction(current, condense_cycles=True)
 
         return current
+
+
+_RELATION_PRECEDENCE: dict[EdgeRelation, int] = {
+    EdgeRelation.ASYNC_SPAWN: 0,
+    EdgeRelation.FORK_JOIN: 1,
+    EdgeRelation.CALLS: 2,
+    EdgeRelation.WRITES_DATA: 3,
+    EdgeRelation.READS_DATA: 4,
+    EdgeRelation.INHERITS: 5,
+    EdgeRelation.IMPLEMENTS: 6,
+    EdgeRelation.COMPOSES: 7,
+    EdgeRelation.AGGREGATES: 8,
+    EdgeRelation.IMPORTS: 9,
+    EdgeRelation.ASSOCIATES: 10,
+}
+
+
+def _resolve_spliced_relation(
+    in_relation: EdgeRelation,
+    out_relation: EdgeRelation,
+) -> EdgeRelation:
+    if _RELATION_PRECEDENCE[in_relation] <= _RELATION_PRECEDENCE[out_relation]:
+        return in_relation
+    return out_relation

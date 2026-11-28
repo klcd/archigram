@@ -16,12 +16,12 @@ archigram: "archigram" {
     entrypoints_cli: "entrypoints.cli" {
       style.fill: transparent
       style.stroke: "#64748b"
-      tooltip: "Derived via l1_d2_cli (84 backing nodes: archigram.entrypoints.cli, archigram.entrypoints.cli.app, archigram.entrypoints.cli.app.ApplyOptions, archigram.entrypoints.cli.app.DiffOptions, archigram.entrypoints.cli.app.LintOptions, ...)"
+      tooltip: "Derived via l1_d2_cli (83 backing nodes: archigram.entrypoints.cli, archigram.entrypoints.cli.app, archigram.entrypoints.cli.app.ApplyOptions, archigram.entrypoints.cli.app.DiffOptions, archigram.entrypoints.cli.app.LintOptions, ...)"
     }
     entrypoints_mcp: "entrypoints.mcp" {
       style.fill: transparent
       style.stroke: "#64748b"
-      tooltip: "Derived via l1_d2_mcp (21 backing nodes: archigram.entrypoints.mcp, archigram.entrypoints.mcp.propose_loop, archigram.entrypoints.mcp.propose_loop.CompiledViewPreview, archigram.entrypoints.mcp.propose_loop.CuratedViewsPreviewReport, archigram.entrypoints.mcp.propose_loop.DeterministicHeuristicProposer, ...)"
+      tooltip: "Derived via l1_d2_mcp (23 backing nodes: archigram.entrypoints.mcp, archigram.entrypoints.mcp.propose_loop, archigram.entrypoints.mcp.propose_loop.CompiledViewPreview, archigram.entrypoints.mcp.propose_loop.CuratedViewsPreviewReport, archigram.entrypoints.mcp.propose_loop.DeterministicHeuristicProposer, ...)"
     }
   }
   "archigram.features": "features" {
@@ -40,7 +40,7 @@ archigram: "archigram" {
     emit_dsl: "emit_likec4 + emit_plantuml" {
       style.fill: transparent
       style.stroke: "#64748b"
-      tooltip: "Derived via l1_d2_emit_dsl (21 backing nodes: archigram.features.emit_likec4, archigram.features.emit_likec4.emitter, archigram.features.emit_likec4.emitter.LikeC4Emitter, archigram.features.emit_plantuml, archigram.features.emit_plantuml.emitter, ...)"
+      tooltip: "Derived via l1_d2_emit_dsl (20 backing nodes: archigram.features.emit_likec4, archigram.features.emit_likec4.emitter, archigram.features.emit_likec4.emitter.LikeC4Emitter, archigram.features.emit_plantuml, archigram.features.emit_plantuml.emitter, ...)"
     }
     emit_mermaid: "emit_mermaid" {
       style.fill: transparent
@@ -80,7 +80,7 @@ archigram: "archigram" {
     lint_grounding: "lint_grounding" {
       style.fill: transparent
       style.stroke: "#64748b"
-      tooltip: "Derived via l1_d2_lint_grounding (12 backing nodes: archigram.features.lint_grounding, archigram.features.lint_grounding.gates, archigram.features.lint_grounding.gates.Gate1GroundingGate, archigram.features.lint_grounding.gates.Gate2BoundaryLeafGate, archigram.features.lint_grounding.gates.GroundingAndBoundaryGate, ...)"
+      tooltip: "Derived via l1_d2_lint_grounding (11 backing nodes: archigram.features.lint_grounding, archigram.features.lint_grounding.gates, archigram.features.lint_grounding.gates.Gate1GroundingGate, archigram.features.lint_grounding.gates.Gate2BoundaryLeafGate, archigram.features.lint_grounding.gates.GroundingAndBoundaryGate, ...)"
     }
     lint_syntax: "lint_syntax" {
       style.fill: transparent
@@ -106,7 +106,7 @@ archigram: "archigram" {
   domain: "domain" {
     style.fill: transparent
     style.stroke: "#64748b"
-    tooltip: "Derived via l1_d2_domain (75 backing nodes: archigram.domain, archigram.domain.ProvenanceGrade, archigram.domain.ProvenanceStamp, archigram.domain.concurrency, archigram.domain.concurrency.ConcurrencyMode, ...)"
+    tooltip: "Derived via l1_d2_domain (85 backing nodes: archigram.domain, archigram.domain.ProvenanceGrade, archigram.domain.ProvenanceStamp, archigram.domain.concurrency, archigram.domain.concurrency.CausalTraceEvent, ...)"
   }
   ports: "ports" {
     style.fill: transparent
@@ -126,6 +126,10 @@ archigram."archigram.features".digest -> archigram.domain: "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }
+archigram."archigram.features".emit_d2 -> archigram.domain: "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
 archigram."archigram.features".emit_d2 -> archigram.domain: "composes" {
   style.stroke: "#14b8a6"
   source-arrowhead: {
@@ -137,6 +141,10 @@ archigram."archigram.features".emit_d2 -> archigram.domain: "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }
+archigram."archigram.features".emit_dsl -> archigram.domain: "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
 archigram."archigram.features".emit_dsl -> archigram.domain: "composes" {
   style.stroke: "#14b8a6"
   source-arrowhead: {
@@ -147,6 +155,10 @@ archigram."archigram.features".emit_dsl -> archigram.domain: "composes" {
 archigram."archigram.features".emit_dsl -> archigram.domain: "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
+}
+archigram."archigram.features".emit_mermaid -> archigram.domain: "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
 }
 archigram."archigram.features".emit_mermaid -> archigram.domain: "composes" {
   style.stroke: "#14b8a6"

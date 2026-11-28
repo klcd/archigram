@@ -7,6 +7,7 @@ import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from archigram.domain.concurrency import events_overlap, order_trace_events
 from archigram.domain.ir import (
     CanonicalIR,
     ClassMember,
@@ -29,7 +30,6 @@ from archigram.domain.style import (
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
-    from pathlib import Path
 
 _SLUG_RE = re.compile(r"[^A-Za-z0-9]+")
 
@@ -336,31 +336,6 @@ def _emit_class_diagram(ir: StructuralGraphIR) -> str:
     return "\n".join(lines) + "\n"
 
 
-def emit_class_filter_overlay(
-    base_puml_path: str | Path,
-    hide_private: bool = True,
-    remove_unlinked: bool = True,
-    remove_tags: Iterable[str] = (),
-    *,
-    hide_empty: bool = True,
-) -> str:
-    """Emit a lightweight post-include PlantUML filter overlay view."""
-    clean_path = _strip_control_and_newlines(str(base_puml_path)).replace('"', "")
-    include_target = clean_path if clean_path else "base.puml"
-    lines: list[str] = ["@startuml", f"!include {include_target}"]
-    if hide_empty:
-        lines.append("hide empty members")
-    if hide_private:
-        lines.append("hide private members")
-    if remove_unlinked:
-        lines.append("remove @unlinked")
-    normalized_tags = sorted({tag for raw in remove_tags if (tag := _sanitize_tag(raw))})
-    for tag in normalized_tags:
-        lines.append(f"remove ${tag}")
-    lines.append("@enduml")
-    return "\n".join(lines) + "\n"
-
-
 def _emit_component_subtree(
     sym_id: str,
     nodes: dict[str, IRNode],
@@ -436,51 +411,6 @@ class _AnchorStep:
 type _SequenceStep = _SingleStep | _ParStep | _LoopStep | _AnchorStep
 
 
-def _order_trace_events(events: dict[str, TraceEvent]) -> list[TraceEvent]:
-    """Topologically order causal DAG events deterministically by timestamp and event_id."""
-    import heapq
-
-    dependents: dict[str, list[str]] = {eid: [] for eid in events}
-    indegree: dict[str, int] = dict.fromkeys(events, 0)
-
-    for eid, event in events.items():
-        preds = set(event.causal_links)
-        if event.parent_event_id is not None:
-            preds.add(event.parent_event_id)
-        indegree[eid] = len(preds)
-        for pred in preds:
-            dependents[pred].append(eid)
-
-    heap: list[tuple[int, int, str, str, str]] = [
-        (ev.start_ns, ev.end_ns, ev.caller_id, ev.callee_id, eid)
-        for eid, ev in events.items()
-        if indegree[eid] == 0
-    ]
-    heapq.heapify(heap)
-
-    ordered: list[TraceEvent] = []
-    while heap:
-        _, _, _, _, eid = heapq.heappop(heap)
-        ordered.append(events[eid])
-        for dep_id in dependents[eid]:
-            indegree[dep_id] -= 1
-            if indegree[dep_id] == 0:
-                dep = events[dep_id]
-                heapq.heappush(
-                    heap, (dep.start_ns, dep.end_ns, dep.caller_id, dep.callee_id, dep_id)
-                )
-    return ordered
-
-
-def _events_overlap(first: TraceEvent, second: TraceEvent) -> bool:
-    """Check whether two same-clock-domain events overlap in execution intervals."""
-    if first.clock_domain_id != second.clock_domain_id:
-        return False
-    if first.start_ns == second.start_ns:
-        return True
-    return max(first.start_ns, second.start_ns) < min(first.end_ns, second.end_ns)
-
-
 def _can_join_cluster(
     event: TraceEvent,
     cluster_idx: int | None,
@@ -490,7 +420,7 @@ def _can_join_cluster(
     if cluster_idx is None:
         return False
     cluster = clusters[cluster_idx]
-    if not any(_events_overlap(member, event) for member in cluster):
+    if not any(events_overlap(member, event) for member in cluster):
         return False
     if not event.causal_links:
         return True
@@ -722,7 +652,7 @@ def _emit_sequence_diagram(ir: InteractionTraceIR) -> str:
         lines.append(_format_participant_line(ir.participants[pid], aliases[pid]))
 
     children_by_parent: dict[str | None, list[TraceEvent]] = {}
-    for event in _order_trace_events(ir.events):
+    for event in order_trace_events(ir.events):
         children_by_parent.setdefault(event.parent_event_id, []).append(event)
 
     root_events = children_by_parent.get(None, [])
@@ -769,4 +699,4 @@ class PlantUmlEmitter:
 
 
 build_puml_children_map = _build_children_map
-order_puml_trace_events = _order_trace_events
+order_puml_trace_events = order_trace_events

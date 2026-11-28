@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from archigram.domain.concurrency import find_causal_overlap_span, order_trace_events
 from archigram.domain.ir import (
     EdgeRelation,
     InteractionTraceIR,
     IREdge,
     IRNode,
-    NodeKind,
     StructuralGraphIR,
     TraceEvent,
 )
@@ -17,6 +17,14 @@ from archigram.domain.style import (
     CANONICAL_EDGE_STYLES,
     DEFAULT_MERMAID_THEME,
     MermaidThemeConfig,
+)
+from archigram.domain.uml import (
+    build_structural_hierarchy,
+    number_trace_events,
+    partition_use_case_structural,
+    partition_use_case_trace,
+    shorten_signature,
+    structural_start_end_nodes,
 )
 
 if TYPE_CHECKING:
@@ -47,44 +55,12 @@ def _clean_state_trigger(raw: str) -> str:
     return printable[:48] if printable else "step"
 
 
-def _short_sig(sig: str) -> str:
-    """Shorten a Python or RPC call signature for compact diagram edge labels."""
-    base = sig.split("->", 1)[0].strip()
-    if "(" in base:
-        fn_name = base.split("(", 1)[0].strip().rsplit(".", 1)[-1]
-        return f"{fn_name}()" if fn_name else base[:32]
-    return base[:36] if base else "call"
-
-
 def _alias_map(ids: Sequence[str], prefix: str) -> dict[str, str]:
     return {raw_id: f"{prefix}{idx}" for idx, raw_id in enumerate(sorted(set(ids)))}
 
 
 def _ordered_events(trace: InteractionTraceIR) -> list[TraceEvent]:
-    return sorted(trace.events.values(), key=lambda ev: (ev.start_ns, ev.end_ns, ev.event_id))
-
-
-def _number_trace_events(trace: InteractionTraceIR) -> list[tuple[str, TraceEvent]]:
-    """Assign hierarchical UML Communication Diagram sequence numbers (`1`, `1.1`, `2`)."""
-    by_parent: dict[str | None, list[TraceEvent]] = {}
-    for ev in _ordered_events(trace):
-        parent = ev.parent_event_id if ev.parent_event_id in trace.events else None
-        by_parent.setdefault(parent, []).append(ev)
-
-    numbered: list[tuple[str, TraceEvent]] = []
-    visited: set[str] = set()
-
-    def _walk(parent_id: str | None, prefix: str) -> None:
-        for idx, child in enumerate(by_parent.get(parent_id, ()), start=1):
-            if child.event_id in visited:
-                continue
-            visited.add(child.event_id)
-            seq_no = f"{prefix}.{idx}" if prefix else str(idx)
-            numbered.append((seq_no, child))
-            _walk(child.event_id, seq_no)
-
-    _walk(None, "")
-    return numbered
+    return order_trace_events(trace.events)
 
 
 def emit_mermaid_state_structural(
@@ -99,13 +75,7 @@ def emit_mermaid_state_structural(
         label = _clean_state_trigger(ir.nodes[sid].label)
         lines.append(f'  state "{label}" as {aliases[sid]}')
     if sorted_ids:
-        in_deg = dict.fromkeys(sorted_ids, 0)
-        out_deg = dict.fromkeys(sorted_ids, 0)
-        for edge in sorted(ir.edges, key=lambda item: item.edge_id):
-            in_deg[edge.target] += 1
-            out_deg[edge.source] += 1
-        starts = [sid for sid in sorted_ids if in_deg[sid] == 0] or [sorted_ids[0]]
-        ends = [sid for sid in sorted_ids if out_deg[sid] == 0] or [sorted_ids[-1]]
+        starts, ends = structural_start_end_nodes(ir)
         for sid in starts[:3]:
             lines.append(f"  [*] --> {aliases[sid]}")
         for edge in sorted(ir.edges, key=lambda item: item.edge_id):
@@ -134,7 +104,7 @@ def emit_mermaid_state_trace(
         for ev in ordered:
             pair = (ev.caller_id, ev.callee_id)
             if pair not in seen_pairs:
-                seen_pairs[pair] = _clean_state_trigger(_short_sig(ev.signature))
+                seen_pairs[pair] = _clean_state_trigger(shorten_signature(ev.signature))
         for (src, dst), trig in seen_pairs.items():
             lines.append(f"  {aliases[src]} --> {aliases[dst]} : {trig}")
         lines.append(f"  {aliases[ordered[-1].callee_id]} --> [*]")
@@ -156,9 +126,9 @@ def emit_mermaid_communication_trace(
         label = _clean_text(trace.participants[pid].label)
         lines.append(f'  {aliases[pid]}[":{label}"]')
     grouped: dict[tuple[str, str], list[str]] = {}
-    for seq_no, ev in _number_trace_events(trace):
+    for seq_no, ev in number_trace_events(trace):
         grouped.setdefault((ev.caller_id, ev.callee_id), []).append(
-            f"{seq_no}: {_short_sig(ev.signature)}"
+            f"{seq_no}: {shorten_signature(ev.signature)}"
         )
     edge_count = 0
     for (src, dst), msgs in grouped.items():
@@ -214,7 +184,7 @@ def _emit_mermaid_fork_region(
         b_ev = capped[b_idx]
         b_node = f"a{b_idx}"
         b_lbl = _clean_text(
-            f"{trace.participants[b_ev.callee_id].label}: {_short_sig(b_ev.signature)}"
+            f"{trace.participants[b_ev.callee_id].label}: {shorten_signature(b_ev.signature)}"
         )
         node_lines.append(f'  {b_node}("{b_lbl}")')
         edges.append((fork_id, b_node, _FORK_HEX))
@@ -234,14 +204,7 @@ def _emit_activity_trace_nodes(
     idx = 0
     while idx < len(capped):
         ev = capped[idx]
-        overlap_end = idx + 1
-        while (
-            overlap_end < len(capped)
-            and capped[overlap_end].parent_event_id == ev.parent_event_id
-            and capped[overlap_end].clock_domain_id == ev.clock_domain_id
-            and capped[overlap_end].start_ns < ev.end_ns
-        ):
-            overlap_end += 1
+        overlap_end = find_causal_overlap_span(capped, idx)
         if overlap_end - idx > 1:
             prev_id = _emit_mermaid_fork_region(
                 trace, capped, (idx, overlap_end), prev_id, node_lines, edges
@@ -256,7 +219,7 @@ def _emit_activity_trace_nodes(
             prev_id = guard_id
         act_id = f"a{idx}"
         step_lbl = _clean_text(
-            f"{trace.participants[ev.callee_id].label}: {_short_sig(ev.signature)}"
+            f"{trace.participants[ev.callee_id].label}: {shorten_signature(ev.signature)}"
         )
         node_lines.append(f'  {act_id}("{step_lbl}")')
         edges.append((prev_id, act_id, _CALL_HEX))
@@ -308,13 +271,7 @@ def emit_mermaid_activity_structural(
     lines.append('  act_stop(((" ")))')
     edge_count = 0
     if sorted_ids:
-        in_deg = dict.fromkeys(sorted_ids, 0)
-        out_deg = dict.fromkeys(sorted_ids, 0)
-        for edge in ir.edges:
-            in_deg[edge.target] += 1
-            out_deg[edge.source] += 1
-        starts = [sid for sid in sorted_ids if in_deg[sid] == 0] or [sorted_ids[0]]
-        ends = [sid for sid in sorted_ids if out_deg[sid] == 0] or [sorted_ids[-1]]
+        starts, ends = structural_start_end_nodes(ir)
         for sid in starts[:3]:
             lines.append(f"  act_start --> {aliases[sid]}")
             edge_count += 1
@@ -332,36 +289,12 @@ def emit_mermaid_activity_structural(
     return "\n".join(lines) + "\n"
 
 
-def _partition_actors_and_use_cases(ir: StructuralGraphIR) -> tuple[list[str], list[str]]:
-    """Split `StructuralGraphIR` nodes into driving Actors vs inside-boundary Use Cases."""
-    sorted_ids = sorted(ir.nodes)
-    if len(sorted_ids) <= 1:
-        return [], sorted_ids
-    in_deg = dict.fromkeys(sorted_ids, 0)
-    for edge in ir.edges:
-        in_deg[edge.target] += 1
-    actors = [
-        sid
-        for sid in sorted_ids
-        if ir.nodes[sid].kind is NodeKind.EXTERNAL
-        or "cli" in sid.lower()
-        or "mcp" in sid.lower()
-        or "entrypoint" in sid.lower()
-    ]
-    if not actors or len(actors) == len(sorted_ids):
-        roots = [sid for sid in sorted_ids if in_deg[sid] == 0]
-        actors = roots[:2] if roots and len(roots) < len(sorted_ids) else [sorted_ids[0]]
-    actor_set = set(actors)
-    use_cases = [sid for sid in sorted_ids if sid not in actor_set]
-    return actors, use_cases
-
-
 def emit_mermaid_use_case_structural(
     ir: StructuralGraphIR,
     theme: MermaidThemeConfig = DEFAULT_MERMAID_THEME,
 ) -> str:
     """Emit a UML 2.5 Use Case Diagram (`flowchart LR`) from `StructuralGraphIR`."""
-    actors, use_cases = _partition_actors_and_use_cases(ir)
+    actors, use_cases = partition_use_case_structural(ir)
     aliases = _alias_map(sorted(ir.nodes), "u")
     lines = [theme.structural_frontmatter(), "flowchart LR", f"  {theme.default_classdef()}"]
     for aid in actors:
@@ -393,15 +326,9 @@ def emit_mermaid_use_case_trace(
 ) -> str:
     """Emit a UML 2.5 Use Case Diagram (`flowchart LR`) from `InteractionTraceIR`."""
     ordered = _ordered_events(trace)
-    root_callers = sorted({ev.caller_id for ev in ordered if ev.parent_event_id is None})
     sorted_pids = sorted(trace.participants)
-    actors = (
-        root_callers[:2]
-        if root_callers and len(root_callers) < len(sorted_pids)
-        else sorted_pids[:1]
-    )
+    actors, use_cases = partition_use_case_trace(trace)
     actor_set = set(actors)
-    use_cases = [pid for pid in sorted_pids if pid not in actor_set] or sorted_pids
     aliases = _alias_map(sorted_pids, "u")
     lines = [theme.structural_frontmatter(), "flowchart LR", f"  {theme.default_classdef()}"]
     for aid in actors:
@@ -459,14 +386,7 @@ def _emit_stereotyped_structural(
 ) -> str:
     sorted_ids = sorted(ir.nodes)
     aliases = _alias_map(sorted_ids, "n")
-    roots: list[str] = []
-    children: dict[str, list[str]] = {sid: [] for sid in sorted_ids}
-    for sid in sorted_ids:
-        pid = ir.nodes[sid].parent_id
-        if pid is None or pid not in children:
-            roots.append(sid)
-        else:
-            children[pid].append(sid)
+    roots, children = build_structural_hierarchy(ir.nodes)
     sub_style = theme.subgraph_style_attrs()
     lines = [
         theme.structural_frontmatter(),

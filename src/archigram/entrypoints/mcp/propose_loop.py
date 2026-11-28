@@ -17,6 +17,7 @@ from archigram.domain.diagnostics import (
 )
 from archigram.domain.ir import (
     CanonicalIR,
+    EdgeRelation,
     InteractionTraceIR,
     StructuralGraphIR,
 )
@@ -25,6 +26,7 @@ from archigram.domain.spec import (
     BypassVerticesRule,
     CollapsePartitionRule,
     CurationSpecV1,
+    DiagramVariant,
     DiagramViewSpec,
     FullScope,
     GlobalAbstractionRule,
@@ -37,6 +39,14 @@ from archigram.domain.spec import (
     ViewInvariants,
     dump_curation_spec_yaml,
     parse_curation_spec_yaml,
+)
+from archigram.domain.style import (
+    DEFAULT_MERMAID_THEME,
+    NEUTRAL_BORDER_HEX,
+    TRANSPARENT_FILL,
+    LinePattern,
+    MermaidThemeConfig,
+    resolve_edge_visual_style,
 )
 from archigram.features.digest import (
     GraphDigestGenerator,
@@ -66,6 +76,8 @@ from archigram.features.reduce_trace import TraceCompactionEngine
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
+    from archigram.ports.contracts import DiagramEmitterPort
+
 _CANONICAL_IR_ADAPTER: TypeAdapter[CanonicalIR] = TypeAdapter(CanonicalIR)
 _DIGEST_GENERATOR = GraphDigestGenerator()
 _STRUCTURAL_REDUCER = StructuralTopologicalReducer()
@@ -74,7 +86,7 @@ _GATE_1_2 = GroundingAndBoundaryGate()
 _GATE_3 = TopologicalInvariantGate()
 _GATE_4 = CognitiveBudgetAndOrphanGate()
 _GATE_5 = Gate5SyntaxHarness()
-_EMITTERS = {
+_EMITTERS: dict[TargetRenderer, DiagramEmitterPort] = {
     TargetRenderer.MERMAID: MermaidEmitter(),
     TargetRenderer.D2: D2Emitter(),
     TargetRenderer.PLANTUML: PlantUmlEmitter(),
@@ -156,41 +168,195 @@ def make_schema_error_diagnostic(exc: Exception) -> LintDiagnostic:
     )
 
 
-def _emit_dot_diagram(ir: CanonicalIR) -> str:
-    lines: list[str] = ["digraph G {"]
-    if isinstance(ir, StructuralGraphIR):
-        for sym_id in sorted(ir.nodes):
+def _escape_dot_str(value: str) -> str:
+    cleaned = (
+        value.replace("\\", "\\\\").replace('"', '\\"').replace("\r", " ").replace("\n", "\\n")
+    )
+    return f'"{cleaned}"'
+
+
+def _dot_preamble_lines(graph_title: str) -> list[str]:
+    return [
+        f"digraph {_escape_dot_str(graph_title)} {{",
+        '  rankdir="LR";',
+        f"  bgcolor={_escape_dot_str(TRANSPARENT_FILL)};",
+        '  splines="ortho";',
+        (
+            f'  node [shape="box", style="rounded", '
+            f"color={_escape_dot_str(NEUTRAL_BORDER_HEX)}, "
+            f"fontcolor={_escape_dot_str(NEUTRAL_BORDER_HEX)}];"
+        ),
+        f'  edge [penwidth="1.5", fontcolor={_escape_dot_str(NEUTRAL_BORDER_HEX)}];',
+    ]
+
+
+def _dot_line_style(pattern: LinePattern) -> str:
+    if pattern is LinePattern.DASHED:
+        return "dashed"
+    if pattern is LinePattern.BOLD:
+        return "bold"
+    return "solid"
+
+
+def _emit_structural_dot(ir: StructuralGraphIR) -> str:
+    lines = _dot_preamble_lines(ir.graph_id)
+    children_by_parent: dict[str | None, list[str]] = {}
+    for sym_id in sorted(ir.nodes):
+        parent_id = ir.nodes[sym_id].parent_id
+        parent_key = parent_id if (parent_id is not None and parent_id in ir.nodes) else None
+        children_by_parent.setdefault(parent_key, []).append(sym_id)
+
+    def _emit_level(parent_key: str | None, indent: str) -> None:
+        for sym_id in children_by_parent.get(parent_key, ()):
             node = ir.nodes[sym_id]
-            safe_id = sym_id.replace("\\", "\\\\").replace('"', '\\"')
-            safe_lbl = node.label.replace("\\", "\\\\").replace('"', '\\"')
-            lines.append(f'  "{safe_id}" [label="{safe_lbl}"];')
-        for edge in ir.edges:
-            src = edge.source.replace("\\", "\\\\").replace('"', '\\"')
-            dst = edge.target.replace("\\", "\\\\").replace('"', '\\"')
-            rel = edge.relation.value.replace("\\", "\\\\").replace('"', '\\"')
-            lines.append(f'  "{src}" -> "{dst}" [label="{rel}"];')
-    else:
-        for pid in sorted(ir.participants):
-            part = ir.participants[pid]
-            safe_id = pid.replace("\\", "\\\\").replace('"', '\\"')
-            safe_lbl = part.label.replace("\\", "\\\\").replace('"', '\\"')
-            lines.append(f'  "{safe_id}" [label="{safe_lbl}"];')
-        for eid in sorted(ir.events):
-            ev = ir.events[eid]
-            src = ev.caller_id.replace("\\", "\\\\").replace('"', '\\"')
-            dst = ev.callee_id.replace("\\", "\\\\").replace('"', '\\"')
-            sig = ev.signature.replace("\\", "\\\\").replace('"', '\\"')
-            lines.append(f'  "{src}" -> "{dst}" [label="{sig}"];')
+            child_ids = children_by_parent.get(sym_id, [])
+            kind_val = _escape_dot_str(node.kind.value)
+            node_attrs = f"[label={_escape_dot_str(node.label)}, kind={kind_val}, _kind={kind_val}]"
+            if child_ids:
+                cluster_id = f"cluster_{sym_id}"
+                lines.append(f"{indent}subgraph {_escape_dot_str(cluster_id)} {{")
+                lines.append(f"{indent}  label={_escape_dot_str(node.label)};")
+                lines.append(f"{indent}  bgcolor={_escape_dot_str(TRANSPARENT_FILL)};")
+                lines.append(f'{indent}  style="rounded,dashed";')
+                lines.append(f"{indent}  color={_escape_dot_str(NEUTRAL_BORDER_HEX)};")
+                lines.append(f"{indent}  fontcolor={_escape_dot_str(NEUTRAL_BORDER_HEX)};")
+                lines.append(f"{indent}  {_escape_dot_str(sym_id)} {node_attrs};")
+                _emit_level(sym_id, indent + "  ")
+                lines.append(f"{indent}}}")
+            else:
+                lines.append(f"{indent}{_escape_dot_str(sym_id)} {node_attrs};")
+
+    _emit_level(None, "  ")
+    for edge in sorted(ir.edges, key=lambda e: (e.source, e.target, e.relation.value, e.edge_id)):
+        visual = resolve_edge_visual_style(edge.relation, edge.sync_kind)
+        style = _dot_line_style(visual.line_pattern)
+        rel_str = _escape_dot_str(edge.relation.value)
+        lines.append(
+            f"  {_escape_dot_str(edge.source)} -> {_escape_dot_str(edge.target)} "
+            f"[xlabel={rel_str}, _rel_kind={rel_str}, "
+            f"_sync_kind={_escape_dot_str(edge.sync_kind.value)}, "
+            f"style={_escape_dot_str(style)}, "
+            f"color={_escape_dot_str(visual.stroke_hex)}, "
+            f"arrowhead={_escape_dot_str(visual.dot_arrowhead)}];"
+        )
     lines.append("}")
     return "\n".join(lines) + "\n"
 
 
-def emit_view_diagram(ir: CanonicalIR, renderer: TargetRenderer) -> str:
+def _emit_trace_dot(ir: InteractionTraceIR) -> str:
+    lines = _dot_preamble_lines(ir.trace_id)
+    for pid in sorted(ir.participants):
+        participant = ir.participants[pid]
+        kind_val = _escape_dot_str(participant.kind.value)
+        lines.append(
+            f"  {_escape_dot_str(pid)} "
+            f"[label={_escape_dot_str(participant.label)}, kind={kind_val}, _kind={kind_val}];"
+        )
+    ordered_events = sorted(
+        ir.events.values(),
+        key=lambda ev: (ev.start_ns, ev.end_ns, ev.event_id),
+    )
+    for event in ordered_events:
+        visual = resolve_edge_visual_style(EdgeRelation.CALLS, event.sync_kind)
+        style = _dot_line_style(visual.line_pattern)
+        lines.append(
+            f"  {_escape_dot_str(event.caller_id)} -> {_escape_dot_str(event.callee_id)} "
+            f"[xlabel={_escape_dot_str(event.signature)}, "
+            f"style={_escape_dot_str(style)}, "
+            f"color={_escape_dot_str(visual.stroke_hex)}, "
+            f"arrowhead={_escape_dot_str(visual.dot_arrowhead)}];"
+        )
+    lines.append("}")
+    return "\n".join(lines) + "\n"
+
+
+def emit_deterministic_dot(ir: CanonicalIR) -> str:
+    """Emit deterministic Graphviz `.dot` source for StructuralGraphIR or InteractionTraceIR."""
+    if isinstance(ir, StructuralGraphIR):
+        return _emit_structural_dot(ir)
+    return _emit_trace_dot(ir)
+
+
+def _append_overflow_comment(
+    diagram_source: str,
+    renderer: TargetRenderer,
+    overflow_filename: str,
+    overflow_markdown: str,
+) -> str:
+    if not overflow_markdown:
+        return diagram_source
+    prefix_map: dict[TargetRenderer, str] = {
+        TargetRenderer.MERMAID: "%%",
+        TargetRenderer.D2: "#",
+        TargetRenderer.PLANTUML: "'",
+        TargetRenderer.LIKEC4: "//",
+        TargetRenderer.DOT: "//",
+    }
+    prefix = prefix_map[renderer]
+    row_count = max(0, len(overflow_markdown.splitlines()) - 2)
+    comment_lines = [
+        f"{prefix} Companion overflow table ({row_count} omitted edges): {overflow_filename}",
+        *(f"{prefix} {line}" for line in overflow_markdown.splitlines()),
+    ]
+    if renderer is TargetRenderer.PLANTUML:
+        stripped = diagram_source.rstrip("\n")
+        if stripped.endswith("@enduml"):
+            body = stripped[: -len("@enduml")].rstrip("\n")
+            return "\n".join([body, *comment_lines, "@enduml"]) + "\n"
+    return diagram_source.rstrip("\n") + "\n" + "\n".join(comment_lines) + "\n"
+
+
+def emit_view_source(
+    ir: CanonicalIR,
+    view: DiagramViewSpec,
+    overflow_markdown: str = "",
+    mermaid_theme: MermaidThemeConfig = DEFAULT_MERMAID_THEME,
+) -> str:
+    """Emit deterministic target diagram source for a view, appending overflow comment if any."""
+    meta_updates: dict[str, str] = {}
+    if view.diagram_variant is not DiagramVariant.AUTO:
+        meta_updates["diagram_variant"] = view.diagram_variant.value
+    if view.animate_edges is not None:
+        meta_updates["animate_edges"] = "true" if view.animate_edges else "false"
+    effective_ir = (
+        ir.model_copy(update={"metadata": {**ir.metadata, **meta_updates}}) if meta_updates else ir
+    )
+    if view.target_renderer is TargetRenderer.DOT:
+        raw_source = emit_deterministic_dot(effective_ir)
+    elif view.target_renderer is TargetRenderer.MERMAID:
+        raw_source = MermaidEmitter(mermaid_theme).emit(effective_ir)
+    else:
+        emitter = _EMITTERS[view.target_renderer]
+        raw_source = emitter.emit(effective_ir)
+    overflow_file = f"{view.id}.overflow.md"
+    return _append_overflow_comment(
+        raw_source, view.target_renderer, overflow_file, overflow_markdown
+    )
+
+
+def emit_view_diagram(
+    ir: CanonicalIR,
+    renderer: TargetRenderer,
+    *,
+    diagram_variant: DiagramVariant = DiagramVariant.AUTO,
+    animate_edges: bool | None = None,
+    mermaid_theme: MermaidThemeConfig = DEFAULT_MERMAID_THEME,
+) -> str:
     """Deterministically emit diagram text for a curated view IR and target renderer."""
-    if renderer is TargetRenderer.DOT:
-        return _emit_dot_diagram(ir)
-    emitter = _EMITTERS[renderer]
-    return emitter.emit(ir)
+    synthetic_view = DiagramViewSpec(
+        id="preview",
+        title="Preview",
+        ir_mode=IRMode(ir.ir_mode),
+        target_renderer=renderer,
+        diagram_variant=diagram_variant,
+        animate_edges=animate_edges,
+    )
+    return emit_view_source(
+        ir,
+        synthetic_view,
+        overflow_markdown="",
+        mermaid_theme=mermaid_theme,
+    )
 
 
 def _compute_view_branch_count(curated: CanonicalIR, view: DiagramViewSpec) -> int:
@@ -293,7 +459,7 @@ def _preview_and_validate_syntax(
             view.invariants.edge_budget_max,
         )
 
-    diagram_text = emit_view_diagram(render_ir, view.target_renderer)
+    diagram_text = emit_view_source(render_ir, view, overflow_markdown="")
     syntax_res = _GATE_5.validate(view.target_renderer.value, diagram_text)
     diagnostics: list[LintDiagnostic] = []
     if not syntax_res.valid:
@@ -883,14 +1049,26 @@ def _finalize_repaired_spec(
         return candidate
     baseline = build_heuristic_baseline_spec(observed_ir)
     if prior_spec.views and baseline.views:
-        first_view = baseline.views[0].model_copy(
+        template = baseline.views[0]
+        repaired_views = tuple(
+            template.model_copy(
+                update={
+                    "id": pv.id,
+                    "title": pv.title,
+                    "target_renderer": pv.target_renderer,
+                    "diagram_variant": pv.diagram_variant,
+                    "animate_edges": pv.animate_edges,
+                    "render_svg": pv.render_svg,
+                }
+            )
+            for pv in prior_spec.views
+        )
+        return baseline.model_copy(
             update={
-                "id": prior_spec.views[0].id,
-                "title": prior_spec.views[0].title,
-                "target_renderer": prior_spec.views[0].target_renderer,
+                "views": repaired_views,
+                "metadata": dict(prior_spec.metadata),
             }
         )
-        return baseline.model_copy(update={"views": (first_view,)})
     return baseline
 
 
@@ -983,14 +1161,25 @@ class DeterministicHeuristicProposer:
         return dump_curation_spec_yaml(repaired)
 
 
+def _validate_max_turns(max_turns: int) -> int:
+    if isinstance(max_turns, bool) or not (1 <= max_turns <= 3):
+        msg = f"max_turns must be between 1 and 3 (got {max_turns})"
+        raise ValueError(msg)
+    return max_turns
+
+
 def run_propose_loop(
     ir: CanonicalIR,
     proposer: RuleProposerProtocol | None = None,
     *,
     max_turns: int = 3,
 ) -> ProposeResult:
-    """Run the bounded (<= 3 turns) digest -> propose -> 5-Gate lint-repair loop."""
-    bounded_turns = max(1, min(max_turns, 3))
+    """Run the bounded (1 <= max_turns <= 3) digest -> propose -> 5-Gate lint-repair loop.
+
+    Raises:
+        ValueError: If `max_turns` is a bool or outside `1 <= max_turns <= 3`.
+    """
+    bounded_turns = _validate_max_turns(max_turns)
     active_proposer: RuleProposerProtocol = (
         proposer if proposer is not None else DeterministicHeuristicProposer(ir)
     )
@@ -1077,7 +1266,9 @@ def run_propose_cli(
     """CLI helper reading CanonicalIR or Python directory, running repair loop, and writing YAML.
 
     The data-plane `ir_loader` is injected by the caller so this module has no CLI import edge.
+    `max_turns` must satisfy `1 <= max_turns <= 3` (`ValueError` otherwise).
     """
+    _validate_max_turns(max_turns)
     ir = _load_propose_input_ir(input_path, ir_loader)
     if ir is None:
         return 1

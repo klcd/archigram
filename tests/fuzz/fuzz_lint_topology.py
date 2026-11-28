@@ -38,6 +38,9 @@ from archigram.domain.spec import (
 from archigram.features.lint_topology import TopologicalInvariantGate
 from archigram.features.lint_topology.gate import (
     _build_curated_resolver,  # pyright: ignore[reportPrivateUsage]
+    _build_trace_order_context,  # pyright: ignore[reportPrivateUsage]
+    _observed_projection,  # pyright: ignore[reportPrivateUsage]
+    _TraceOrderContext,  # pyright: ignore[reportPrivateUsage]
 )
 from archigram.ports.contracts import LintGatePort
 
@@ -1297,3 +1300,143 @@ def test_severed_reachability_attributes_only_causal_bypass_rule(
     (plain,) = [d for d in uncaused.diagnostics if d.code == "REACHABILITY_SEVERED"]
     assert plain.repair_hint is not None
     assert "adding a bypass_vertices" in plain.repair_hint
+
+
+def _naive_observed_projection(ctx: _TraceOrderContext) -> tuple[list[int], list[int]]:
+    count = len(ctx.cur_poset.event_ids)
+    succ = [0] * count
+    pred = [0] * count
+    for u_idx in range(count):
+        u_mask = ctx.backing_mask[u_idx]
+        if not u_mask:
+            continue
+        reach = ctx.obs_desc_union[u_idx]
+        for v_idx in range(count):
+            v_mask = ctx.backing_mask[v_idx]
+            if v_idx != u_idx and v_mask & reach and not v_mask & u_mask:
+                succ[u_idx] |= 1 << v_idx
+                pred[v_idx] |= 1 << u_idx
+    return succ, pred
+
+
+def _draw_dag_edges(
+    draw: st.DrawFn,
+    prior_ids: list[str],
+) -> tuple[str | None, tuple[str, ...]]:
+    if not prior_ids:
+        return None, ()
+    parent = draw(st.one_of(st.none(), st.sampled_from(prior_ids)))
+    links = tuple(draw(st.lists(st.sampled_from(prior_ids), max_size=3, unique=True)))
+    return parent, links
+
+
+def _draw_curated_identity(
+    draw: st.DrawFn,
+    idx: int,
+    obs_ids: list[str],
+    used_ids: set[str],
+) -> tuple[str, ProvenanceStamp]:
+    mode = draw(st.sampled_from(["surviving", "derived", "both", "unbacked"]))
+    avail_obs = [eid for eid in obs_ids if eid not in used_ids]
+    if mode == "surviving" and avail_obs:
+        eid = draw(st.sampled_from(avail_obs))
+        return eid, _OBS_PROVENANCE
+    if mode == "both" and avail_obs:
+        eid = draw(st.sampled_from(avail_obs))
+        backing = tuple(
+            draw(st.lists(st.sampled_from([*obs_ids, "missing_obs"]), min_size=1, max_size=3))
+        )
+        return eid, ProvenanceStamp(
+            grade=ProvenanceGrade.DERIVED_DETERMINISTIC,
+            rule_id="merge-both",
+            backing_ids=backing,
+        )
+    if mode == "derived" and obs_ids:
+        backing = tuple(
+            draw(st.lists(st.sampled_from([*obs_ids, "missing_obs"]), min_size=1, max_size=4))
+        )
+        return f"rep_{idx}", ProvenanceStamp(
+            grade=ProvenanceGrade.DERIVED_DETERMINISTIC,
+            rule_id="fold-rep",
+            backing_ids=backing,
+        )
+    return f"syn_{idx}", ProvenanceStamp(grade=ProvenanceGrade.DECLARED, extractor="spec")
+
+
+@st.composite
+def _trace_pair_strategy(draw: st.DrawFn) -> tuple[InteractionTraceIR, InteractionTraceIR]:
+    participants = {"p0": _make_participant("p0"), "p1": _make_participant("p1")}
+    obs_count = draw(st.integers(min_value=0, max_value=18))
+    obs_events: dict[str, TraceEvent] = {}
+    obs_ids: list[str] = []
+    for idx in range(obs_count):
+        eid = f"obs_{idx}"
+        parent, links = _draw_dag_edges(draw, obs_ids)
+        obs_events[eid] = TraceEvent(
+            event_id=eid,
+            caller_id="p0",
+            callee_id="p1",
+            signature=f"obs_{idx}()",
+            parent_event_id=parent,
+            causal_links=links,
+            clock_domain_id="clk0",
+            start_ns=idx * 10,
+            end_ns=idx * 10 + 5,
+            sync_kind=SyncKind.SYNC,
+            provenance=_OBS_PROVENANCE,
+        )
+        obs_ids.append(eid)
+
+    cur_count = draw(st.integers(min_value=0, max_value=18))
+    cur_events: dict[str, TraceEvent] = {}
+    cur_ids: list[str] = []
+    used_ids: set[str] = set()
+    for idx in range(cur_count):
+        eid, prov = _draw_curated_identity(draw, idx, obs_ids, used_ids)
+        used_ids.add(eid)
+        parent, links = _draw_dag_edges(draw, cur_ids)
+        cur_events[eid] = TraceEvent(
+            event_id=eid,
+            caller_id="p0",
+            callee_id="p1",
+            signature=f"cur_{idx}()",
+            parent_event_id=parent,
+            causal_links=links,
+            clock_domain_id="clk0",
+            start_ns=idx * 10,
+            end_ns=idx * 10 + 5,
+            sync_kind=SyncKind.SYNC,
+            provenance=prov,
+        )
+        cur_ids.append(eid)
+
+    return (
+        InteractionTraceIR(participants=participants, events=obs_events),
+        InteractionTraceIR(participants=participants, events=cur_events),
+    )
+
+
+@settings(max_examples=120, deadline=None)
+@given(pair=_trace_pair_strategy())
+def test_observed_projection_matches_quadratic_reference(
+    pair: tuple[InteractionTraceIR, InteractionTraceIR],
+) -> None:
+    observed, curated = pair
+    ctx = _build_trace_order_context(observed, curated)
+    succ, pred = _observed_projection(ctx)
+    exp_succ, exp_pred = _naive_observed_projection(ctx)
+
+    assert succ == exp_succ
+    assert pred == exp_pred
+    assert _observed_projection(ctx) == (succ, pred)
+
+    count = len(ctx.cur_poset.event_ids)
+    for u_idx in range(count):
+        assert not (succ[u_idx] & (1 << u_idx))
+        for v_idx in range(count):
+            assert bool(succ[u_idx] & (1 << v_idx)) is bool(pred[v_idx] & (1 << u_idx))
+
+    report = TopologicalInvariantGate().check(observed, _trace_spec(), {"trace-view": curated})
+    assert report == TopologicalInvariantGate().check(
+        observed, _trace_spec(), {"trace-view": curated}
+    )

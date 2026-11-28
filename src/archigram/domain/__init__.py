@@ -3,8 +3,20 @@
 from __future__ import annotations
 
 from enum import StrEnum
+from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field
+
+
+def validate_non_blank(value: str) -> str:
+    """Validate that an identifier or text field is non-empty after stripping whitespace."""
+    if not value.strip():
+        msg = "Identifier or text field must not be blank"
+        raise ValueError(msg)
+    return value
+
+
+NonBlankStr = Annotated[str, AfterValidator(validate_non_blank)]
 
 
 class ProvenanceGrade(StrEnum):

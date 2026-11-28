@@ -23,31 +23,28 @@ from archigram.domain.diagnostics import (
 )
 from archigram.domain.ir import (
     CanonicalIR,
-    EdgeRelation,
     InteractionTraceIR,
     StructuralGraphIR,
 )
 from archigram.domain.spec import (
     CurationSpecV1,
-    DiagramVariant,
     DiagramViewSpec,
     IRMode,
     TargetRenderer,
     parse_curation_spec_yaml,
+    validate_safe_view_id,
 )
 from archigram.domain.style import (
     DEFAULT_MERMAID_THEME,
-    NEUTRAL_BORDER_HEX,
-    TRANSPARENT_FILL,
-    LinePattern,
     MermaidThemeConfig,
     parse_mermaid_theme_yaml,
-    resolve_edge_visual_style,
 )
-from archigram.features.emit_d2 import D2Emitter
-from archigram.features.emit_likec4 import LikeC4Emitter
-from archigram.features.emit_mermaid import MermaidEmitter
-from archigram.features.emit_plantuml import PlantUmlEmitter
+from archigram.entrypoints.mcp.propose_loop import (
+    emit_deterministic_dot as emit_deterministic_dot,
+)
+from archigram.entrypoints.mcp.propose_loop import (
+    emit_view_source as emit_view_source,
+)
 from archigram.features.ingest_class import ClassHierarchyIngestor
 from archigram.features.ingest_dot import DotStructuralIngestor
 from archigram.features.ingest_otel import OtelTraceIngestor
@@ -71,8 +68,6 @@ from archigram.features.reduce_trace import TraceCompactionEngine
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
-
-    from archigram.ports.contracts import DiagramEmitterPort
 
 _CANONICAL_IR_ADAPTER: TypeAdapter[CanonicalIR] = TypeAdapter(CanonicalIR)
 
@@ -356,187 +351,13 @@ def load_canonical_ir(
     return _dispatch_format_ingestor(resolved_fmt, raw_text, source_path)
 
 
-def _escape_dot_str(value: str) -> str:
-    cleaned = (
-        value.replace("\\", "\\\\").replace('"', '\\"').replace("\r", " ").replace("\n", "\\n")
-    )
-    return f'"{cleaned}"'
-
-
-def _dot_preamble_lines(graph_title: str) -> list[str]:
-    return [
-        f"digraph {_escape_dot_str(graph_title)} {{",
-        '  rankdir="LR";',
-        f"  bgcolor={_escape_dot_str(TRANSPARENT_FILL)};",
-        '  splines="ortho";',
-        (
-            f'  node [shape="box", style="rounded", '
-            f"color={_escape_dot_str(NEUTRAL_BORDER_HEX)}, "
-            f"fontcolor={_escape_dot_str(NEUTRAL_BORDER_HEX)}];"
-        ),
-        f'  edge [penwidth="1.5", fontcolor={_escape_dot_str(NEUTRAL_BORDER_HEX)}];',
-    ]
-
-
-def _dot_line_style(pattern: LinePattern) -> str:
-    if pattern is LinePattern.DASHED:
-        return "dashed"
-    if pattern is LinePattern.BOLD:
-        return "bold"
-    return "solid"
-
-
-def _emit_structural_dot(ir: StructuralGraphIR) -> str:
-    lines = _dot_preamble_lines(ir.graph_id)
-    children_by_parent: dict[str | None, list[str]] = {}
-    for sym_id in sorted(ir.nodes):
-        parent_id = ir.nodes[sym_id].parent_id
-        parent_key = parent_id if (parent_id is not None and parent_id in ir.nodes) else None
-        children_by_parent.setdefault(parent_key, []).append(sym_id)
-
-    def _emit_level(parent_key: str | None, indent: str) -> None:
-        for sym_id in children_by_parent.get(parent_key, ()):
-            node = ir.nodes[sym_id]
-            child_ids = children_by_parent.get(sym_id, [])
-            kind_val = _escape_dot_str(node.kind.value)
-            node_attrs = f"[label={_escape_dot_str(node.label)}, kind={kind_val}, _kind={kind_val}]"
-            if child_ids:
-                cluster_id = f"cluster_{sym_id}"
-                lines.append(f"{indent}subgraph {_escape_dot_str(cluster_id)} {{")
-                lines.append(f"{indent}  label={_escape_dot_str(node.label)};")
-                lines.append(f"{indent}  bgcolor={_escape_dot_str(TRANSPARENT_FILL)};")
-                lines.append(f'{indent}  style="rounded,dashed";')
-                lines.append(f"{indent}  color={_escape_dot_str(NEUTRAL_BORDER_HEX)};")
-                lines.append(f"{indent}  fontcolor={_escape_dot_str(NEUTRAL_BORDER_HEX)};")
-                lines.append(f"{indent}  {_escape_dot_str(sym_id)} {node_attrs};")
-                _emit_level(sym_id, indent + "  ")
-                lines.append(f"{indent}}}")
-            else:
-                lines.append(f"{indent}{_escape_dot_str(sym_id)} {node_attrs};")
-
-    _emit_level(None, "  ")
-    for edge in sorted(ir.edges, key=lambda e: (e.source, e.target, e.relation.value, e.edge_id)):
-        visual = resolve_edge_visual_style(edge.relation, edge.sync_kind)
-        style = _dot_line_style(visual.line_pattern)
-        rel_str = _escape_dot_str(edge.relation.value)
-        lines.append(
-            f"  {_escape_dot_str(edge.source)} -> {_escape_dot_str(edge.target)} "
-            f"[xlabel={rel_str}, _rel_kind={rel_str}, "
-            f"_sync_kind={_escape_dot_str(edge.sync_kind.value)}, "
-            f"style={_escape_dot_str(style)}, "
-            f"color={_escape_dot_str(visual.stroke_hex)}, "
-            f"arrowhead={_escape_dot_str(visual.dot_arrowhead)}];"
-        )
-    lines.append("}")
-    return "\n".join(lines) + "\n"
-
-
-def _emit_trace_dot(ir: InteractionTraceIR) -> str:
-    lines = _dot_preamble_lines(ir.trace_id)
-    for pid in sorted(ir.participants):
-        participant = ir.participants[pid]
-        kind_val = _escape_dot_str(participant.kind.value)
-        lines.append(
-            f"  {_escape_dot_str(pid)} "
-            f"[label={_escape_dot_str(participant.label)}, kind={kind_val}, _kind={kind_val}];"
-        )
-    ordered_events = sorted(
-        ir.events.values(),
-        key=lambda ev: (ev.start_ns, ev.end_ns, ev.event_id),
-    )
-    for event in ordered_events:
-        visual = resolve_edge_visual_style(EdgeRelation.CALLS, event.sync_kind)
-        style = _dot_line_style(visual.line_pattern)
-        lines.append(
-            f"  {_escape_dot_str(event.caller_id)} -> {_escape_dot_str(event.callee_id)} "
-            f"[xlabel={_escape_dot_str(event.signature)}, "
-            f"style={_escape_dot_str(style)}, "
-            f"color={_escape_dot_str(visual.stroke_hex)}, "
-            f"arrowhead={_escape_dot_str(visual.dot_arrowhead)}];"
-        )
-    lines.append("}")
-    return "\n".join(lines) + "\n"
-
-
-def emit_deterministic_dot(ir: CanonicalIR) -> str:
-    """Emit deterministic Graphviz `.dot` source for StructuralGraphIR or InteractionTraceIR."""
-    if isinstance(ir, StructuralGraphIR):
-        return _emit_structural_dot(ir)
-    return _emit_trace_dot(ir)
-
-
-_EMITTERS: dict[TargetRenderer, DiagramEmitterPort] = {
-    TargetRenderer.MERMAID: MermaidEmitter(),
-    TargetRenderer.D2: D2Emitter(),
-    TargetRenderer.PLANTUML: PlantUmlEmitter(),
-    TargetRenderer.LIKEC4: LikeC4Emitter(),
-}
-
-
-def _append_overflow_comment(
-    diagram_source: str,
-    renderer: TargetRenderer,
-    overflow_filename: str,
-    overflow_markdown: str,
-) -> str:
-    if not overflow_markdown:
-        return diagram_source
-    prefix_map: dict[TargetRenderer, str] = {
-        TargetRenderer.MERMAID: "%%",
-        TargetRenderer.D2: "#",
-        TargetRenderer.PLANTUML: "'",
-        TargetRenderer.LIKEC4: "//",
-        TargetRenderer.DOT: "//",
-    }
-    prefix = prefix_map[renderer]
-    row_count = max(0, len(overflow_markdown.splitlines()) - 2)
-    comment_lines = [
-        f"{prefix} Companion overflow table ({row_count} omitted edges): {overflow_filename}",
-        *(f"{prefix} {line}" for line in overflow_markdown.splitlines()),
-    ]
-    if renderer is TargetRenderer.PLANTUML:
-        stripped = diagram_source.rstrip("\n")
-        if stripped.endswith("@enduml"):
-            body = stripped[: -len("@enduml")].rstrip("\n")
-            return "\n".join([body, *comment_lines, "@enduml"]) + "\n"
-    return diagram_source.rstrip("\n") + "\n" + "\n".join(comment_lines) + "\n"
-
-
-def emit_view_source(
-    ir: CanonicalIR,
-    view: DiagramViewSpec,
-    overflow_markdown: str = "",
-    mermaid_theme: MermaidThemeConfig = DEFAULT_MERMAID_THEME,
-) -> str:
-    """Emit deterministic target diagram source for a view, appending overflow comment if any."""
-    meta_updates: dict[str, str] = {}
-    if view.diagram_variant is not DiagramVariant.AUTO:
-        meta_updates["diagram_variant"] = view.diagram_variant.value
-    if view.animate_edges is not None:
-        meta_updates["animate_edges"] = "true" if view.animate_edges else "false"
-    effective_ir = (
-        ir.model_copy(update={"metadata": {**ir.metadata, **meta_updates}}) if meta_updates else ir
-    )
-    if view.target_renderer is TargetRenderer.DOT:
-        raw_source = emit_deterministic_dot(effective_ir)
-    elif view.target_renderer is TargetRenderer.MERMAID:
-        raw_source = MermaidEmitter(mermaid_theme).emit(effective_ir)
-    else:
-        emitter = _EMITTERS[view.target_renderer]
-        raw_source = emitter.emit(effective_ir)
-    overflow_file = f"{view.id}.overflow.md"
-    return _append_overflow_comment(
-        raw_source, view.target_renderer, overflow_file, overflow_markdown
-    )
-
-
 def _reduce_single_view(
     observed_ir: CanonicalIR,
     view: DiagramViewSpec,
     spec: CurationSpecV1,
     structural_reducer: StructuralTopologicalReducer,
     trace_compactor: TraceCompactionEngine,
-) -> tuple[CanonicalIR, CanonicalIR, str, list[LintDiagnostic]]:
+) -> tuple[CanonicalIR | None, CanonicalIR | None, str, list[LintDiagnostic]]:
     if view.ir_mode.value != observed_ir.ir_mode:
         diag = LintDiagnostic(
             gate=GateId.GATE_1_GROUNDING,
@@ -553,7 +374,7 @@ def _reduce_single_view(
                 "or provide a matching input payload."
             ),
         )
-        return observed_ir, observed_ir, "", [diag]
+        return None, None, "", [diag]
 
     if isinstance(observed_ir, StructuralGraphIR) and view.ir_mode is IRMode.STRUCTURAL_GRAPH:
         try:
@@ -563,18 +384,27 @@ def _reduce_single_view(
                 spec.global_abstractions,
             )
         except CycleInducedError as exc:
-            curated = structural_reducer.reduce(
-                observed_ir,
-                view.model_copy(
-                    update={
-                        "invariants": view.invariants.model_copy(
-                            update={"forbid_new_cycles": False}
-                        )
-                    }
-                ),
-                spec.global_abstractions,
+            return (
+                None,
+                None,
+                "",
+                [
+                    LintDiagnostic(
+                        gate=GateId.GATE_3_TOPOLOGY_POSET,
+                        severity=DiagnosticSeverity.ERROR,
+                        code="INDUCED_PARTITION_CYCLE",
+                        rule_id=exc.rule_id,
+                        view_id=view.id,
+                        offending_symbols=exc.member_ids or (exc.target_node_id,),
+                        witness_path=exc.witness_path,
+                        message=str(exc),
+                        repair_hint=(
+                            f"Split member_globs or add exclude_ids on collapse_partition rule "
+                            f"'{exc.rule_id}' to prevent inducing a cycle."
+                        ),
+                    )
+                ],
             )
-            _ = exc
         overflow_md = ""
         emitted: CanonicalIR = curated
         if (
@@ -648,6 +478,8 @@ def compile_and_lint_pipeline(
             trace_compactor,
         )
         pre_diagnostics.extend(view_diags)
+        if view_diags or curated_ir is None or emitted_ir is None:
+            continue
         curated_by_id[view.id] = curated_ir
         diagram_source = emit_view_source(emitted_ir, view, overflow_md, mermaid_theme)
         compiled_views[view.id] = CompiledViewArtifact(
@@ -815,6 +647,42 @@ def render_companion_svg(renderer: TargetRenderer, diagram_source: str) -> str |
     return None
 
 
+def resolve_contained_output_path(out_dir: Path, filename: str) -> Path:
+    """Resolve `out_dir / filename` and verify it stays strictly inside `out_dir.resolve()`."""
+    if (
+        not filename
+        or filename in {".", ".."}
+        or "/" in filename
+        or "\\" in filename
+        or "\x00" in filename
+    ):
+        msg = f"Unsafe output filename {filename!r}: must be a single relative path segment"
+        raise ValueError(msg)
+    resolved_root = out_dir.resolve()
+    target = out_dir / filename
+    resolved_target = target.resolve()
+    if resolved_target == resolved_root or not resolved_target.is_relative_to(resolved_root):
+        msg = f"Refusing path escape outside output directory '{resolved_root}': {resolved_target}"
+        raise ValueError(msg)
+    return target
+
+
+def _validated_artifact_paths(
+    artifact: CompiledViewArtifact,
+    out_dir: Path,
+) -> tuple[Path, Path | None]:
+    validate_safe_view_id(artifact.view.id)
+    diagram_path = resolve_contained_output_path(out_dir, artifact.output_filename)
+    overflow_path = (
+        resolve_contained_output_path(out_dir, artifact.overflow_filename)
+        if artifact.overflow_markdown
+        else None
+    )
+    if artifact.view.render_svg:
+        resolve_contained_output_path(out_dir, f"{artifact.output_filename}.svg")
+    return diagram_path, overflow_path
+
+
 def _sync_companion_svg(
     artifact: CompiledViewArtifact,
     out_dir: Path,
@@ -824,7 +692,8 @@ def _sync_companion_svg(
     drifted: list[Path],
     missing: list[Path],
 ) -> None:
-    svg_path = out_dir / f"{artifact.output_filename}.svg"
+    validate_safe_view_id(artifact.view.id)
+    svg_path = resolve_contained_output_path(out_dir, f"{artifact.output_filename}.svg")
     source_sha = hashlib.sha256(artifact.diagram_source.encode("utf-8")).hexdigest()
     expected_token = f"archigram-source-sha256: {source_sha}"
     if check_only:
@@ -860,11 +729,14 @@ def sync_compiled_artifacts(
     missing: list[Path] = []
     synced_md: list[Path] = []
 
+    resolved_targets = [
+        (artifact, *_validated_artifact_paths(artifact, out_dir))
+        for artifact in compilation.views.values()
+    ]
     if not check_only and not compilation.lint_report.passed:
         return ApplySyncOutcome(compilation=compilation)
 
-    for artifact in compilation.views.values():
-        diagram_path = out_dir / artifact.output_filename
+    for artifact, diagram_path, overflow_path in resolved_targets:
         _check_or_write_single_file(
             diagram_path,
             artifact.diagram_source,
@@ -873,8 +745,7 @@ def sync_compiled_artifacts(
             drifted=drifted,
             missing=missing,
         )
-        if artifact.overflow_markdown:
-            overflow_path = out_dir / artifact.overflow_filename
+        if overflow_path is not None:
             _check_or_write_single_file(
                 overflow_path,
                 artifact.overflow_markdown + "\n",

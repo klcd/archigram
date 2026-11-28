@@ -24,6 +24,11 @@ uml_final: "◉" {
   style.fill: transparent
   style.stroke: "#64748b"
 }
+"archigram.domain.glob": "glob" {
+  style.border-radius: 14
+  style.fill: transparent
+  style.stroke: "#64748b"
+}
 "archigram.domain.ir": "ir" {
   style.border-radius: 14
   style.fill: transparent
@@ -106,15 +111,7 @@ uml_initial -> "archigram.entrypoints.cli.pipeline": "start" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
-"archigram.entrypoints.cli.pipeline" -> "archigram.features.emit_mermaid.emitter": "MermaidEmitter.__init__" {
-  style.stroke: "#3b82f6"
-  style.animated: true
-}
-"archigram.entrypoints.cli.pipeline" -> "archigram.features.emit_d2.emitter": "D2Emitter.emit" {
-  style.stroke: "#3b82f6"
-  style.animated: true
-}
-"archigram.entrypoints.cli.pipeline" -> "archigram.features.emit_plantuml.emitter": "PlantUmlEmitter.emit" {
+"archigram.entrypoints.cli.pipeline" -> "archigram.entrypoints.mcp.propose_loop": "emit_view_source" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
@@ -170,7 +167,7 @@ uml_initial -> "archigram.entrypoints.cli.pipeline": "start" {
   style.stroke: "#3b82f6"
   style.animated: true
 }
-"archigram.entrypoints.mcp.propose_loop" -> "archigram.features.emit_mermaid.emitter": "MermaidEmitter.emit" {
+"archigram.entrypoints.mcp.propose_loop" -> "archigram.features.emit_mermaid.emitter": "MermaidEmitter.__init__" {
   style.stroke: "#3b82f6"
   style.animated: true
 }

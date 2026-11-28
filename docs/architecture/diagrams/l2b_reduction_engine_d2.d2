@@ -13,6 +13,14 @@ archigram: "archigram" {
   "archigram.domain": "domain" {
     style.fill: transparent
     style.stroke: "#64748b"
+    "archigram.domain.glob": "glob" {
+      style.fill: transparent
+      style.stroke: "#64748b"
+    }
+    "archigram.domain.uml": "uml" {
+      style.fill: transparent
+      style.stroke: "#64748b"
+    }
     domain_concurrency_poset: "domain.concurrency (SP-Poset & Overlap Clustering)" {
       style.fill: transparent
       style.stroke: "#64748b"
@@ -72,15 +80,27 @@ archigram: "archigram" {
         }
       }
     }
-    concurrency_consumers: "Other Concurrency Consumers (lint_budget, digest)" {
+    concurrency_consumers: "Other Concurrency Consumers (lint_budget, digest, emitters)" {
       style.fill: transparent
       style.stroke: "#64748b"
-      tooltip: "Derived via l2b_d2_lint_consumers (2 backing nodes: archigram.features.lint_budget, archigram.features.lint_budget.gate)"
+      tooltip: "Derived via l2b_d2_lint_consumers (13 backing nodes: archigram.features.emit_d2, archigram.features.emit_d2.emitter, archigram.features.emit_d2.uml_variants, archigram.features.emit_likec4, archigram.features.emit_likec4.emitter, ...)"
     }
   }
 }
 
+archigram."archigram.domain"."archigram.domain.uml" -> archigram."archigram.domain".domain_concurrency_poset: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.domain"."archigram.domain.uml" -> archigram."archigram.domain".domain_ir_and_spec: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
 archigram."archigram.features"."archigram.features.reduce_structural" -> archigram."archigram.features"."archigram.features.reduce_structural"."archigram.features.reduce_structural.reducer": "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.features"."archigram.features.reduce_structural"."archigram.features.reduce_structural.reducer" -> archigram."archigram.domain"."archigram.domain.glob": "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }
@@ -104,11 +124,11 @@ archigram."archigram.features"."archigram.features.reduce_trace"."archigram.feat
   style.stroke: "#3b82f6"
   style.animated: true
 }
-archigram."archigram.features".concurrency_consumers -> archigram."archigram.domain".domain_concurrency_poset: "imports" {
+archigram."archigram.features".concurrency_consumers -> archigram."archigram.domain"."archigram.domain.uml": "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }
-archigram."archigram.features".concurrency_consumers -> archigram."archigram.domain".domain_ir_and_spec: "imports" {
+archigram."archigram.domain".domain_concurrency_poset -> archigram."archigram.domain": "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }

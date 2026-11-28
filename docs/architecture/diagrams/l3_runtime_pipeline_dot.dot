@@ -5,6 +5,7 @@ digraph "archigram_pipeline_and_repair_v1" {
   node [shape="box", style="rounded", color="#64748b", fontcolor="#64748b"];
   edge [penwidth="1.5", fontcolor="#64748b"];
   "archigram.domain.diagnostics" [label="diagnostics", kind="module", _kind="module"];
+  "archigram.domain.glob" [label="glob", kind="module", _kind="module"];
   "archigram.domain.ir" [label="ir", kind="module", _kind="module"];
   "archigram.domain.spec" [label="spec", kind="module", _kind="module"];
   "archigram.domain.style" [label="style", kind="module", _kind="module"];
@@ -21,12 +22,11 @@ digraph "archigram_pipeline_and_repair_v1" {
   "archigram.features.reduce_structural.reducer" [label="reducer", kind="module", _kind="module"];
   "archigram.entrypoints.cli.pipeline" -> "archigram.entrypoints.cli.pipeline" [xlabel="compile_and_lint_pipeline", style="solid", color="#3b82f6", arrowhead="vee"];
   "archigram.entrypoints.cli.pipeline" -> "archigram.features.reduce_structural.reducer" [xlabel="StructuralTopologicalReducer.reduce", style="solid", color="#3b82f6", arrowhead="vee"];
-  "archigram.entrypoints.cli.pipeline" -> "archigram.features.emit_mermaid.emitter" [xlabel="MermaidEmitter.__init__", style="solid", color="#3b82f6", arrowhead="vee"];
-  "archigram.entrypoints.cli.pipeline" -> "archigram.features.emit_mermaid.emitter" [xlabel="MermaidEmitter.emit", style="solid", color="#3b82f6", arrowhead="vee"];
+  "archigram.entrypoints.cli.pipeline" -> "archigram.entrypoints.mcp.propose_loop" [xlabel="emit_view_source", style="solid", color="#3b82f6", arrowhead="vee"];
   "archigram.entrypoints.cli.pipeline" -> "archigram.features.reduce_structural.reducer" [xlabel="StructuralTopologicalReducer.reduce", style="solid", color="#3b82f6", arrowhead="vee"];
-  "archigram.entrypoints.cli.pipeline" -> "archigram.features.emit_d2.emitter" [xlabel="D2Emitter.emit", style="solid", color="#3b82f6", arrowhead="vee"];
+  "archigram.entrypoints.cli.pipeline" -> "archigram.entrypoints.mcp.propose_loop" [xlabel="emit_view_source", style="solid", color="#3b82f6", arrowhead="vee"];
   "archigram.entrypoints.cli.pipeline" -> "archigram.features.reduce_structural.reducer" [xlabel="StructuralTopologicalReducer.reduce", style="solid", color="#3b82f6", arrowhead="vee"];
-  "archigram.entrypoints.cli.pipeline" -> "archigram.features.emit_plantuml.emitter" [xlabel="PlantUmlEmitter.emit", style="solid", color="#3b82f6", arrowhead="vee"];
+  "archigram.entrypoints.cli.pipeline" -> "archigram.entrypoints.mcp.propose_loop" [xlabel="emit_view_source", style="solid", color="#3b82f6", arrowhead="vee"];
   "archigram.entrypoints.cli.pipeline" -> "archigram.features.lint_grounding.gates" [xlabel="GroundingAndBoundaryGate.__init__", style="solid", color="#3b82f6", arrowhead="vee"];
   "archigram.entrypoints.cli.pipeline" -> "archigram.features.lint_grounding.gates" [xlabel="GroundingAndBoundaryGate.check", style="solid", color="#3b82f6", arrowhead="vee"];
   "archigram.entrypoints.cli.pipeline" -> "archigram.features.lint_topology.gate" [xlabel="TopologicalInvariantGate.__init__", style="solid", color="#3b82f6", arrowhead="vee"];
@@ -52,6 +52,7 @@ digraph "archigram_pipeline_and_repair_v1" {
   "archigram.entrypoints.mcp.propose_loop" -> "archigram.features.lint_grounding.gates" [xlabel="GroundingAndBoundaryGate.check", style="solid", color="#3b82f6", arrowhead="vee"];
   "archigram.entrypoints.mcp.propose_loop" -> "archigram.features.lint_topology.gate" [xlabel="TopologicalInvariantGate.check", style="solid", color="#3b82f6", arrowhead="vee"];
   "archigram.entrypoints.mcp.propose_loop" -> "archigram.features.lint_budget.gate" [xlabel="CognitiveBudgetAndOrphanGate.check", style="solid", color="#3b82f6", arrowhead="vee"];
+  "archigram.entrypoints.mcp.propose_loop" -> "archigram.features.emit_mermaid.emitter" [xlabel="MermaidEmitter.__init__", style="solid", color="#3b82f6", arrowhead="vee"];
   "archigram.entrypoints.mcp.propose_loop" -> "archigram.features.emit_mermaid.emitter" [xlabel="MermaidEmitter.emit", style="solid", color="#3b82f6", arrowhead="vee"];
   "archigram.entrypoints.mcp.propose_loop" -> "archigram.features.lint_syntax.validators" [xlabel="Gate5SyntaxHarness.validate", style="solid", color="#3b82f6", arrowhead="vee"];
   "archigram.entrypoints.mcp.propose_loop" -> "archigram.domain.diagnostics" [xlabel="LintReport.from_diagnostics", style="solid", color="#3b82f6", arrowhead="vee"];
@@ -63,6 +64,7 @@ digraph "archigram_pipeline_and_repair_v1" {
   "archigram.entrypoints.mcp.propose_loop" -> "archigram.features.lint_grounding.gates" [xlabel="GroundingAndBoundaryGate.check", style="solid", color="#3b82f6", arrowhead="vee"];
   "archigram.entrypoints.mcp.propose_loop" -> "archigram.features.lint_topology.gate" [xlabel="TopologicalInvariantGate.check", style="solid", color="#3b82f6", arrowhead="vee"];
   "archigram.entrypoints.mcp.propose_loop" -> "archigram.features.lint_budget.gate" [xlabel="CognitiveBudgetAndOrphanGate.check", style="solid", color="#3b82f6", arrowhead="vee"];
+  "archigram.entrypoints.mcp.propose_loop" -> "archigram.features.emit_mermaid.emitter" [xlabel="MermaidEmitter.__init__", style="solid", color="#3b82f6", arrowhead="vee"];
   "archigram.entrypoints.mcp.propose_loop" -> "archigram.features.emit_mermaid.emitter" [xlabel="MermaidEmitter.emit", style="solid", color="#3b82f6", arrowhead="vee"];
   "archigram.entrypoints.mcp.propose_loop" -> "archigram.features.lint_syntax.validators" [xlabel="Gate5SyntaxHarness.validate", style="solid", color="#3b82f6", arrowhead="vee"];
   "archigram.entrypoints.mcp.propose_loop" -> "archigram.domain.diagnostics" [xlabel="LintReport.from_diagnostics", style="solid", color="#3b82f6", arrowhead="vee"];

@@ -40,15 +40,18 @@ archigram: "archigram" {
         tooltip: "Derived via fold_cli_callers (4 backing nodes: archigram.entrypoints.cli.app, archigram.entrypoints.cli.diff_report, archigram.entrypoints.cli.self_trace, archigram.entrypoints.cli.triage)"
       }
     }
+    "archigram.entrypoints.mcp": "mcp" {
+      style.fill: transparent
+      style.stroke: "#64748b"
+      "archigram.entrypoints.mcp.propose_loop": "propose_loop" {
+        style.fill: transparent
+        style.stroke: "#64748b"
+      }
+    }
   }
   "archigram.features": "features" {
     style.fill: transparent
     style.stroke: "#64748b"
-    emitter_slices: "Multi-Target Emitter Slices" {
-      style.fill: transparent
-      style.stroke: "#64748b"
-      tooltip: "Derived via fold_emitters (8 backing nodes: archigram.features.emit_d2.emitter, archigram.features.emit_d2.emitter.D2Emitter, archigram.features.emit_likec4.emitter, archigram.features.emit_likec4.emitter.LikeC4Emitter, archigram.features.emit_mermaid.emitter, ...)"
-    }
     ingestor_slices: "Ingestor Slices (5 Extractors)" {
       style.fill: transparent
       style.stroke: "#64748b"
@@ -71,11 +74,7 @@ archigram."archigram.entrypoints"."archigram.entrypoints.cli" -> archigram."arch
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }
-archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline" -> archigram."archigram.features".emitter_slices: "calls" {
-  style.stroke: "#3b82f6"
-  style.animated: true
-}
-archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline" -> archigram."archigram.features".emitter_slices: "imports" {
+archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline" -> archigram."archigram.entrypoints"."archigram.entrypoints.mcp"."archigram.entrypoints.mcp.propose_loop": "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }
@@ -83,11 +82,19 @@ archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypo
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }
-archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline" -> archigram."archigram.features".linter_slices: "imports" {
+archigram."archigram.entrypoints"."archigram.entrypoints.mcp" -> archigram."archigram.entrypoints"."archigram.entrypoints.mcp"."archigram.entrypoints.mcp.propose_loop": "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }
-archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline" -> archigram."archigram.features".reducer_slices: "imports" {
+archigram."archigram.entrypoints"."archigram.entrypoints.mcp"."archigram.entrypoints.mcp.propose_loop" -> archigram."archigram.domain".domain_style: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.entrypoints"."archigram.entrypoints.mcp"."archigram.entrypoints.mcp.propose_loop" -> archigram."archigram.features".linter_slices: "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.entrypoints"."archigram.entrypoints.mcp"."archigram.entrypoints.mcp.propose_loop" -> archigram."archigram.features".reducer_slices: "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }
@@ -104,10 +111,6 @@ archigram."archigram.domain".domain_core -> archigram."archigram.domain": "impor
   style.stroke-dash: 5
 }
 archigram."archigram.domain".domain_style -> archigram."archigram.domain".domain_core: "imports" {
-  style.stroke: "#64748b"
-  style.stroke-dash: 5
-}
-archigram."archigram.features".emitter_slices -> archigram."archigram.domain".domain_style: "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }

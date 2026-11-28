@@ -172,6 +172,20 @@ def _interaction_trace_strategy(draw: st.DrawFn) -> InteractionTraceIR:
         parent = (
             event_ids[draw(st.integers(0, idx - 1))] if idx > 0 and draw(st.booleans()) else None
         )
+        links = (
+            tuple(
+                draw(
+                    st.lists(
+                        st.sampled_from(event_ids[:idx]),
+                        min_size=0,
+                        max_size=min(2, idx),
+                        unique=True,
+                    )
+                )
+            )
+            if idx > 0
+            else ()
+        )
         start = draw(st.integers(min_value=0, max_value=5_000))
         dur = draw(st.integers(min_value=1, max_value=1_000))
         events[eid] = TraceEvent(
@@ -180,6 +194,7 @@ def _interaction_trace_strategy(draw: st.DrawFn) -> InteractionTraceIR:
             callee_id=callee,
             signature=draw(_LABEL_TEXT),
             parent_event_id=parent,
+            causal_links=links,
             clock_domain_id=draw(st.sampled_from(["c0", "c1"])),
             start_ns=start,
             end_ns=start + dur,
@@ -436,3 +451,296 @@ def test_likec4_cli_validation_on_clean_hierarchical_and_dynamic_models(dummy: b
     trace = InteractionTraceIR(trace_id="cli_check_trace", participants=participants, events=events)
     c4_trace = LikeC4Emitter().emit(trace)
     _assert_likec4_cli_valid(c4_trace)
+
+
+def _make_trace_participants(count: int) -> dict[str, TraceParticipant]:
+    stamp = ProvenanceStamp(grade=ProvenanceGrade.OBSERVED, extractor="otel", input_sha256=_SHA256)
+    return {
+        f"p_{idx}": TraceParticipant(
+            participant_id=f"p_{idx}",
+            symbol_id=f"svc.node_{idx}",
+            label=f"Svc{idx}",
+            kind=NodeKind.SERVICE,
+            provenance=stamp,
+        )
+        for idx in range(count)
+    }
+
+
+@st.composite
+def _skewed_clock_causal_trace_strategy(draw: st.DrawFn) -> InteractionTraceIR:
+    """Generate a causal DAG trace with backwards-skewed timestamps across clock domains."""
+    count = draw(st.integers(min_value=3, max_value=7))
+    use_parent_links = draw(st.booleans())
+    shared_clock = draw(st.booleans())
+    stamp = ProvenanceStamp(grade=ProvenanceGrade.OBSERVED, extractor="otel", input_sha256=_SHA256)
+    participants = _make_trace_participants(count + 1)
+
+    events: dict[str, TraceEvent] = {}
+    for idx in range(count):
+        eid = f"ev_{idx}"
+        parent_id: str | None = None
+        links: tuple[str, ...] = ()
+        if idx > 0:
+            if use_parent_links and idx % 2 == 1:
+                parent_id = f"ev_{idx - 1}"
+            elif use_parent_links:
+                links = (f"ev_{idx - 1}",)
+            else:
+                drawn = tuple(f"ev_{p}" for p in range(idx) if draw(st.booleans()))
+                links = drawn if drawn else (f"ev_{idx - 1}",)
+        skewed_start = (count - idx) * 100_000 + draw(st.integers(min_value=0, max_value=5_000))
+        domain = (
+            "skewed_0" if shared_clock else f"skewed_{draw(st.integers(min_value=0, max_value=2))}"
+        )
+        events[eid] = TraceEvent(
+            event_id=eid,
+            caller_id=f"p_{idx}",
+            callee_id=f"p_{idx + 1}",
+            signature=f"step_{idx:02d}()",
+            parent_event_id=parent_id,
+            causal_links=links,
+            clock_domain_id=domain,
+            start_ns=skewed_start,
+            end_ns=skewed_start + 50,
+            sync_kind=draw(st.sampled_from(list(SyncKind))),
+            status=EventStatus.OK,
+            provenance=stamp,
+        )
+
+    return InteractionTraceIR(
+        trace_id="fuzz_skewed_clocks",
+        participants=participants,
+        events=events,
+    )
+
+
+@st.composite
+def _overlapping_causal_siblings_strategy(
+    draw: st.DrawFn,
+) -> tuple[InteractionTraceIR, bool]:
+    """Generate overlapping same-clock siblings with causal_links (full chain or partial DAG)."""
+    count = draw(st.integers(min_value=2, max_value=6))
+    full_chain = draw(st.booleans())
+    stamp = ProvenanceStamp(grade=ProvenanceGrade.OBSERVED, extractor="otel", input_sha256=_SHA256)
+    participants = _make_trace_participants(count + 1)
+
+    events: dict[str, TraceEvent] = {
+        "root": TraceEvent(
+            event_id="root",
+            caller_id="p_0",
+            callee_id="p_0",
+            signature="dispatch()",
+            clock_domain_id="shared_clk",
+            start_ns=0,
+            end_ns=5_000,
+            provenance=stamp,
+        )
+    }
+    for idx in range(count):
+        eid = f"ov_{idx}"
+        if idx == 0:
+            links: tuple[str, ...] = ()
+        elif full_chain:
+            links = (f"ov_{idx - 1}",)
+        else:
+            candidates = [f"ov_{p}" for p in range(idx)]
+            min_links = 1 if idx == count - 1 else 0
+            links = tuple(
+                draw(
+                    st.lists(
+                        st.sampled_from(candidates),
+                        min_size=min_links,
+                        max_size=idx,
+                        unique=True,
+                    )
+                )
+            )
+        start_ns = 100 + draw(st.integers(min_value=0, max_value=40))
+        end_ns = 500 + draw(st.integers(min_value=0, max_value=100))
+        events[eid] = TraceEvent(
+            event_id=eid,
+            caller_id="p_0",
+            callee_id=f"p_{idx + 1}",
+            signature=f"ovstep_{idx:02d}()",
+            parent_event_id="root",
+            causal_links=links,
+            clock_domain_id="shared_clk",
+            start_ns=start_ns,
+            end_ns=end_ns,
+            sync_kind=SyncKind.FORK_JOIN_BRANCH,
+            status=EventStatus.OK,
+            provenance=stamp,
+        )
+
+    return (
+        InteractionTraceIR(
+            trace_id="fuzz_causal_overlap",
+            participants=participants,
+            events=events,
+        ),
+        full_chain,
+    )
+
+
+def _extract_parallel_groups(c4_source: str) -> list[list[int]]:
+    """Extract ovstep event indices inside each `parallel { ... }` block."""
+    groups: list[list[int]] = []
+    current: list[int] | None = None
+    for raw_line in c4_source.splitlines():
+        line = raw_line.strip()
+        if line == "parallel {":
+            assert current is None, "Nested parallel block is unexpected"
+            current = []
+        elif current is not None and line == "}":
+            assert len(current) >= 2, "parallel block must contain at least 2 steps"
+            groups.append(current)
+            current = None
+        elif current is not None and (match := re.search(r"ovstep_(\d+)\(\)", line)) is not None:
+            current.append(int(match.group(1)))
+    assert current is None, "Unclosed parallel block"
+    return groups
+
+
+def _transitive_ancestors(events: dict[str, TraceEvent]) -> dict[str, set[str]]:
+    """Compute transitive causal ancestors (parent_event_id and causal_links) per event."""
+    ancestors: dict[str, set[str]] = {}
+    for eid in events:
+        seen: set[str] = set()
+        stack: list[str] = list(events[eid].causal_links)
+        if (parent_id := events[eid].parent_event_id) is not None:
+            stack.append(parent_id)
+        while stack:
+            pred = stack.pop()
+            if pred in seen or pred not in events:
+                continue
+            seen.add(pred)
+            stack.extend(events[pred].causal_links)
+            if (pred_parent := events[pred].parent_event_id) is not None:
+                stack.append(pred_parent)
+        ancestors[eid] = seen
+    return ancestors
+
+
+@settings(max_examples=50)
+@given(trace=_skewed_clock_causal_trace_strategy())
+def test_skewed_clock_causal_ordering_and_dangling_safety(trace: InteractionTraceIR) -> None:
+    """Causal ordering overrides skewed timestamps and handles dangling predecessors safely."""
+    emitter = LikeC4Emitter()
+    first = emitter.emit(trace)
+    permuted = InteractionTraceIR(
+        trace_id=trace.trace_id,
+        participants=dict(reversed(list(trace.participants.items()))),
+        events=dict(reversed(list(trace.events.items()))),
+        metadata=trace.metadata,
+    )
+    assert first == emitter.emit(permuted)
+    _assert_balanced_c4_braces(first)
+
+    for ev in trace.events.values():
+        preds = list(ev.causal_links)
+        if ev.parent_event_id is not None:
+            preds.append(ev.parent_event_id)
+        for pred_id in preds:
+            assert first.index(trace.events[pred_id].signature) < first.index(ev.signature)
+
+    dangling_trace = InteractionTraceIR.model_construct(
+        schema_version=trace.schema_version,
+        ir_mode=trace.ir_mode,
+        trace_id=trace.trace_id,
+        participants=trace.participants,
+        events={k: v for k, v in trace.events.items() if k != "ev_0"},
+        metadata=trace.metadata,
+    )
+    dangling_out = emitter.emit(dangling_trace)
+    _assert_balanced_c4_braces(dangling_out)
+    for eid, ev in dangling_trace.events.items():
+        assert ev.signature in dangling_out, f"Missing {eid} after dangling predecessor removal"
+
+
+@settings(max_examples=50)
+@given(payload=_overlapping_causal_siblings_strategy())
+def test_overlapping_causal_links_never_group_into_parallel(
+    payload: tuple[InteractionTraceIR, bool],
+) -> None:
+    """Overlapping same-clock siblings linked via causal_links never share a parallel block."""
+    trace, full_chain = payload
+    emitter = LikeC4Emitter()
+    first = emitter.emit(trace)
+    permuted = InteractionTraceIR(
+        trace_id=trace.trace_id,
+        participants=dict(reversed(list(trace.participants.items()))),
+        events=dict(reversed(list(trace.events.items()))),
+        metadata=trace.metadata,
+    )
+    assert first == emitter.emit(permuted)
+    _assert_balanced_c4_braces(first)
+
+    if full_chain:
+        assert "parallel {" not in first
+
+    ancestors = _transitive_ancestors(trace.events)
+    for group in _extract_parallel_groups(first):
+        for i, lhs in enumerate(group):
+            for rhs in group[i + 1 :]:
+                assert f"ov_{lhs}" not in ancestors[f"ov_{rhs}"]
+                assert f"ov_{rhs}" not in ancestors[f"ov_{lhs}"]
+
+    for ev in trace.events.values():
+        for pred_id in ev.causal_links:
+            assert first.index(trace.events[pred_id].signature) < first.index(ev.signature)
+
+
+@settings(max_examples=50)
+@given(
+    base_start=st.integers(min_value=1, max_value=400),
+    offsets=st.lists(st.integers(min_value=0, max_value=25), min_size=2, max_size=7),
+    durations=st.lists(st.integers(min_value=40, max_value=250), min_size=2, max_size=7),
+)
+def test_different_clock_domains_never_group_into_parallel(
+    base_start: int,
+    offsets: list[int],
+    durations: list[int],
+) -> None:
+    """Overlapping siblings on distinct clock_domain_id values never emit a parallel block."""
+    count = min(len(offsets), len(durations))
+    stamp = ProvenanceStamp(grade=ProvenanceGrade.OBSERVED, extractor="otel", input_sha256=_SHA256)
+    participants = _make_trace_participants(count + 1)
+    events: dict[str, TraceEvent] = {
+        "root": TraceEvent(
+            event_id="root",
+            caller_id="p_0",
+            callee_id="p_0",
+            signature="dispatch()",
+            clock_domain_id="host_root",
+            start_ns=0,
+            end_ns=2_000,
+            provenance=stamp,
+        )
+    }
+    for idx in range(count):
+        start_ns = base_start + offsets[idx]
+        events[f"evt_{idx}"] = TraceEvent(
+            event_id=f"evt_{idx}",
+            caller_id="p_0",
+            callee_id=f"p_{idx + 1}",
+            signature=f"remote_call_{idx}()",
+            parent_event_id="root",
+            clock_domain_id=f"host_{idx}",
+            start_ns=start_ns,
+            end_ns=start_ns + durations[idx],
+            sync_kind=SyncKind.FORK_JOIN_BRANCH,
+            provenance=stamp,
+        )
+
+    trace = InteractionTraceIR(trace_id="clock_iso", participants=participants, events=events)
+    permuted = InteractionTraceIR(
+        trace_id=trace.trace_id,
+        participants=dict(reversed(list(trace.participants.items()))),
+        events=dict(reversed(list(trace.events.items()))),
+    )
+    emitter = LikeC4Emitter()
+    out = emitter.emit(trace)
+    assert out == emitter.emit(permuted)
+    assert "parallel {" not in out
+    _assert_balanced_c4_braces(out)

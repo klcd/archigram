@@ -5,6 +5,11 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
+from archigram.domain.concurrency import (
+    events_overlap,
+    group_concurrent_siblings,
+    order_trace_events,
+)
 from archigram.domain.ir import (
     CanonicalIR,
     ClassMember,
@@ -387,33 +392,19 @@ class _LoopStep:
 type _SequenceStep = _SingleStep | _ParStep | _LoopStep
 
 
-def _events_overlap(first: TraceEvent, second: TraceEvent) -> bool:
-    """Check whether two events in the same clock domain have overlapping time intervals."""
-    if first.clock_domain_id != second.clock_domain_id:
-        return False
-    if first.start_ns == second.start_ns:
-        return True
-    return max(first.start_ns, second.start_ns) < min(first.end_ns, second.end_ns)
-
-
-def _cluster_parallel_siblings(siblings: list[TraceEvent]) -> list[list[TraceEvent]]:
-    """Group sorted sibling events into temporal overlap clusters per clock domain."""
-    clusters: list[list[TraceEvent]] = []
-    for event in siblings:
-        if clusters and any(_events_overlap(member, event) for member in clusters[-1]):
-            clusters[-1].append(event)
-        else:
-            clusters.append([event])
-    return clusters
-
-
 def _can_merge_into_loop(
     first: TraceEvent,
     second: TraceEvent,
     children_by_parent: dict[str | None, list[TraceEvent]],
+    run_ids: set[str],
+    run_links: set[str],
 ) -> bool:
     """Determine if two consecutive non-overlapping events form a repeatable loop step."""
     if children_by_parent.get(first.event_id) or children_by_parent.get(second.event_id):
+        return False
+    if first.clock_domain_id != second.clock_domain_id or events_overlap(first, second):
+        return False
+    if second.event_id in run_links or bool(set(second.causal_links) & run_ids):
         return False
     return (
         first.caller_id == second.caller_id
@@ -427,8 +418,8 @@ def _group_sibling_steps(
     siblings: list[TraceEvent],
     children_by_parent: dict[str | None, list[TraceEvent]],
 ) -> list[_SequenceStep]:
-    """Partition sorted sibling events into par blocks, loop blocks, and single steps."""
-    clusters = _cluster_parallel_siblings(siblings)
+    """Partition causally ordered sibling events into par, loop, and single steps."""
+    clusters = group_concurrent_siblings(siblings)
     steps: list[_SequenceStep] = []
     idx = 0
     while idx < len(clusters):
@@ -437,19 +428,31 @@ def _group_sibling_steps(
             steps.append(_ParStep(branches=tuple(cluster)))
             idx += 1
             continue
-        run = [cluster[0]]
+        first = cluster[0]
+        run = [first]
+        run_ids = {first.event_id}
+        run_links = set(first.causal_links)
         next_idx = idx + 1
         while (
             next_idx < len(clusters)
             and len(clusters[next_idx]) == 1
-            and _can_merge_into_loop(run[-1], clusters[next_idx][0], children_by_parent)
+            and _can_merge_into_loop(
+                run[-1],
+                clusters[next_idx][0],
+                children_by_parent,
+                run_ids,
+                run_links,
+            )
         ):
-            run.append(clusters[next_idx][0])
+            nxt = clusters[next_idx][0]
+            run.append(nxt)
+            run_ids.add(nxt.event_id)
+            run_links.update(nxt.causal_links)
             next_idx += 1
         if len(run) >= 2:
             steps.append(_LoopStep(events=tuple(run)))
         else:
-            steps.append(_SingleStep(event=run[0]))
+            steps.append(_SingleStep(event=first))
         idx = next_idx
     return steps
 
@@ -528,7 +531,7 @@ def _emit_sequence_diagram(
         lines.append(_format_participant_line(ir.participants[pid], aliases[pid]))
 
     children_by_parent: dict[str | None, list[TraceEvent]] = {}
-    for event in sorted(ir.events.values(), key=lambda item: (item.start_ns, item.event_id)):
+    for event in order_trace_events(ir.events):
         children_by_parent.setdefault(event.parent_event_id, []).append(event)
 
     root_events = children_by_parent.get(None, [])

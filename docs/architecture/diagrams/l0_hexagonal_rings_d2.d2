@@ -16,12 +16,12 @@ archigram: "archigram" {
     cli_dataplane: "CLI Data Plane" {
       style.fill: transparent
       style.stroke: "#64748b"
-      tooltip: "Derived via l0_d2_cli_dataplane (84 backing nodes: archigram.entrypoints.cli, archigram.entrypoints.cli.app, archigram.entrypoints.cli.app.ApplyOptions, archigram.entrypoints.cli.app.DiffOptions, archigram.entrypoints.cli.app.LintOptions, ...)"
+      tooltip: "Derived via l0_d2_cli_dataplane (83 backing nodes: archigram.entrypoints.cli, archigram.entrypoints.cli.app, archigram.entrypoints.cli.app.ApplyOptions, archigram.entrypoints.cli.app.DiffOptions, archigram.entrypoints.cli.app.LintOptions, ...)"
     }
     mcp_controlplane: "MCP Control Plane" {
       style.fill: transparent
       style.stroke: "#64748b"
-      tooltip: "Derived via l0_d2_mcp_controlplane (21 backing nodes: archigram.entrypoints.mcp, archigram.entrypoints.mcp.propose_loop, archigram.entrypoints.mcp.propose_loop.CompiledViewPreview, archigram.entrypoints.mcp.propose_loop.CuratedViewsPreviewReport, archigram.entrypoints.mcp.propose_loop.DeterministicHeuristicProposer, ...)"
+      tooltip: "Derived via l0_d2_mcp_controlplane (23 backing nodes: archigram.entrypoints.mcp, archigram.entrypoints.mcp.propose_loop, archigram.entrypoints.mcp.propose_loop.CompiledViewPreview, archigram.entrypoints.mcp.propose_loop.CuratedViewsPreviewReport, archigram.entrypoints.mcp.propose_loop.DeterministicHeuristicProposer, ...)"
     }
   }
   "archigram.features": "features" {
@@ -35,7 +35,7 @@ archigram: "archigram" {
     feature_emitters: "Emitter Slices" {
       style.fill: transparent
       style.stroke: "#64748b"
-      tooltip: "Derived via l0_d2_feature_emitters (54 backing nodes: archigram.features.emit_d2, archigram.features.emit_d2.emitter, archigram.features.emit_d2.emitter.D2Emitter, archigram.features.emit_d2.emitter._D2StructuralCtx, archigram.features.emit_d2.emitter._StepEdge, ...)"
+      tooltip: "Derived via l0_d2_feature_emitters (53 backing nodes: archigram.features.emit_d2, archigram.features.emit_d2.emitter, archigram.features.emit_d2.emitter.D2Emitter, archigram.features.emit_d2.emitter._D2StructuralCtx, archigram.features.emit_d2.emitter._StepEdge, ...)"
     }
     feature_ingestors: "Ingestor Slices" {
       style.fill: transparent
@@ -45,7 +45,7 @@ archigram: "archigram" {
     feature_linters: "5-Gate Linter Slices" {
       style.fill: transparent
       style.stroke: "#64748b"
-      tooltip: "Derived via l0_d2_feature_linters (36 backing nodes: archigram.features.lint_budget, archigram.features.lint_budget.gate, archigram.features.lint_budget.gate.CognitiveBudgetAndOrphanGate, archigram.features.lint_budget.gate.apply_spanning_tree_edge_fallback, archigram.features.lint_grounding, ...)"
+      tooltip: "Derived via l0_d2_feature_linters (35 backing nodes: archigram.features.lint_budget, archigram.features.lint_budget.gate, archigram.features.lint_budget.gate.CognitiveBudgetAndOrphanGate, archigram.features.lint_budget.gate.apply_spanning_tree_edge_fallback, archigram.features.lint_grounding, ...)"
     }
     feature_reducers: "Reducer Slices" {
       style.fill: transparent
@@ -56,7 +56,7 @@ archigram: "archigram" {
   domain_core: "Domain Core" {
     style.fill: transparent
     style.stroke: "#64748b"
-    tooltip: "Derived via l0_d2_domain_core (75 backing nodes: archigram.domain, archigram.domain.ProvenanceGrade, archigram.domain.ProvenanceStamp, archigram.domain.concurrency, archigram.domain.concurrency.ConcurrencyMode, ...)"
+    tooltip: "Derived via l0_d2_domain_core (85 backing nodes: archigram.domain, archigram.domain.ProvenanceGrade, archigram.domain.ProvenanceStamp, archigram.domain.concurrency, archigram.domain.concurrency.CausalTraceEvent, ...)"
   }
   ports_contracts: "Ports & Contracts" {
     style.fill: transparent
@@ -95,6 +95,10 @@ archigram."archigram.features".feature_digest -> archigram.domain_core: "compose
 archigram."archigram.features".feature_digest -> archigram.domain_core: "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
+}
+archigram."archigram.features".feature_emitters -> archigram.domain_core: "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
 }
 archigram."archigram.features".feature_emitters -> archigram.domain_core: "composes" {
   style.stroke: "#14b8a6"

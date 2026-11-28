@@ -22,7 +22,7 @@ from archigram.domain.ir import (
     TraceParticipant,
     Visibility,
 )
-from archigram.features.emit_plantuml import PlantUmlEmitter, emit_class_filter_overlay
+from archigram.features.emit_plantuml import PlantUmlEmitter
 from archigram.ports.contracts import DiagramEmitterPort
 
 _STAMP = ProvenanceStamp(
@@ -403,42 +403,221 @@ def test_class_diagram_plantuml_determinism_and_uml_invariants(
     assert any(kw in first for kw in ("class ", "interface ", "enum "))
 
 
-@settings(max_examples=50)
-@given(
-    base_path=_ADVERSARIAL_TEXT,
-    hide_private=st.booleans(),
-    remove_unlinked=st.booleans(),
-    hide_empty=st.booleans(),
-    tags=st.lists(_ADVERSARIAL_TEXT, max_size=5),
-)
-def test_class_filter_overlay_determinism_and_directives(
-    base_path: str,
-    hide_private: bool,
-    remove_unlinked: bool,
-    hide_empty: bool,
-    tags: list[str],
-) -> None:
-    first = emit_class_filter_overlay(
-        base_path,
-        hide_private=hide_private,
-        remove_unlinked=remove_unlinked,
-        remove_tags=tags,
-        hide_empty=hide_empty,
-    )
-    second = emit_class_filter_overlay(
-        base_path,
-        hide_private=hide_private,
-        remove_unlinked=remove_unlinked,
-        remove_tags=list(reversed(tags)),
-        hide_empty=hide_empty,
+@st.composite
+def overlapping_causal_activity_strategy(draw: st.DrawFn) -> InteractionTraceIR:
+    """Generate overlapping same-domain activity events with causal_links dependencies."""
+    count = draw(st.integers(min_value=2, max_value=8))
+    force_chain = draw(st.booleans())
+    participants = {
+        f"p_{idx}": TraceParticipant(
+            participant_id=f"p_{idx}",
+            symbol_id=f"svc.node_{idx}",
+            label=f"Node{idx}",
+            kind=NodeKind.SERVICE,
+            provenance=_STAMP,
+        )
+        for idx in range(count + 1)
+    }
+
+    events: dict[str, TraceEvent] = {}
+    has_any_link = False
+    for idx in range(count):
+        eid = f"ev_{idx}"
+        if force_chain:
+            links: tuple[str, ...] = (f"ev_{idx - 1}",) if idx > 0 else ()
+        else:
+            links = tuple(f"ev_{pred}" for pred in range(idx) if draw(st.booleans()))
+            if idx == count - 1 and not links and not has_any_link:
+                links = ("ev_0",)
+        has_any_link = has_any_link or bool(links)
+        start_ns = 100 + draw(st.integers(min_value=0, max_value=40))
+        end_ns = 500 + draw(st.integers(min_value=0, max_value=100))
+        events[eid] = TraceEvent(
+            event_id=eid,
+            caller_id=f"p_{idx}",
+            callee_id=f"p_{idx + 1}",
+            signature=f"op_{idx:02d}()",
+            parent_event_id=None,
+            causal_links=links,
+            clock_domain_id="shared_clock",
+            start_ns=start_ns,
+            end_ns=end_ns,
+            sync_kind=draw(st.sampled_from(list(SyncKind))),
+            status=EventStatus.OK,
+            provenance=_STAMP,
+        )
+
+    return InteractionTraceIR(
+        trace_id="fuzz_activity_causal",
+        participants=participants,
+        events=events,
+        metadata={"diagram_variant": "activity"},
     )
 
-    assert first == second
+
+@st.composite
+def skewed_clock_causal_trace_strategy(draw: st.DrawFn) -> InteractionTraceIR:
+    """Generate a causal DAG trace with backwards-skewed timestamps across clock domains."""
+    count = draw(st.integers(min_value=3, max_value=7))
+    use_parent_links = draw(st.booleans())
+    shared_clock = draw(st.booleans())
+    participants = {
+        f"p_{idx}": TraceParticipant(
+            participant_id=f"p_{idx}",
+            symbol_id=f"svc.actor_{idx}",
+            label=f"Actor{idx}",
+            kind=NodeKind.SERVICE,
+            provenance=_STAMP,
+        )
+        for idx in range(count + 1)
+    }
+
+    events: dict[str, TraceEvent] = {}
+    for idx in range(count):
+        eid = f"ev_{idx}"
+        parent_id: str | None = None
+        links: tuple[str, ...] = ()
+        if idx > 0:
+            if use_parent_links and idx % 2 == 1:
+                parent_id = f"ev_{idx - 1}"
+            elif use_parent_links:
+                links = (f"ev_{idx - 1}",)
+            else:
+                drawn = tuple(f"ev_{p}" for p in range(idx) if draw(st.booleans()))
+                links = drawn if drawn else (f"ev_{idx - 1}",)
+        skewed_start = (count - idx) * 100_000 + draw(st.integers(min_value=0, max_value=5_000))
+        domain = (
+            "skewed_0" if shared_clock else f"skewed_{draw(st.integers(min_value=0, max_value=2))}"
+        )
+        events[eid] = TraceEvent(
+            event_id=eid,
+            caller_id=f"p_{idx}",
+            callee_id=f"p_{idx + 1}",
+            signature=f"step_{idx:02d}()",
+            parent_event_id=parent_id,
+            causal_links=links,
+            clock_domain_id=domain,
+            start_ns=skewed_start,
+            end_ns=skewed_start + 50,
+            sync_kind=draw(st.sampled_from(list(SyncKind))),
+            status=EventStatus.OK,
+            provenance=_STAMP,
+        )
+
+    return InteractionTraceIR(
+        trace_id="fuzz_skewed_clocks",
+        participants=participants,
+        events=events,
+    )
+
+
+def _extract_fork_event_indices(puml: str) -> list[list[int]]:
+    """Parse fork / fork again / end fork groups and extract event indices per fork block."""
+    groups: list[list[int]] = []
+    current: list[int] | None = None
+    for raw_line in puml.splitlines():
+        line = raw_line.strip()
+        if line == "fork":
+            assert current is None, "Nested fork is unexpected"
+            current = []
+        elif line == "fork again":
+            assert current is not None, "'fork again' outside fork block"
+        elif line == "end fork":
+            assert current is not None, "'end fork' without matching fork"
+            assert len(current) >= 2, "fork block must have at least 2 branches"
+            groups.append(current)
+            current = None
+        elif current is not None and (match := re.search(r"op_(\d+)\(\)", line)) is not None:
+            current.append(int(match.group(1)))
+    assert current is None, "Unclosed fork block"
+    return groups
+
+
+def _transitive_ancestors(events: dict[str, TraceEvent]) -> dict[str, set[str]]:
+    """Compute transitive causal ancestors (parent_event_id and causal_links) per event."""
+    ancestors: dict[str, set[str]] = {}
+    for eid in events:
+        seen: set[str] = set()
+        stack: list[str] = list(events[eid].causal_links)
+        if (parent_id := events[eid].parent_event_id) is not None:
+            stack.append(parent_id)
+        while stack:
+            pred = stack.pop()
+            if pred in seen or pred not in events:
+                continue
+            seen.add(pred)
+            stack.extend(events[pred].causal_links)
+            if (pred_parent := events[pred].parent_event_id) is not None:
+                stack.append(pred_parent)
+        ancestors[eid] = seen
+    return ancestors
+
+
+@settings(max_examples=60)
+@given(trace=overlapping_causal_activity_strategy())
+def test_activity_overlapping_causal_links_never_fork(trace: InteractionTraceIR) -> None:
+    """Overlapping activity events with causal_links are never grouped into fork/end fork."""
+    emitter = PlantUmlEmitter()
+    first = emitter.emit(trace)
+    permuted = InteractionTraceIR(
+        trace_id=trace.trace_id,
+        participants=dict(reversed(list(trace.participants.items()))),
+        events=dict(reversed(list(trace.events.items()))),
+        metadata=trace.metadata,
+    )
+    assert first == emitter.emit(permuted)
     _assert_plantuml_framing_and_safety(first)
-    assert "\n!include " in first
-    assert ("\nhide empty members\n" in first) is hide_empty
-    assert ("\nhide private members\n" in first) is hide_private
-    assert ("\nremove @unlinked\n" in first) is remove_unlinked
+
+    ancestors = _transitive_ancestors(trace.events)
+    for group in _extract_fork_event_indices(first):
+        for i, lhs in enumerate(group):
+            for rhs in group[i + 1 :]:
+                assert f"ev_{lhs}" not in ancestors[f"ev_{rhs}"]
+                assert f"ev_{rhs}" not in ancestors[f"ev_{lhs}"]
+
+    for eid, ev in trace.events.items():
+        for pred_id in ev.causal_links:
+            assert first.index(trace.events[pred_id].signature) < first.index(ev.signature)
+        if eid != "ev_0" and all(
+            f"ev_{k}" in trace.events[f"ev_{k + 1}"].causal_links
+            for k in range(len(trace.events) - 1)
+        ):
+            assert "fork" not in first.splitlines()
+
+
+@settings(max_examples=60)
+@given(trace=skewed_clock_causal_trace_strategy())
+def test_skewed_clock_causal_ordering_across_plantuml_views(
+    trace: InteractionTraceIR,
+) -> None:
+    """Causal ordering holds across sequence, activity, state, and communication under skew."""
+    emitter = PlantUmlEmitter()
+    for variant in ("auto", "activity", "state", "communication"):
+        variant_trace = InteractionTraceIR(
+            trace_id=trace.trace_id,
+            participants=trace.participants,
+            events=trace.events,
+            metadata={"diagram_variant": variant},
+        )
+        permuted = InteractionTraceIR(
+            trace_id=trace.trace_id,
+            participants=dict(reversed(list(trace.participants.items()))),
+            events=dict(reversed(list(trace.events.items()))),
+            metadata={"diagram_variant": variant},
+        )
+        rendered = emitter.emit(variant_trace)
+        assert rendered == emitter.emit(permuted)
+        _assert_plantuml_framing_and_safety(rendered)
+        if variant == "auto":
+            _assert_balanced_sequence_blocks(rendered)
+        for ev in trace.events.values():
+            preds = list(ev.causal_links)
+            if ev.parent_event_id is not None:
+                preds.append(ev.parent_event_id)
+            for pred_id in preds:
+                assert rendered.index(trace.events[pred_id].signature) < rendered.index(
+                    ev.signature
+                )
 
 
 @settings(max_examples=50)

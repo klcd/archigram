@@ -17,6 +17,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from archigram.domain.diagnostics import DiagnosticSeverity, LintDiagnostic, LintReport
 from archigram.domain.ir import CanonicalIR, IREdge, StructuralGraphIR
+from archigram.domain.style import DEFAULT_MERMAID_THEME
 from archigram.entrypoints.cli.pipeline import (
     CompiledViewArtifact,
     PipelineCompilationResult,
@@ -25,6 +26,7 @@ from archigram.entrypoints.cli.pipeline import (
 
 if TYPE_CHECKING:
     from archigram.domain.spec import CurationSpecV1, DiagramViewSpec
+    from archigram.domain.style import MermaidThemeConfig
 
 KIND_REQUIRE = "require_reachability"
 KIND_PRESERVE = "preserve_reachability"
@@ -852,6 +854,7 @@ def compute_pr_regression_diff(
     spec: CurationSpecV1,
     *,
     base_unavailable_reason: str | None = None,
+    mermaid_theme: MermaidThemeConfig = DEFAULT_MERMAID_THEME,
 ) -> PrDiffSummary:
     """Compare baseline vs head Canonical IR across all curated views and Gate 1-5 invariants.
 
@@ -861,8 +864,12 @@ def compute_pr_regression_diff(
     A regression is a diagnostic newly introduced on head; errors already present on base do not
     fail the diff.
     """
-    base_comp = compile_and_lint_pipeline(base_ir, spec) if base_ir is not None else None
-    head_comp = compile_and_lint_pipeline(head_ir, spec)
+    base_comp = (
+        compile_and_lint_pipeline(base_ir, spec, mermaid_theme=mermaid_theme)
+        if base_ir is not None
+        else None
+    )
+    head_comp = compile_and_lint_pipeline(head_ir, spec, mermaid_theme=mermaid_theme)
     base_diags = base_comp.lint_report.diagnostics if base_comp is not None else ()
     head_diags = head_comp.lint_report.diagnostics
 

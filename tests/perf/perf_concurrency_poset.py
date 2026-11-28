@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from archigram.domain import ProvenanceGrade, ProvenanceStamp
 from archigram.domain.concurrency import (
     ParallelSiblingCluster,
     PosetCotreeNode,
@@ -11,7 +12,10 @@ from archigram.domain.concurrency import (
     SpanInterval,
     cluster_overlapping_siblings,
     decompose_causal_poset,
+    group_concurrent_siblings,
+    order_trace_events,
 )
+from archigram.domain.ir import EventStatus, SyncKind, TraceEvent
 
 
 def _build_1000_sibling_spans() -> list[SpanInterval]:
@@ -102,3 +106,70 @@ def test_perf_decompose_causal_poset_100_node_fork_join_dag(benchmark: Any) -> N
     assert leaf_count == 100
     assert prime_count == 0
     assert cotree.kind is PosetModuleKind.SERIES
+
+
+def _build_1000_skewed_causal_trace_events() -> dict[str, TraceEvent]:
+    """Build 1,000 TraceEvents across 4 skewed clock domains with parents and causal_links."""
+    stamp = ProvenanceStamp(
+        grade=ProvenanceGrade.OBSERVED,
+        extractor="perf_concurrency",
+        input_sha256="b" * 64,
+    )
+    domains = ("host-a:101", "host-b:202", "host-c:303", "host-d:404")
+    skew_ns = (0, 500_000, -150_000, 1_250_000)
+    events: dict[str, TraceEvent] = {}
+
+    for idx in range(1000):
+        eid = f"te_{idx:04d}"
+        wave = idx // 8
+        slot = idx % 8
+        domain_idx = (wave + (slot // 4)) % len(domains)
+        parent_id = f"te_{wave * 8:04d}" if slot > 0 else None
+        links: tuple[str, ...] = ()
+        if slot in {2, 6}:
+            links = (f"te_{idx - 1:04d}",)
+        elif wave > 0 and slot == 0:
+            links = (f"te_{(wave - 1) * 8 + 7:04d}",)
+
+        raw_start = wave * 100_000 + slot * 5_000 + skew_ns[domain_idx]
+        start_ns = max(0, raw_start)
+        events[eid] = TraceEvent(
+            event_id=eid,
+            caller_id=f"svc_{slot % 4}",
+            callee_id=f"svc_{(slot + 1) % 4}",
+            signature=f"call_{slot % 3}()",
+            parent_event_id=parent_id,
+            causal_links=links,
+            clock_domain_id=domains[domain_idx],
+            start_ns=start_ns,
+            end_ns=start_ns + 40_000,
+            sync_kind=SyncKind.FORK_JOIN_BRANCH if slot % 2 == 1 else SyncKind.SYNC,
+            status=EventStatus.OK,
+            provenance=stamp,
+        )
+    return events
+
+
+def test_perf_order_trace_events_1000_skewed_causal_events(benchmark: Any) -> None:
+    events = _build_1000_skewed_causal_trace_events()
+    ordered: list[TraceEvent] = benchmark(order_trace_events, events)
+    assert len(ordered) == 1000
+    pos = {ev.event_id: idx for idx, ev in enumerate(ordered)}
+    for idx, ev in enumerate(ordered):
+        if ev.parent_event_id is not None:
+            assert pos[ev.parent_event_id] < idx
+        for link in ev.causal_links:
+            assert pos[link] < idx
+
+
+def test_perf_group_concurrent_siblings_1000_skewed_causal_events(benchmark: Any) -> None:
+    ordered = order_trace_events(_build_1000_skewed_causal_trace_events())
+    groups: list[list[TraceEvent]] = benchmark(group_concurrent_siblings, ordered)
+    assert sum(len(group) for group in groups) == 1000
+    assert any(len(group) > 1 for group in groups)
+    for group in groups:
+        anchor = group[0]
+        ids = {ev.event_id for ev in group}
+        assert all(ev.clock_domain_id == anchor.clock_domain_id for ev in group)
+        assert all(ev.parent_event_id == anchor.parent_event_id for ev in group)
+        assert all(not (set(ev.causal_links) & ids) for ev in group)

@@ -4,12 +4,17 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from archigram.domain.concurrency import (
+    find_causal_overlap_span,
+)
+from archigram.domain.concurrency import (
+    order_trace_events as _order_trace_events,
+)
 from archigram.domain.ir import (
     CanonicalIR,
     EdgeRelation,
     InteractionTraceIR,
     IRNode,
-    NodeKind,
     StructuralGraphIR,
     TraceEvent,
 )
@@ -18,6 +23,14 @@ from archigram.domain.style import (
     D2_CANONICAL_HEADER,
     NEUTRAL_BORDER_HEX,
     TRANSPARENT_FILL,
+)
+from archigram.domain.uml import (
+    build_structural_hierarchy,
+    number_trace_events,
+    partition_use_case_structural,
+    partition_use_case_trace,
+    shorten_signature,
+    structural_start_end_nodes,
 )
 from archigram.features.emit_d2.emitter import (
     build_qualified_paths as _build_qualified_paths,
@@ -29,9 +42,6 @@ from archigram.features.emit_d2.emitter import (
     format_d2_key as _format_d2_key,
 )
 from archigram.features.emit_d2.emitter import (
-    order_d2_trace_events as _order_trace_events,
-)
-from archigram.features.emit_d2.emitter import (
     quote_d2_string as _quote_d2_string,
 )
 
@@ -40,14 +50,6 @@ _IMPORT_HEX = CANONICAL_EDGE_STYLES[EdgeRelation.IMPORTS].stroke_hex
 _FORK_HEX = CANONICAL_EDGE_STYLES[EdgeRelation.FORK_JOIN].stroke_hex
 _MAX_EDGE_MSGS = 3
 _MAX_ACTIVITY_STEPS = 18
-
-
-def _short_sig(sig: str) -> str:
-    base = sig.split("->", 1)[0].strip()
-    if "(" in base:
-        fn_name = base.split("(", 1)[0].strip().rsplit(".", 1)[-1]
-        return f"{fn_name}()" if fn_name else base[:32]
-    return base[:36] if base else "call"
 
 
 def _should_animate(meta: dict[str, str], *, default: bool = True) -> bool:
@@ -76,27 +78,6 @@ def _append_d2_edge(
     if animated:
         lines.append("  style.animated: true")
     lines.append("}")
-
-
-def _number_trace_events(trace: InteractionTraceIR) -> list[tuple[str, TraceEvent]]:
-    by_parent: dict[str | None, list[TraceEvent]] = {}
-    for ev in _order_trace_events(trace.events):
-        parent = ev.parent_event_id if ev.parent_event_id in trace.events else None
-        by_parent.setdefault(parent, []).append(ev)
-    numbered: list[tuple[str, TraceEvent]] = []
-    visited: set[str] = set()
-
-    def _walk(parent_id: str | None, prefix: str) -> None:
-        for idx, child in enumerate(by_parent.get(parent_id, ()), start=1):
-            if child.event_id in visited:
-                continue
-            visited.add(child.event_id)
-            seq_no = f"{prefix}.{idx}" if prefix else str(idx)
-            numbered.append((seq_no, child))
-            _walk(child.event_id, seq_no)
-
-    _walk(None, "")
-    return numbered
 
 
 def _append_state_terminals(lines: list[str]) -> None:
@@ -135,13 +116,7 @@ def _emit_d2_state_structural(ir: StructuralGraphIR, anim: bool, lines: list[str
     for sid in sorted_ids:
         _append_state_box(_format_d2_key(key_map[sid]), ir.nodes[sid].label, lines)
     if sorted_ids:
-        in_deg = dict.fromkeys(sorted_ids, 0)
-        out_deg = dict.fromkeys(sorted_ids, 0)
-        for edge in ir.edges:
-            in_deg[edge.target] += 1
-            out_deg[edge.source] += 1
-        starts = [s for s in sorted_ids if in_deg[s] == 0] or [sorted_ids[0]]
-        ends = [s for s in sorted_ids if out_deg[s] == 0] or [sorted_ids[-1]]
+        starts, ends = structural_start_end_nodes(ir)
         for sid in starts[:3]:
             ep = ("uml_initial", _format_d2_key(key_map[sid]))
             _append_d2_edge(ep, "init", _CALL_HEX, lines, animated=anim)
@@ -171,7 +146,7 @@ def emit_d2_state(ir: CanonicalIR) -> str:
         _append_d2_edge(start_ep, "start", _CALL_HEX, lines, animated=anim)
         seen: dict[tuple[str, str], str] = {}
         for ev in ordered:
-            seen.setdefault((ev.caller_id, ev.callee_id), _short_sig(ev.signature))
+            seen.setdefault((ev.caller_id, ev.callee_id), shorten_signature(ev.signature))
         for (src, dst), trig in seen.items():
             ep = (_format_d2_key(key_map[src]), _format_d2_key(key_map[dst]))
             _append_d2_edge(ep, trig, _CALL_HEX, lines, animated=anim)
@@ -215,8 +190,8 @@ def emit_d2_communication(ir: CanonicalIR) -> str:
             )
         )
     grouped: dict[tuple[str, str], list[str]] = {}
-    for seq_no, ev in _number_trace_events(ir):
-        msg = f"{seq_no}: {_short_sig(ev.signature)}"
+    for seq_no, ev in number_trace_events(ir):
+        msg = f"{seq_no}: {shorten_signature(ev.signature)}"
         grouped.setdefault((ev.caller_id, ev.callee_id), []).append(msg)
     for (src, dst), msgs in grouped.items():
         shown = msgs[:_MAX_EDGE_MSGS]
@@ -249,13 +224,7 @@ def _emit_d2_activity_structural(ir: StructuralGraphIR, anim: bool, lines: list[
         _append_d2_pill_node(_format_d2_key(key_map[sid]), ir.nodes[sid].label, lines)
     _append_d2_pill_node("act_stop", "◉", lines, shape="circle")
     if sorted_ids:
-        in_deg = dict.fromkeys(sorted_ids, 0)
-        out_deg = dict.fromkeys(sorted_ids, 0)
-        for edge in ir.edges:
-            in_deg[edge.target] += 1
-            out_deg[edge.source] += 1
-        starts = [s for s in sorted_ids if in_deg[s] == 0] or [sorted_ids[0]]
-        ends = [s for s in sorted_ids if out_deg[s] == 0] or [sorted_ids[-1]]
+        starts, ends = structural_start_end_nodes(ir)
         for sid in starts[:3]:
             ep = ("act_start", _format_d2_key(key_map[sid]))
             _append_d2_edge(ep, "start", _CALL_HEX, lines, animated=anim)
@@ -284,7 +253,7 @@ def _emit_d2_fork_region(
     for b_idx in range(start_idx, end_idx):
         b_ev = capped[b_idx]
         b_node = f"act_{b_idx}"
-        lbl = f"{trace.participants[b_ev.callee_id].label}: {_short_sig(b_ev.signature)}"
+        lbl = f"{trace.participants[b_ev.callee_id].label}: {shorten_signature(b_ev.signature)}"
         _append_d2_pill_node(b_node, lbl, lines)
         _append_d2_edge((fk, b_node), "branch", _FORK_HEX, lines, animated=anim)
         _append_d2_edge((b_node, jn), "join", _FORK_HEX, lines, animated=anim)
@@ -305,14 +274,7 @@ def emit_d2_activity(ir: CanonicalIR) -> str:
     idx = 0
     while idx < len(capped):
         ev = capped[idx]
-        overlap_end = idx + 1
-        while (
-            overlap_end < len(capped)
-            and capped[overlap_end].parent_event_id == ev.parent_event_id
-            and capped[overlap_end].clock_domain_id == ev.clock_domain_id
-            and capped[overlap_end].start_ns < ev.end_ns
-        ):
-            overlap_end += 1
+        overlap_end = find_causal_overlap_span(capped, idx)
         if overlap_end - idx > 1:
             prev_id = _emit_d2_fork_region(ir, capped, (idx, overlap_end), prev_id, anim, lines)
             idx = overlap_end
@@ -324,7 +286,7 @@ def emit_d2_activity(ir: CanonicalIR) -> str:
             _append_d2_edge((prev_id, gid), "guard", _CALL_HEX, lines, animated=anim)
             prev_id = gid
         aid = f"act_{idx}"
-        lbl = f"{ir.participants[ev.callee_id].label}: {_short_sig(ev.signature)}"
+        lbl = f"{ir.participants[ev.callee_id].label}: {shorten_signature(ev.signature)}"
         _append_d2_pill_node(aid, lbl, lines)
         _append_d2_edge((prev_id, aid), "next", _CALL_HEX, lines, animated=anim)
         prev_id = aid
@@ -399,36 +361,17 @@ def emit_d2_use_case(ir: CanonicalIR) -> str:
     anim = _should_animate(ir.metadata, default=False)
     if isinstance(ir, StructuralGraphIR):
         sorted_ids = sorted(ir.nodes)
-        actors = [
-            sid
-            for sid in sorted_ids
-            if ir.nodes[sid].kind is NodeKind.EXTERNAL
-            or any(tok in sid.lower() for tok in ("cli", "mcp", "entrypoint"))
-        ]
-        if (not actors or len(actors) == len(sorted_ids)) and len(sorted_ids) >= 2:
-            in_deg = dict.fromkeys(sorted_ids, 0)
-            for e in ir.edges:
-                in_deg[e.target] += 1
-            roots = [s for s in sorted_ids if in_deg[s] == 0]
-            actors = roots[:2] if roots and len(roots) < len(sorted_ids) else [sorted_ids[0]]
-        actor_set = set(actors)
-        use_cases = [s for s in sorted_ids if s not in actor_set]
+        actors, use_cases = partition_use_case_structural(ir)
         labels = {sid: ir.nodes[sid].label for sid in sorted_ids}
         edges = [(e.source, e.target) for e in sorted(ir.edges, key=lambda item: item.edge_id)]
         return _render_d2_use_case_body(labels, actors, use_cases, edges, anim)
 
-    ordered = _order_trace_events(ir.events)
     sorted_pids = sorted(ir.participants)
-    root_callers = sorted({ev.caller_id for ev in ordered if ev.parent_event_id is None})
-    actors = (
-        root_callers[:2]
-        if root_callers and len(root_callers) < len(sorted_pids)
-        else sorted_pids[:1]
-    )
-    actor_set = set(actors)
-    use_cases = [p for p in sorted_pids if p not in actor_set] or sorted_pids
+    actors, use_cases = partition_use_case_trace(ir)
     labels = {pid: ir.participants[pid].label for pid in sorted_pids}
-    edges = sorted({(ev.caller_id, ev.callee_id) for ev in ordered if ev.caller_id != ev.callee_id})
+    edges = sorted(
+        {(ev.caller_id, ev.callee_id) for ev in ir.events.values() if ev.caller_id != ev.callee_id}
+    )
     return _render_d2_use_case_body(labels, actors, use_cases, edges, anim)
 
 
@@ -475,14 +418,7 @@ def emit_d2_package_or_deployment(ir: CanonicalIR, mode: str) -> str:
     if isinstance(ir, StructuralGraphIR):
         sorted_ids = sorted(ir.nodes)
         key_map, _ = _build_safe_key_map(sorted_ids)
-        children: dict[str, list[str]] = {sid: [] for sid in sorted_ids}
-        roots: list[str] = []
-        for sid in sorted_ids:
-            pid = ir.nodes[sid].parent_id
-            if pid is None or pid not in children:
-                roots.append(sid)
-            else:
-                children[pid].append(sid)
+        roots, children = build_structural_hierarchy(ir.nodes)
         ctx = _D2TreeCtx(nodes=ir.nodes, children=children, key_map=key_map, mode=mode)
         for rid in roots:
             _emit_d2_stereo_subtree(ir.nodes[rid], ctx, 0, lines)

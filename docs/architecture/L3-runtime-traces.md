@@ -93,118 +93,121 @@ config:
 ---
 sequenceDiagram
   participant p0 as "diagnostics"
-  participant p1 as "ir"
-  participant p2 as "spec"
-  participant p3 as "style"
-  participant p4 as "pipeline"
-  participant p5 as "propose_loop"
-  participant p6 as "generator"
-  participant p7 as "emit_d2.emitter"
-  participant p8 as "emit_mermaid.emitter"
-  participant p9 as "emit_plantuml.emitter"
-  participant p10 as "lint_budget.gate"
-  participant p11 as "gates"
-  participant p12 as "validators"
-  participant p13 as "lint_topology.gate"
-  participant p14 as "reducer"
-  p4->>+p4: compile_and_lint_pipeline
-  p4->>+p14: StructuralTopologicalReducer.reduce
-  p14-->>-p4: return
-  p4->>+p8: MermaidEmitter.__init__
-  p8-->>-p4: return
-  p4->>+p8: MermaidEmitter.emit
-  p8-->>-p4: return
-  p4->>+p14: StructuralTopologicalReducer.reduce
-  p14-->>-p4: return
-  p4->>+p7: D2Emitter.emit
-  p7-->>-p4: return
-  p4->>+p14: StructuralTopologicalReducer.reduce
-  p14-->>-p4: return
-  p4->>+p9: PlantUmlEmitter.emit
-  p9-->>-p4: return
-  p4->>+p11: GroundingAndBoundaryGate.__init__
-  p11-->>-p4: return
-  p4->>+p11: GroundingAndBoundaryGate.check
-  p11-->>-p4: return
-  p4->>+p13: TopologicalInvariantGate.__init__
-  p13-->>-p4: return
-  p4->>+p13: TopologicalInvariantGate.check
-  p13-->>-p4: return
-  p4->>+p10: CognitiveBudgetAndOrphanGate.check
-  p10-->>-p4: return
-  p4->>+p12: build_default_validators
-  p12-->>-p4: return
-  p4->>+p12: Gate5SyntaxHarness.__init__
-  p12-->>-p4: return
-  p4->>+p12: Gate5SyntaxHarness.validate #91;loop x3#93;
-  p12-->>-p4: return
-  p4->>+p0: LintReport.from_diagnostics
-  p0-->>-p4: return
-  p4-->>-p4: return
-  p5->>+p5: run_propose_loop
-  p5->>+p6: GraphDigestGenerator.to_compact_markdown
+  participant p1 as "glob"
+  participant p2 as "ir"
+  participant p3 as "spec"
+  participant p4 as "style"
+  participant p5 as "pipeline"
+  participant p6 as "propose_loop"
+  participant p7 as "generator"
+  participant p8 as "emit_d2.emitter"
+  participant p9 as "emit_mermaid.emitter"
+  participant p10 as "emit_plantuml.emitter"
+  participant p11 as "lint_budget.gate"
+  participant p12 as "gates"
+  participant p13 as "validators"
+  participant p14 as "lint_topology.gate"
+  participant p15 as "reducer"
+  p5->>+p5: compile_and_lint_pipeline
+  p5->>+p15: StructuralTopologicalReducer.reduce
+  p15-->>-p5: return
+  p5->>+p6: emit_view_source
   p6-->>-p5: return
-  p5->>+p2: parse_curation_spec_yaml
-  p2-->>-p5: return
-  p5->>+p11: GroundingAndBoundaryGate.check #91;loop x2#93;
-  p11-->>-p5: return
-  p5->>+p13: TopologicalInvariantGate.check
-  p13-->>-p5: return
-  p5->>+p0: LintReport.from_diagnostics
-  p0-->>-p5: return
-  p5->>+p0: LintReport._validate_passed_invariant
-  p0-->>-p5: return
-  p5->>+p2: parse_curation_spec_yaml
-  p2-->>-p5: return
-  p5->>+p11: collect_observed_symbols
-  p11-->>-p5: return
-  p5->>+p2: DiagramViewSpec._validate_unique_view_rules
-  p2-->>-p5: return
-  p5->>+p2: CurationSpecV1._validate_spec_uniqueness
-  p2-->>-p5: return
-  p5->>+p11: GroundingAndBoundaryGate.check
-  p11-->>-p5: return
-  p5->>+p14: StructuralTopologicalReducer.reduce
-  p14-->>-p5: return
-  p5->>+p11: GroundingAndBoundaryGate.check
-  p11-->>-p5: return
-  p5->>+p13: TopologicalInvariantGate.check
-  p13-->>-p5: return
-  p5->>+p10: CognitiveBudgetAndOrphanGate.check
-  p10-->>-p5: return
-  p5->>+p8: MermaidEmitter.emit
-  p8-->>-p5: return
-  p5->>+p12: Gate5SyntaxHarness.validate
+  p5->>+p15: StructuralTopologicalReducer.reduce
+  p15-->>-p5: return
+  p5->>+p6: emit_view_source
+  p6-->>-p5: return
+  p5->>+p15: StructuralTopologicalReducer.reduce
+  p15-->>-p5: return
+  p5->>+p6: emit_view_source
+  p6-->>-p5: return
+  p5->>+p12: GroundingAndBoundaryGate.__init__
   p12-->>-p5: return
-  p5->>+p0: LintReport.from_diagnostics
-  p0-->>-p5: return
-  p5->>+p0: LintReport._validate_passed_invariant
-  p0-->>-p5: return
-  p5->>+p2: dump_curation_spec_yaml
-  p2-->>-p5: return
-  p5->>+p2: parse_curation_spec_yaml
-  p2-->>-p5: return
-  p5->>+p11: GroundingAndBoundaryGate.check
-  p11-->>-p5: return
-  p5->>+p14: StructuralTopologicalReducer.reduce
-  p14-->>-p5: return
-  p5->>+p11: GroundingAndBoundaryGate.check
-  p11-->>-p5: return
-  p5->>+p13: TopologicalInvariantGate.check
-  p13-->>-p5: return
-  p5->>+p10: CognitiveBudgetAndOrphanGate.check
-  p10-->>-p5: return
-  p5->>+p8: MermaidEmitter.emit
-  p8-->>-p5: return
-  p5->>+p12: Gate5SyntaxHarness.validate
+  p5->>+p12: GroundingAndBoundaryGate.check
   p12-->>-p5: return
+  p5->>+p14: TopologicalInvariantGate.__init__
+  p14-->>-p5: return
+  p5->>+p14: TopologicalInvariantGate.check
+  p14-->>-p5: return
+  p5->>+p11: CognitiveBudgetAndOrphanGate.check
+  p11-->>-p5: return
+  p5->>+p13: build_default_validators
+  p13-->>-p5: return
+  p5->>+p13: Gate5SyntaxHarness.__init__
+  p13-->>-p5: return
+  p5->>+p13: Gate5SyntaxHarness.validate #91;loop x3#93;
+  p13-->>-p5: return
   p5->>+p0: LintReport.from_diagnostics
   p0-->>-p5: return
-  p5->>+p0: LintReport._validate_passed_invariant
-  p0-->>-p5: return
-  p5->>+p2: dump_curation_spec_yaml
-  p2-->>-p5: return
   p5-->>-p5: return
+  p6->>+p6: run_propose_loop
+  p6->>+p7: GraphDigestGenerator.to_compact_markdown
+  p7-->>-p6: return
+  p6->>+p3: parse_curation_spec_yaml
+  p3-->>-p6: return
+  p6->>+p12: GroundingAndBoundaryGate.check #91;loop x2#93;
+  p12-->>-p6: return
+  p6->>+p14: TopologicalInvariantGate.check
+  p14-->>-p6: return
+  p6->>+p0: LintReport.from_diagnostics
+  p0-->>-p6: return
+  p6->>+p0: LintReport._validate_passed_invariant
+  p0-->>-p6: return
+  p6->>+p3: parse_curation_spec_yaml
+  p3-->>-p6: return
+  p6->>+p12: collect_observed_symbols
+  p12-->>-p6: return
+  p6->>+p3: DiagramViewSpec._validate_unique_view_rules
+  p3-->>-p6: return
+  p6->>+p3: CurationSpecV1._validate_spec_uniqueness
+  p3-->>-p6: return
+  p6->>+p12: GroundingAndBoundaryGate.check
+  p12-->>-p6: return
+  p6->>+p15: StructuralTopologicalReducer.reduce
+  p15-->>-p6: return
+  p6->>+p12: GroundingAndBoundaryGate.check
+  p12-->>-p6: return
+  p6->>+p14: TopologicalInvariantGate.check
+  p14-->>-p6: return
+  p6->>+p11: CognitiveBudgetAndOrphanGate.check
+  p11-->>-p6: return
+  p6->>+p9: MermaidEmitter.__init__
+  p9-->>-p6: return
+  p6->>+p9: MermaidEmitter.emit
+  p9-->>-p6: return
+  p6->>+p13: Gate5SyntaxHarness.validate
+  p13-->>-p6: return
+  p6->>+p0: LintReport.from_diagnostics
+  p0-->>-p6: return
+  p6->>+p0: LintReport._validate_passed_invariant
+  p0-->>-p6: return
+  p6->>+p3: dump_curation_spec_yaml
+  p3-->>-p6: return
+  p6->>+p3: parse_curation_spec_yaml
+  p3-->>-p6: return
+  p6->>+p12: GroundingAndBoundaryGate.check
+  p12-->>-p6: return
+  p6->>+p15: StructuralTopologicalReducer.reduce
+  p15-->>-p6: return
+  p6->>+p12: GroundingAndBoundaryGate.check
+  p12-->>-p6: return
+  p6->>+p14: TopologicalInvariantGate.check
+  p14-->>-p6: return
+  p6->>+p11: CognitiveBudgetAndOrphanGate.check
+  p11-->>-p6: return
+  p6->>+p9: MermaidEmitter.__init__
+  p9-->>-p6: return
+  p6->>+p9: MermaidEmitter.emit
+  p9-->>-p6: return
+  p6->>+p13: Gate5SyntaxHarness.validate
+  p13-->>-p6: return
+  p6->>+p0: LintReport.from_diagnostics
+  p0-->>-p6: return
+  p6->>+p0: LintReport._validate_passed_invariant
+  p0-->>-p6: return
+  p6->>+p3: dump_curation_spec_yaml
+  p3-->>-p6: return
+  p6-->>-p6: return
 ```
 <!-- archigram:end l3_runtime_pipeline_mermaid -->
 
@@ -241,6 +244,10 @@ style.fill: transparent
 direction: right
 
 "archigram.domain.diagnostics": "diagnostics" {
+  style.fill: transparent
+  style.stroke: "#64748b"
+}
+"archigram.domain.glob": "glob" {
   style.fill: transparent
   style.stroke: "#64748b"
 }
@@ -309,22 +316,12 @@ steps: {
     }
   }
   step_2: {
-    "archigram.entrypoints.cli.pipeline" -> "archigram.features.emit_mermaid.emitter": "MermaidEmitter.__init__ (x2)" {
-      style.stroke: "#3b82f6"
-      style.animated: true
-    }
-    "archigram.entrypoints.cli.pipeline" -> "archigram.features.emit_d2.emitter": "D2Emitter.emit" {
+    "archigram.entrypoints.cli.pipeline" -> "archigram.entrypoints.mcp.propose_loop": "emit_view_source (x3)" {
       style.stroke: "#3b82f6"
       style.animated: true
     }
   }
   step_3: {
-    "archigram.entrypoints.cli.pipeline" -> "archigram.features.emit_plantuml.emitter": "PlantUmlEmitter.emit" {
-      style.stroke: "#3b82f6"
-      style.animated: true
-    }
-  }
-  step_4: {
     "archigram.entrypoints.cli.pipeline" -> "archigram.features.lint_grounding.gates": "GroundingAndBoundaryGate.__init__ (x2)" {
       style.stroke: "#3b82f6"
       style.animated: true
@@ -334,33 +331,35 @@ steps: {
       style.animated: true
     }
   }
-  step_5: {
+  step_4: {
     "archigram.entrypoints.cli.pipeline" -> "archigram.features.lint_budget.gate": "CognitiveBudgetAndOrphanGate.check" {
       style.stroke: "#3b82f6"
       style.animated: true
     }
   }
-  step_6: {
+  step_5: {
     "archigram.entrypoints.cli.pipeline" -> "archigram.features.lint_syntax.validators": "build_default_validators (x3)" {
       style.stroke: "#3b82f6"
       style.animated: true
     }
+  }
+  step_6: {
     "archigram.entrypoints.cli.pipeline" -> "archigram.domain.diagnostics": "LintReport.from_diagnostics" {
       style.stroke: "#3b82f6"
       style.animated: true
     }
-  }
-  step_7: {
     "archigram.entrypoints.mcp.propose_loop" -> "archigram.features.digest.generator": "GraphDigestGenerator.to_compact_markdown" {
       style.stroke: "#3b82f6"
       style.animated: true
     }
   }
-  step_8: {
+  step_7: {
     "archigram.entrypoints.mcp.propose_loop" -> "archigram.domain.spec": "parse_curation_spec_yaml (x7)" {
       style.stroke: "#3b82f6"
       style.animated: true
     }
+  }
+  step_8: {
     "archigram.entrypoints.mcp.propose_loop" -> "archigram.features.lint_grounding.gates": "GroundingAndBoundaryGate.check [loop x2] (x6)" {
       style.stroke: "#3b82f6"
       style.animated: true
@@ -371,12 +370,12 @@ steps: {
       style.stroke: "#3b82f6"
       style.animated: true
     }
-  }
-  step_10: {
     "archigram.entrypoints.mcp.propose_loop" -> "archigram.domain.diagnostics": "LintReport.from_diagnostics (x6)" {
       style.stroke: "#3b82f6"
       style.animated: true
     }
+  }
+  step_10: {
     "archigram.entrypoints.mcp.propose_loop" -> "archigram.features.reduce_structural.reducer": "StructuralTopologicalReducer.reduce (x2)" {
       style.stroke: "#3b82f6"
       style.animated: true
@@ -389,7 +388,7 @@ steps: {
     }
   }
   step_12: {
-    "archigram.entrypoints.mcp.propose_loop" -> "archigram.features.emit_mermaid.emitter": "MermaidEmitter.emit (x2)" {
+    "archigram.entrypoints.mcp.propose_loop" -> "archigram.features.emit_mermaid.emitter": "MermaidEmitter.__init__ (x4)" {
       style.stroke: "#3b82f6"
       style.animated: true
     }

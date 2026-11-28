@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from archigram.domain import ProvenanceGrade, ProvenanceStamp
+from archigram.domain.concurrency import decompose_causal_poset
 from archigram.domain.ir import (
     InteractionTraceIR,
     NodeKind,
@@ -178,3 +179,118 @@ def test_perf_compact_1000_span_concurrent_and_looping_trace(benchmark: Any) -> 
 
     assert len(compacted.events) < 80
     assert collect_trace_backing_ids(compacted) == frozenset(trace.events.keys())
+
+
+def _build_1000_span_causal_links_guard_stress_trace() -> InteractionTraceIR:
+    """Build a 1,000-span trace where loops and parallel_map buckets touch causal_links."""
+    participants = {
+        pid: TraceParticipant(
+            participant_id=pid,
+            symbol_id=f"svc.{pid}",
+            label=pid,
+            kind=NodeKind.SERVICE,
+            provenance=_OBS_PROV,
+        )
+        for pid in ("gateway", "worker", "db")
+    }
+    events: dict[str, TraceEvent] = {
+        "root_0": TraceEvent(
+            event_id="root_0",
+            caller_id="gateway",
+            callee_id="gateway",
+            signature="POST /v1/pipeline",
+            parent_event_id=None,
+            clock_domain_id="hostA:1",
+            start_ns=0,
+            end_ns=10_000_000,
+            provenance=_OBS_PROV,
+        )
+    }
+    for idx in range(400):
+        events[f"loop_{idx:03d}"] = TraceEvent(
+            event_id=f"loop_{idx:03d}",
+            caller_id="gateway",
+            callee_id="db",
+            signature="query_step",
+            parent_event_id="root_0",
+            causal_links=(f"loop_{idx - 1:03d}",) if idx > 0 else (),
+            clock_domain_id="hostA:1",
+            start_ns=100 + idx * 100,
+            end_ns=150 + idx * 100,
+            provenance=_OBS_PROV,
+        )
+    events["ext_bridge"] = TraceEvent(
+        event_id="ext_bridge",
+        caller_id="gateway",
+        callee_id="worker",
+        signature="barrier",
+        parent_event_id=None,
+        causal_links=("m_000",),
+        clock_domain_id="hostB:1",
+        start_ns=500_000,
+        end_ns=500_100,
+        provenance=_OBS_PROV,
+    )
+    for idx in range(200):
+        events[f"m_{idx:03d}"] = TraceEvent(
+            event_id=f"m_{idx:03d}",
+            caller_id="gateway",
+            callee_id="worker",
+            signature="map_shard",
+            parent_event_id="root_0",
+            causal_links=("ext_bridge",) if idx == 1 else (),
+            clock_domain_id="hostA:1",
+            start_ns=1_000_000 + idx,
+            end_ns=2_000_000 + idx,
+            provenance=_OBS_PROV,
+        )
+    for idx in range(398):
+        events[f"bg_{idx:03d}"] = TraceEvent(
+            event_id=f"bg_{idx:03d}",
+            caller_id="gateway",
+            callee_id="worker",
+            signature=f"bg_op_{idx}",
+            parent_event_id="root_0",
+            clock_domain_id="hostA:1",
+            start_ns=3_000_000 + idx * 10,
+            end_ns=3_000_005 + idx * 10,
+            provenance=_OBS_PROV,
+        )
+    return InteractionTraceIR(
+        trace_id="perf_1000_causal_links_guard",
+        participants=participants,
+        events=events,
+    )
+
+
+def test_perf_compact_1000_span_causal_links_guard_stress(benchmark: Any) -> None:
+    trace = _build_1000_span_causal_links_guard_stress_trace()
+    assert len(trace.events) == 1000
+
+    config = TraceCompactionConfig(
+        fold_loops=True,
+        fold_loop_with_opt=True,
+        cut_recursion=True,
+        fold_parallel_siblings=True,
+        parallel_epsilon_ns=1_000,
+        fold_parallel_map=True,
+        max_par_branches=2,
+        decompose_series_parallel=False,
+    )
+    engine = TraceCompactionEngine()
+    compacted: InteractionTraceIR = benchmark(engine.compact, trace, config)
+
+    assert "m_001" in compacted.events
+    assert len(compacted.events) < 420
+    assert collect_trace_backing_ids(compacted) == frozenset(trace.events.keys())
+    edges = [
+        (src, eid)
+        for eid, ev in compacted.events.items()
+        for src in (
+            ev.causal_links
+            if ev.parent_event_id is None
+            else (ev.parent_event_id, *ev.causal_links)
+        )
+        if src in compacted.events
+    ]
+    decompose_causal_poset(sorted(compacted.events), edges)

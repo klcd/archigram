@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-import fnmatch
 import hashlib
 from dataclasses import dataclass
 from enum import StrEnum
 from typing import TYPE_CHECKING
 
 from archigram.domain import ProvenanceGrade
+from archigram.domain.glob import matches_any_glob
 from archigram.domain.ir import (
     CanonicalIR,
     InteractionTraceIR,
@@ -22,6 +22,7 @@ from archigram.domain.spec import (
     DiagramViewSpec,
     GlobalAbstractionRule,
     TargetRenderer,
+    validate_safe_view_id,
 )
 from archigram.domain.style import (
     D2_CANONICAL_HEADER,
@@ -44,6 +45,7 @@ from archigram.entrypoints.cli.pipeline import (
     load_curation_spec,
     load_mermaid_theme,
     render_companion_svg,
+    resolve_contained_output_path,
 )
 from archigram.features.emit_d2 import D2Emitter
 from archigram.features.emit_d2.emitter import (
@@ -170,7 +172,7 @@ def _classify_structural_nodes(
             dispositions[sid] = NodeDisposition.KEEP
         elif sid in collapse_targets:
             dispositions[sid] = NodeDisposition.COLLAPSE
-        elif any(fnmatch.fnmatchcase(sid, pat) for pat in bypass_globs):
+        elif matches_any_glob(sid, bypass_globs):
             dispositions[sid] = NodeDisposition.BYPASS
         else:
             dispositions[sid] = NodeDisposition.REMOVE
@@ -414,7 +416,7 @@ def _sync_d2_and_svg(
     buckets: tuple[list[Path], list[Path], list[Path]],
 ) -> None:
     _sync_text_file(stem_path, d2_source, check_only=check_only, buckets=buckets)
-    svg_path = stem_path.parent / f"{stem_path.name}.svg"
+    svg_path = resolve_contained_output_path(stem_path.parent, f"{stem_path.name}.svg")
     sha = hashlib.sha256(d2_source.encode("utf-8")).hexdigest()
     token = f"archigram-source-sha256: {sha}"
     written, drifted, missing = buckets
@@ -513,13 +515,21 @@ def compute_triage_stages(
     mermaid_theme: MermaidThemeConfig = DEFAULT_MERMAID_THEME,
 ) -> TriageOutcome:
     """Compile a view and generate Stage 1 (Original), Stage 2 (Triage), and Stage 3 (Curated)."""
-    matching = [v for v in spec.views if v.id == view_id]
+    safe_view_id = validate_safe_view_id(view_id)
+    matching = [v for v in spec.views if v.id == safe_view_id]
     if not matching:
-        msg = f"View '{view_id}' not found in spec (available: {[v.id for v in spec.views]})"
+        msg = f"View '{safe_view_id}' not found in spec (available: {[v.id for v in spec.views]})"
         raise ValueError(msg)
     single_spec = spec.model_copy(update={"views": (matching[0],)})
     compilation = compile_and_lint_pipeline(observed_ir, single_spec, mermaid_theme=mermaid_theme)
-    artifact = compilation.views[view_id]
+    artifact = compilation.views.get(safe_view_id)
+    if artifact is None:
+        diag_summary = "; ".join(
+            f"{d.code}: {d.message}" for d in compilation.lint_report.diagnostics
+        )
+        detail = diag_summary or "no diagnostics recorded"
+        msg = f"View '{safe_view_id}' failed compilation and cannot be triaged ({detail})"
+        raise ValueError(msg)
     if isinstance(observed_ir, StructuralGraphIR) and isinstance(
         artifact.emitted_ir, StructuralGraphIR
     ):
@@ -538,7 +548,7 @@ def compute_triage_stages(
             observed_ir, artifact.emitted_ir, artifact.view, mermaid_theme
         )
     else:
-        msg = f"IR mode mismatch between input '{observed_ir.ir_mode}' and view '{view_id}'"
+        msg = f"IR mode mismatch between input '{observed_ir.ir_mode}' and view '{safe_view_id}'"
         raise ValueError(msg)
     return TriageOutcome(
         compilation=compilation,
@@ -552,10 +562,11 @@ def compute_triage_stages(
 
 def execute_triage(options: TriageOptions) -> TriageOutcome:
     """Run 3-stage triage generation (or `--check` verification) on disk."""
+    vid = validate_safe_view_id(options.view_id)
     observed_ir = load_canonical_ir(options.input_path, options.input_format)
     spec = load_curation_spec(options.spec_path)
     theme = load_mermaid_theme(options.spec_path)
-    base = compute_triage_stages(observed_ir, spec, options.view_id, theme)
+    base = compute_triage_stages(observed_ir, spec, vid, theme)
     if not options.check_only and not base.compilation.lint_report.passed:
         return base
 
@@ -563,27 +574,26 @@ def execute_triage(options: TriageOptions) -> TriageOutcome:
     drifted: list[Path] = []
     missing: list[Path] = []
     buckets = (written, drifted, missing)
-    vid = options.view_id
     _sync_d2_and_svg(
-        options.out_dir / f"{vid}.1_original.d2",
+        resolve_contained_output_path(options.out_dir, f"{vid}.1_original.d2"),
         base.stage1_d2,
         check_only=options.check_only,
         buckets=buckets,
     )
     _sync_d2_and_svg(
-        options.out_dir / f"{vid}.2_triage.d2",
+        resolve_contained_output_path(options.out_dir, f"{vid}.2_triage.d2"),
         base.stage2_d2,
         check_only=options.check_only,
         buckets=buckets,
     )
     _sync_d2_and_svg(
-        options.out_dir / f"{vid}.3_curated.d2",
+        resolve_contained_output_path(options.out_dir, f"{vid}.3_curated.d2"),
         base.stage3_d2,
         check_only=options.check_only,
         buckets=buckets,
     )
     _sync_text_file(
-        options.out_dir / f"{vid}.3_curated.mmd",
+        resolve_contained_output_path(options.out_dir, f"{vid}.3_curated.mmd"),
         base.stage3_mermaid,
         check_only=options.check_only,
         buckets=buckets,

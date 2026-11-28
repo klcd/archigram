@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -403,6 +404,17 @@ def _parse_uml_member(raw_line: str, force_method: bool | None = None) -> ClassM
     return _parse_field_member(rest, vis, mods)
 
 
+def _parse_edge_weight(raw_weight: Any) -> float:
+    """Parse positive finite edge weight, defaulting invalid values to 1.0."""
+    if raw_weight is None or isinstance(raw_weight, bool):
+        return 1.0
+    try:
+        val = float(raw_weight)
+    except (TypeError, ValueError, OverflowError):
+        return 1.0
+    return val if math.isfinite(val) and val > 0.0 else 1.0
+
+
 @dataclass
 class _RawEdge:
     """Deferred class relationship record resolved once all nodes are registered."""
@@ -637,7 +649,7 @@ class _ClassGraphBuilder:
                     target=dst,
                     relation=raw.relation,
                     sync_kind=SyncKind.SYNC,
-                    weight=raw.weight if raw.weight > 0.0 else 1.0,
+                    weight=_parse_edge_weight(raw.weight),
                     attributes=raw.attributes,
                     provenance=self._stamp(line_span=raw.line_span),
                 )
@@ -731,7 +743,7 @@ def _collect_json_class_relations(
             for tgt in target_list:
                 if isinstance(tgt, dict):
                     tgt_ref = str(tgt.get("target") or tgt.get("name") or "").strip()
-                    weight = float(tgt.get("weight", 1.0))
+                    weight = _parse_edge_weight(tgt.get("weight"))
                     attrs = (
                         {"label": str(tgt["label"])} if isinstance(tgt.get("label"), str) else {}
                     )
@@ -908,7 +920,7 @@ def _ingest_json_edges(raw_edges: Any, builder: _ClassGraphBuilder) -> None:
         attrs = (
             {"label": str(edge_item["label"])} if isinstance(edge_item.get("label"), str) else {}
         )
-        weight = float(edge_item.get("weight", 1.0))
+        weight = _parse_edge_weight(edge_item.get("weight"))
         builder.add_edge(_RawEdge(src, dst, relation, None, attrs, weight))
 
 
@@ -1401,7 +1413,10 @@ def _walk_dot_container(
         edge_attrs = _clean_dot_attrs(edge.get_attributes())
         relation, reverse = _infer_dot_relation(edge_attrs)
         eff_src, eff_dst = (dst, src) if reverse else (src, dst)
-        builder.add_edge(_RawEdge(eff_src, eff_dst, relation, current_pkg, edge_attrs))
+        weight = _parse_edge_weight(edge_attrs.get("weight"))
+        builder.add_edge(
+            _RawEdge(eff_src, eff_dst, relation, current_pkg, edge_attrs, weight=weight)
+        )
 
     for subgraph in container.get_subgraphs():
         _walk_dot_container(subgraph, current_pkg, builder)

@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
-import heapq
 import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from archigram.domain import ProvenanceGrade
+from archigram.domain.concurrency import (
+    group_concurrent_siblings,
+    order_trace_events,
+)
 from archigram.domain.ir import (
     ClassMember,
     EdgeRelation,
@@ -369,64 +372,6 @@ def _emit_structural_graph(graph: StructuralGraphIR) -> str:
     return "\n".join(lines) + "\n"
 
 
-def _order_trace_events(events: dict[str, TraceEvent]) -> list[TraceEvent]:
-    """Topologically order causal DAG events deterministically by timestamp and event_id."""
-    dependents: dict[str, list[str]] = {eid: [] for eid in events}
-    indegree: dict[str, int] = dict.fromkeys(events, 0)
-
-    for eid, event in events.items():
-        preds: set[str] = set(event.causal_links)
-        if event.parent_event_id is not None:
-            preds.add(event.parent_event_id)
-        indegree[eid] = len(preds)
-        for pred in preds:
-            dependents[pred].append(eid)
-
-    heap: list[tuple[int, int, str, str, str]] = [
-        (ev.start_ns, ev.end_ns, ev.caller_id, ev.callee_id, eid)
-        for eid, ev in events.items()
-        if indegree[eid] == 0
-    ]
-    heapq.heapify(heap)
-
-    ordered: list[TraceEvent] = []
-    while heap:
-        _, _, _, _, eid = heapq.heappop(heap)
-        ordered.append(events[eid])
-        for dep_id in dependents[eid]:
-            indegree[dep_id] -= 1
-            if indegree[dep_id] == 0:
-                dep = events[dep_id]
-                heapq.heappush(
-                    heap, (dep.start_ns, dep.end_ns, dep.caller_id, dep.callee_id, dep_id)
-                )
-    return ordered
-
-
-def _group_concurrent_siblings(ordered: list[TraceEvent]) -> list[list[TraceEvent]]:
-    """Group adjacent causally-independent sibling events with overlapping intervals."""
-    if not ordered:
-        return []
-    groups: list[list[TraceEvent]] = [[ordered[0]]]
-    group_ids: set[str] = {ordered[0].event_id}
-    group_max_end = ordered[0].end_ns
-
-    for event in ordered[1:]:
-        current = groups[-1]
-        same_parent = event.parent_event_id == current[0].parent_event_id
-        independent = not (set(event.causal_links) & group_ids)
-        overlaps = event.start_ns < group_max_end
-        if same_parent and independent and overlaps:
-            current.append(event)
-            group_ids.add(event.event_id)
-            group_max_end = max(group_max_end, event.end_ns)
-        else:
-            groups.append([event])
-            group_ids = {event.event_id}
-            group_max_end = event.end_ns
-    return groups
-
-
 def _emit_d2_call_edge(
     endpoints: tuple[str, str],
     label: str,
@@ -519,7 +464,7 @@ def _collect_unique_step_waves(ordered: list[TraceEvent]) -> list[list[_StepEdge
 
     seen_pairs: set[tuple[str, str]] = set()
     waves: list[list[_StepEdge]] = []
-    for group in _group_concurrent_siblings(ordered):
+    for group in group_concurrent_siblings(ordered):
         wave: list[_StepEdge] = []
         for ev in group:
             pair = (ev.caller_id, ev.callee_id)
@@ -547,7 +492,7 @@ def _emit_trace_steps(trace: InteractionTraceIR) -> str:
     animate_override = trace.metadata.get("animate_edges")
     _emit_trace_participants(trace, key_map, lines)
 
-    waves = _collect_unique_step_waves(_order_trace_events(trace.events)) if trace.events else []
+    waves = _collect_unique_step_waves(order_trace_events(trace.events)) if trace.events else []
     if waves:
         lines.append("")
         lines.append("steps: {")
@@ -587,9 +532,9 @@ def _emit_interaction_trace(trace: InteractionTraceIR) -> str:
 
     if trace.events:
         lines.append("")
-        ordered = _order_trace_events(trace.events)
+        ordered = order_trace_events(trace.events)
         group_index = 0
-        for group in _group_concurrent_siblings(ordered):
+        for group in group_concurrent_siblings(ordered):
             if len(group) == 1:
                 ev = group[0]
                 _emit_d2_call_edge(
@@ -656,4 +601,4 @@ format_d2_key = _format_d2_key
 build_safe_key_map = _build_safe_key_map
 build_qualified_paths = _build_qualified_paths
 build_provenance_tooltip = _build_provenance_tooltip
-order_d2_trace_events = _order_trace_events
+order_d2_trace_events = order_trace_events

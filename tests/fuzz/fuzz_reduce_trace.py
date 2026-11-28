@@ -20,6 +20,10 @@ from archigram.features.reduce_trace import (
     TraceFragmentKind,
     collect_trace_backing_ids,
 )
+from archigram.features.reduce_trace.compactor import (
+    _ContractionGuard,  # pyright: ignore[reportPrivateUsage]
+    _quotient_is_acyclic,  # pyright: ignore[reportPrivateUsage]
+)
 from archigram.ports.contracts import TraceCompactorPort
 
 _OBS_PROV = ProvenanceStamp(
@@ -458,3 +462,94 @@ def test_mixed_sync_kind_compaction_never_upgrades_async_backing_events(
                 for bid in backing_ids
                 if bid in events
             )
+
+
+def _draw_random_dag_events(data: st.DataObject, n: int) -> dict[str, TraceEvent]:
+    events: dict[str, TraceEvent] = {}
+    for idx in range(n):
+        eid = f"e{idx}"
+        parent = (
+            None
+            if idx == 0 or data.draw(st.booleans())
+            else f"e{data.draw(st.integers(min_value=0, max_value=idx - 1))}"
+        )
+        prior = [f"e{p}" for p in range(idx) if f"e{p}" != parent]
+        links: tuple[str, ...] = ()
+        if prior:
+            cnt = data.draw(st.integers(min_value=0, max_value=min(3, len(prior))))
+            if cnt:
+                links = tuple(
+                    data.draw(
+                        st.lists(st.sampled_from(prior), min_size=cnt, max_size=cnt, unique=True)
+                    )
+                )
+        events[eid] = TraceEvent(
+            event_id=eid,
+            caller_id="svc_0",
+            callee_id="svc_1",
+            signature="op()",
+            parent_event_id=parent,
+            causal_links=links,
+            clock_domain_id="clk_a",
+            start_ns=idx * 10,
+            end_ns=idx * 10 + 5,
+            provenance=_OBS_PROV,
+        )
+    return events
+
+
+def _collect_active_subtree(
+    root: str, events: dict[str, TraceEvent], active_set: set[str]
+) -> list[str]:
+    children: dict[str | None, list[str]] = {}
+    for eid in active_set:
+        ev = events[eid]
+        children.setdefault(ev.parent_event_id, []).append(eid)
+    sub: list[str] = []
+    stack = [root]
+    while stack:
+        curr = stack.pop()
+        if curr in active_set:
+            sub.append(curr)
+            stack.extend(children.get(curr, ()))
+    return sub
+
+
+@settings(max_examples=120, deadline=None)
+@given(data=st.data())
+def test_contraction_guard_matches_full_quotient_check_across_contraction_sequences(
+    data: st.DataObject,
+) -> None:
+    """Differential property: _ContractionGuard agrees exactly with _quotient_is_acyclic."""
+    n = data.draw(st.integers(min_value=4, max_value=24))
+    events = _draw_random_dag_events(data, n)
+    guard = _ContractionGuard(events)
+    active_set = set(events.keys())
+
+    steps = data.draw(st.integers(min_value=1, max_value=10))
+    for _ in range(steps):
+        active = sorted(active_set)
+        if len(active) < 2:
+            break
+        roots_cnt = data.draw(st.integers(min_value=1, max_value=min(3, len(active))))
+        roots = data.draw(
+            st.lists(st.sampled_from(active), min_size=roots_cnt, max_size=roots_cnt, unique=True)
+        )
+        scope: list[str] = []
+        seen_scope: set[str] = set()
+        for root in roots:
+            for sid in _collect_active_subtree(root, events, active_set):
+                if sid not in seen_scope:
+                    seen_scope.add(sid)
+                    scope.append(sid)
+        if len(scope) < 2:
+            continue
+        rep = scope[0]
+        cand = {eid: rep for eid in scope[1:]}
+        expected = _quotient_is_acyclic(events, {**guard.folded_to_rep, **cand})
+        actual = guard.allows(cand, scope)
+        assert actual is expected
+        if actual and data.draw(st.booleans()):
+            guard.commit(scope)
+            guard.folded_to_rep.update(cand)
+            active_set.difference_update(cand)

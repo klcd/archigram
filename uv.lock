@@ -46,7 +46,6 @@ dependencies = [
     { name = "pydantic" },
     { name = "pydot" },
     { name = "pyyaml" },
-    { name = "rich" },
     { name = "rustworkx" },
     { name = "typer" },
 ]
@@ -68,7 +67,6 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.9.0" },
     { name = "pydot", specifier = ">=3.0.2" },
     { name = "pyyaml", specifier = ">=6.0.2" },
-    { name = "rich", specifier = ">=13.9.0" },
     { name = "rustworkx", specifier = ">=0.15.1" },
     { name = "typer", specifier = ">=0.15.0" },
 ]

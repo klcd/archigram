@@ -57,8 +57,9 @@ flowchart TD
   style n0 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   style n1 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   style n2 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  n3 -.->|"imports"| n1
   n2 -.->|"imports"| n1
-  linkStyle 0 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 0,1 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
 ```
 <!-- archigram:end l2a_domain_and_ports_mermaid -->
 
@@ -94,55 +95,60 @@ flowchart TD
   classDef default fill:transparent,stroke:#64748b,stroke-width:1.5px
   subgraph n0["archigram"]
     subgraph n1["domain"]
-      n9["domain.concurrency (SP-Poset & Overlap Clustering)"]
-      n10["domain.ir & domain.spec (Canonical IR & Spec)"]
+      n2["glob"]
+      n3["uml"]
+      n11["domain.concurrency (SP-Poset & Overlap Clustering)"]
+      n12["domain.ir & domain.spec (Canonical IR & Spec)"]
     end
-    subgraph n2["entrypoints"]
-      n11["Driving Adapters (cli.pipeline & mcp.propose_loop)"]
+    subgraph n4["entrypoints"]
+      n13["Driving Adapters (cli.pipeline & mcp.propose_loop)"]
     end
-    subgraph n3["features"]
-      subgraph n4["reduce_structural"]
-        subgraph n5["reducer"]
-          n12["StructuralTopologicalReducer"]
-          n13["Structural Operators (k_hop, prune, bypass, collapse, SCC, TR)"]
+    subgraph n5["features"]
+      subgraph n6["reduce_structural"]
+        subgraph n7["reducer"]
+          n14["StructuralTopologicalReducer"]
+          n15["Structural Operators (k_hop, prune, bypass, collapse, SCC, TR)"]
         end
       end
-      subgraph n6["reduce_trace"]
-        subgraph n7["compactor"]
-          n14["TraceCompactionEngine (R1-R6 + SP-Poset)"]
-          n15["TraceFragment Tree Builder"]
+      subgraph n8["reduce_trace"]
+        subgraph n9["compactor"]
+          n16["TraceCompactionEngine (R1-R6 + SP-Poset)"]
+          n17["TraceFragment Tree Builder"]
         end
       end
-      n8["Other Concurrency Consumers (lint_budget, digest)"]
+      n10["Other Concurrency Consumers (lint_budget, digest, emitters)"]
     end
   end
   style n0 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   style n1 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
-  style n2 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
-  style n3 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   style n4 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   style n5 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   style n6 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   style n7 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
-  n11 -.->|"imports"| n4
-  n11 -.->|"imports"| n6
-  n7 -.->|"imports"| n9
-  n14 -->|"calls"| n10
-  n5 -.->|"imports"| n10
-  n7 -.->|"imports"| n10
-  n10 -.->|"imports"| n1
-  n8 -.->|"imports"| n9
-  n8 -.->|"imports"| n10
-  n11 -.->|"imports"| n8
-  n11 -->|"calls"| n12
-  n12 -->|"calls"| n13
-  n11 -->|"calls"| n14
+  style n8 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  style n9 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  n13 -.->|"imports"| n6
+  n13 -.->|"imports"| n8
+  n3 -.->|"imports"| n11
+  n9 -.->|"imports"| n11
+  n11 -.->|"imports"| n1
+  n3 -.->|"imports"| n12
+  n16 -->|"calls"| n12
+  n7 -.->|"imports"| n12
+  n9 -.->|"imports"| n12
+  n12 -.->|"imports"| n1
+  n10 -.->|"imports"| n3
+  n13 -.->|"imports"| n10
+  n13 -->|"calls"| n14
   n14 -->|"calls"| n15
-  n7 -->|"calls"| n15
-  n4 -.->|"imports"| n5
+  n13 -->|"calls"| n16
+  n16 -->|"calls"| n17
+  n9 -->|"calls"| n17
   n6 -.->|"imports"| n7
-  linkStyle 0,1,2,4,5,6,7,8,9,15,16 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 3,10,11,12,13,14 stroke:#3b82f6,stroke-width:1.75px
+  n7 -.->|"imports"| n2
+  n8 -.->|"imports"| n9
+  linkStyle 0,1,2,3,4,5,7,8,9,10,11,17,18,19 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 6,12,13,14,15,16 stroke:#3b82f6,stroke-width:1.75px
 ```
 <!-- archigram:end l2b_reduction_engine_mermaid -->
 
@@ -182,42 +188,42 @@ flowchart TD
   classDef default fill:transparent,stroke:#64748b,stroke-width:1.5px
   subgraph n0["archigram"]
     subgraph n1["domain"]
-      n5["domain.diagnostics (LintReport, LintDiagnostic, GateId)"]
-      n6["domain.ir, domain.spec & domain.concurrency"]
+      n2["glob"]
+      n6["domain.diagnostics (LintReport, LintDiagnostic, GateId)"]
+      n7["domain.ir, domain.spec & domain.concurrency"]
     end
-    subgraph n2["entrypoints"]
-      n4["entrypoints.cli (pipeline & diff_report)"]
-      n11["entrypoints.mcp (propose_loop & server)"]
+    subgraph n3["entrypoints"]
+      n5["entrypoints.cli (pipeline & diff_report)"]
+      n12["entrypoints.mcp (propose_loop & server)"]
     end
-    subgraph n3["features"]
-      n7["Gates 1-2: lint_grounding (Referential & Leaf Safety)"]
-      n8["Gate 3: lint_topology (Reachability, Cycles, Poset)"]
-      n9["Gate 4: lint_budget (Node/Edge Budgets & Orphans)"]
-      n10["Gate 5: lint_syntax (Headless Mermaid/D2/PUML/C4/DOT)"]
+    subgraph n4["features"]
+      n8["Gates 1-2: lint_grounding (Referential & Leaf Safety)"]
+      n9["Gate 3: lint_topology (Reachability, Cycles, Poset)"]
+      n10["Gate 4: lint_budget (Node/Edge Budgets & Orphans)"]
+      n11["Gate 5: lint_syntax (Headless Mermaid/D2/PUML/C4/DOT)"]
     end
-    n12["ports.contracts (LintGatePort, SyntaxValidatorPort)"]
+    n13["ports.contracts (LintGatePort, SyntaxValidatorPort)"]
   end
   style n0 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   style n1 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
-  style n2 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
   style n3 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
-  n9 -.->|"imports"| n5
-  n8 -.->|"imports"| n5
-  n7 -.->|"imports"| n5
-  n6 -.->|"imports"| n1
-  n8 -.->|"imports"| n6
-  n7 -.->|"imports"| n6
+  style n4 fill:transparent,stroke:#64748b,stroke-width:1px,stroke-dasharray:4 4
+  n10 -.->|"imports"| n6
   n9 -.->|"imports"| n6
-  n11 -.->|"imports"| n7
-  n4 -.->|"imports"| n7
-  n4 -.->|"imports"| n8
-  n11 -.->|"imports"| n8
-  n4 -.->|"imports"| n9
-  n11 -.->|"imports"| n9
-  n11 -.->|"imports"| n10
-  n4 -.->|"imports"| n10
-  n10 -.->|"imports"| n12
-  linkStyle 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  n8 -.->|"imports"| n6
+  n7 -.->|"imports"| n1
+  n9 -.->|"imports"| n7
+  n8 -.->|"imports"| n7
+  n10 -.->|"imports"| n7
+  n8 -.->|"imports"| n2
+  n12 -.->|"imports"| n8
+  n9 -.->|"imports"| n2
+  n12 -.->|"imports"| n9
+  n12 -.->|"imports"| n10
+  n12 -.->|"imports"| n11
+  n5 -.->|"imports"| n12
+  n11 -.->|"imports"| n13
+  linkStyle 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
 ```
 <!-- archigram:end l2c_five_gate_linter_mermaid -->
 
@@ -375,14 +381,11 @@ flowchart TD
   n17 -->|"calls"| n12
   n17 -.->|"imports"| n12
   n17 -.->|"imports"| n13
-  n10 -.->|"imports"| n13
-  n10 -->|"calls"| n13
   n17 -->|"calls"| n13
   n10 -.->|"imports"| n14
   n17 -->|"calls"| n15
   n17 -.->|"imports"| n15
-  n10 -.->|"imports"| n15
-  n11 -.->|"imports"| n17
+  n10 -.->|"imports"| n17
   n18 -.->|"imports"| n17
   n5 -.->|"imports"| n18
   n12 -.->|"imports"| n19
@@ -393,8 +396,7 @@ flowchart TD
   n16 -.->|"imports"| n19
   n17 -->|"calls"| n16
   n17 -.->|"imports"| n16
-  n10 -.->|"imports"| n16
-  linkStyle 0,1,2,3,4,5,6,7,8,10,11,12,15,17,18,19,20,21,22,23,24,25,26,27,29,30 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
-  linkStyle 9,13,14,16,28 stroke:#3b82f6,stroke-width:1.75px
+  linkStyle 0,1,2,3,4,5,6,7,8,10,11,13,15,16,17,18,19,20,21,22,23,24,26 stroke:#64748b,stroke-width:1.75px,stroke-dasharray:5 5
+  linkStyle 9,12,14,25 stroke:#3b82f6,stroke-width:1.75px
 ```
 <!-- archigram:end l2d_cli_and_mcp_adapters_mermaid -->

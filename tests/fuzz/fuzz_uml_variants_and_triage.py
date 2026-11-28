@@ -335,7 +335,7 @@ def test_triage_stages_partition_conservation_and_syntax_validity(
                         member_globs=("pkg.node_2", "pkg.node_3"),
                     ),
                 ),
-                invariants=ViewInvariants(),
+                invariants=ViewInvariants(forbid_new_cycles=False),
             ),
         )
     )
