@@ -78,6 +78,7 @@ class DiffOptions:
     spec_path: Path
     input_format: InputFormat = InputFormat.AUTO
     output_json: bool = False
+    mermaid_theme: Path | None = None
 
 
 @app.command("version")
@@ -98,6 +99,8 @@ def apply_regeneration_command(options: ApplyOptions) -> str:
         flags.append(("--format", options.input_format.value))
     if options.sync_md is not None:
         flags.append(("--sync-md", str(options.sync_md)))
+    if options.mermaid_theme is not None:
+        flags.append(("--mermaid-theme", str(options.mermaid_theme)))
     return format_regeneration_command("apply", options.input_path, flags)
 
 
@@ -183,12 +186,19 @@ def execute_diff(options: DiffOptions) -> PrDiffSummary:
     """
     head_ir = load_canonical_ir(options.head_path, options.input_format)
     spec = load_curation_spec(options.spec_path)
+    theme = load_mermaid_theme(options.spec_path, options.mermaid_theme)
     base_ir, reason = _load_optional_base(options.base_path, options.input_format)
-    return compute_pr_regression_diff(base_ir, head_ir, spec, base_unavailable_reason=reason)
+    return compute_pr_regression_diff(
+        base_ir,
+        head_ir,
+        spec,
+        base_unavailable_reason=reason,
+        mermaid_theme=theme,
+    )
 
 
 @app.command("apply")
-def apply_cmd(
+def apply_cmd(  # noqa: PLR0913, PLR0917
     input_path: Annotated[
         Path,
         typer.Argument(
@@ -225,6 +235,13 @@ def apply_cmd(
             help="Optional Markdown file or directory to sync inline archigram diagram blocks.",
         ),
     ] = None,
+    mermaid_theme: Annotated[
+        Path | None,
+        typer.Option(
+            "--mermaid-theme",
+            help="Optional path to mermaid-theme.yaml (defaults to sibling of --spec).",
+        ),
+    ] = None,
 ) -> None:
     """Compile Canonical IR + CurationSpecV1 into deterministic diagram files (or --check)."""
     options = ApplyOptions(
@@ -234,6 +251,7 @@ def apply_cmd(
         input_format=input_format,
         check_only=check,
         sync_md=sync_md,
+        mermaid_theme=mermaid_theme,
     )
     try:
         outcome = execute_apply(options)
@@ -266,6 +284,13 @@ def lint_cmd(
         bool,
         typer.Option("--json", help="Emit structured LintReport JSON instead of human text."),
     ] = False,
+    mermaid_theme: Annotated[
+        Path | None,
+        typer.Option(
+            "--mermaid-theme",
+            help="Optional path to mermaid-theme.yaml (defaults to sibling of --spec).",
+        ),
+    ] = None,
 ) -> None:
     """Run all 5 ArchiGram Linter Gates against input topology/trace and curation spec."""
     try:
@@ -275,6 +300,7 @@ def lint_cmd(
                 spec_path=spec,
                 input_format=input_format,
                 output_json=output_json,
+                mermaid_theme=mermaid_theme,
             )
         )
     except (FileNotFoundError, OSError, ValueError, ValidationError) as exc:
@@ -322,6 +348,13 @@ def diff_cmd(
         bool,
         typer.Option("--json", help="Emit structured PrDiffSummary JSON instead of PR Markdown."),
     ] = False,
+    mermaid_theme: Annotated[
+        Path | None,
+        typer.Option(
+            "--mermaid-theme",
+            help="Optional path to mermaid-theme.yaml (defaults to sibling of --spec).",
+        ),
+    ] = None,
 ) -> None:
     """Compare baseline vs PR head across views and render PR Markdown regression summary."""
     try:
@@ -332,6 +365,7 @@ def diff_cmd(
                 spec_path=spec,
                 input_format=input_format,
                 output_json=output_json,
+                mermaid_theme=mermaid_theme,
             )
         )
     except (FileNotFoundError, OSError, ValueError, ValidationError) as exc:

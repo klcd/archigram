@@ -574,6 +574,7 @@ archigram: "archigram" {
           "+spec_path": "Path"
           "+input_format": "InputFormat"
           "+output_json": "bool"
+          "+mermaid_theme": "Path | None"
         }
         "archigram.entrypoints.cli.app.LintOptions": "LintOptions" {
           shape: class
@@ -2639,6 +2640,10 @@ archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypo
   style.stroke: "#3b82f6"
   style.animated: true
 }
+archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.app"."archigram.entrypoints.cli.app.execute_diff" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.load_mermaid_theme": "calls" {
+  style.stroke: "#3b82f6"
+  style.animated: true
+}
 archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.app"."archigram.entrypoints.cli.app.execute_lint" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.compile_and_lint_pipeline": "calls" {
   style.stroke: "#3b82f6"
   style.animated: true
@@ -2756,6 +2761,10 @@ archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypo
   style.stroke-dash: 5
 }
 archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.diff_report" -> archigram."archigram.domain"."archigram.domain.ir": "imports" {
+  style.stroke: "#64748b"
+  style.stroke-dash: 5
+}
+archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.diff_report" -> archigram."archigram.domain"."archigram.domain.style": "imports" {
   style.stroke: "#64748b"
   style.stroke-dash: 5
 }
@@ -6050,6 +6059,8 @@ archigram."archigram.ports"."archigram.ports.contracts"."archigram.ports.contrac
 (archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.app"."archigram.entrypoints.cli.app.execute_diff" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.load_canonical_ir")[0].style.stroke-dash: 5
 (archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.app"."archigram.entrypoints.cli.app.execute_diff" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.load_curation_spec")[0].style.stroke: "#ef4444"
 (archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.app"."archigram.entrypoints.cli.app.execute_diff" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.load_curation_spec")[0].style.stroke-dash: 5
+(archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.app"."archigram.entrypoints.cli.app.execute_diff" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.load_mermaid_theme")[0].style.stroke: "#ef4444"
+(archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.app"."archigram.entrypoints.cli.app.execute_diff" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.load_mermaid_theme")[0].style.stroke-dash: 5
 (archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.app"."archigram.entrypoints.cli.app.execute_lint" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.compile_and_lint_pipeline")[0].style.stroke: "#ef4444"
 (archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.app"."archigram.entrypoints.cli.app.execute_lint" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.compile_and_lint_pipeline")[0].style.stroke-dash: 5
 (archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.app"."archigram.entrypoints.cli.app.execute_lint" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline"."archigram.entrypoints.cli.pipeline.load_canonical_ir")[0].style.stroke: "#ef4444"
@@ -6110,6 +6121,8 @@ archigram."archigram.ports"."archigram.ports.contracts"."archigram.ports.contrac
 (archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.diff_report" -> archigram."archigram.domain"."archigram.domain.diagnostics")[0].style.stroke-dash: 5
 (archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.diff_report" -> archigram."archigram.domain"."archigram.domain.ir")[0].style.stroke: "#8b5cf6"
 (archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.diff_report" -> archigram."archigram.domain"."archigram.domain.ir")[0].style.stroke-dash: 5
+(archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.diff_report" -> archigram."archigram.domain"."archigram.domain.style")[0].style.stroke: "#8b5cf6"
+(archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.diff_report" -> archigram."archigram.domain"."archigram.domain.style")[0].style.stroke-dash: 5
 (archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.diff_report" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline")[0].style.stroke: "#8b5cf6"
 (archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.diff_report" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.pipeline")[0].style.stroke-dash: 5
 (archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.diff_report"."archigram.entrypoints.cli.diff_report.DeclaredRelationshipChange" -> archigram."archigram.entrypoints"."archigram.entrypoints.cli"."archigram.entrypoints.cli.diff_report"."archigram.entrypoints.cli.diff_report.RelationshipStatus")[0].style.stroke: "#ef4444"
